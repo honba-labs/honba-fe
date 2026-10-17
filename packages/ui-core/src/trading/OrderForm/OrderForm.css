@@ -1,0 +1,37 @@
+.hb-order-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.hb-order-form__side {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-order-form__error {
+  margin: -4px 0 0;
+  font-size: 12px;
+  color: var(--bearish);
+}
+
+.hb-order-form__submit {
+  width: 100%;
+  text-align: center;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.hb-order-form__submit-error {
+  margin: 0;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--bearish);
+  background: var(--bearish-bg);
+  border-radius: var(--radius-sm);
+}

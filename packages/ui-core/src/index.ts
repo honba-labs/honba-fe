@@ -85,4 +85,17 @@ export type { InstrumentInfoBarProps } from './market/InstrumentInfoBar';
 export { StatusBar } from './market/StatusBar';
 export type { StatusBarProps } from './market/StatusBar';
 
+// Batch D (docs/tasks.md): order entry ported from bfx-hf-ui-core's src/components/OrderForm
+// (order ticket slice only — see trading/OrderForm/OrderForm.tsx header for what was dropped).
+export { OrderForm, validateOrderFields } from './trading/OrderForm';
+export type {
+  OrderFormProps,
+  OrderDraft,
+  OrderSide,
+  OrderType,
+  TimeInForce,
+  InstrumentId,
+  OrderFormFieldErrors,
+} from './trading/OrderForm';
+
 export const UI_CORE_VERSION = '0.1.0';
