@@ -61,4 +61,28 @@ export type { UseCountdownResult } from './hooks/useCountdown';
 export { useModalFocus } from './hooks/useModalFocus';
 export type { UseModalFocusOptions } from './hooks/useModalFocus';
 
+// Batch C (docs/tasks.md): market/trading display widgets ported from bfx-hf-ui-core's
+// src/components/{OrderBook,OrderBookPanel,Chart,ChartPanel,MarketSelect,TimeFrameDropdown,
+// ExchangeInfoBar,StatusBar}.
+export { OrderBook } from './market/OrderBook';
+export type { OrderBookProps, PriceLevel, OrderBookData } from './market/OrderBook';
+
+export { OrderBookPanel } from './market/OrderBookPanel';
+export type { OrderBookPanelProps } from './market/OrderBookPanel';
+
+export { ChartPanel } from './market/ChartPanel';
+export type { ChartPanelProps } from './market/ChartPanel';
+
+export { MarketSelect } from './market/MarketSelect';
+export type { MarketSelectProps, MarketOption } from './market/MarketSelect';
+
+export { TimeFrameDropdown, DEFAULT_TIMEFRAMES } from './market/TimeFrameDropdown';
+export type { TimeFrameDropdownProps } from './market/TimeFrameDropdown';
+
+export { InstrumentInfoBar } from './market/InstrumentInfoBar';
+export type { InstrumentInfoBarProps } from './market/InstrumentInfoBar';
+
+export { StatusBar } from './market/StatusBar';
+export type { StatusBarProps } from './market/StatusBar';
+
 export const UI_CORE_VERSION = '0.1.0';

@@ -1,0 +1,34 @@
+.hb-chart-panel .hb-panel__content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.hb-chart-panel__root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.hb-chart-panel__host {
+  width: 100%;
+  height: 100%;
+}
+
+.hb-chart-panel__fullscreen-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hb-chart-panel__fullscreen-button:hover {
+  background: var(--bg-hover);
+  color: var(--fg-primary);
+}

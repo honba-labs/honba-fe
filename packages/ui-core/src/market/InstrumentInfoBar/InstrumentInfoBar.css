@@ -1,0 +1,38 @@
+.hb-instrument-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 8px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+}
+
+.hb-instrument-info-bar__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.hb-instrument-info-bar__label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+}
+
+.hb-instrument-info-bar__value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.hb-instrument-info-bar__value.bullish {
+  color: var(--bullish);
+}
+
+.hb-instrument-info-bar__value.bearish {
+  color: var(--bearish);
+}
