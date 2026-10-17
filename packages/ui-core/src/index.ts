@@ -45,4 +45,20 @@ export type { SimpleDropdownProps } from './ui/SimpleDropdown';
 export { Tabs } from './ui/Tabs';
 export type { TabItem, TabsProps } from './ui/Tabs';
 
+// Batch B (docs/tasks.md): hooks ported from bfx-hf-ui-core's src/hooks/*.
+export { useToggle } from './hooks/useToggle';
+export type { UseToggleResult } from './hooks/useToggle';
+
+export { useSize } from './hooks/useSize';
+export type { ElementSize, UseSizeResult } from './hooks/useSize';
+
+export { useHover } from './hooks/useHover';
+export type { UseHoverResult } from './hooks/useHover';
+
+export { useCountdown } from './hooks/useCountdown';
+export type { UseCountdownResult } from './hooks/useCountdown';
+
+export { useModalFocus } from './hooks/useModalFocus';
+export type { UseModalFocusOptions } from './hooks/useModalFocus';
+
 export const UI_CORE_VERSION = '0.1.0';
