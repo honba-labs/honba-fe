@@ -1,0 +1,115 @@
+.hb-orders-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+
+.hb-orders-table__scroll {
+  overflow: auto;
+  width: 100%;
+}
+
+.hb-orders-table__table {
+  width: 100%;
+  min-width: 100%;
+}
+
+.hb-orders-table__table th,
+.hb-orders-table__table td {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hb-orders-table__table thead th {
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-orders-table__table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-orders-table__table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.hb-orders-table__side--buy {
+  color: var(--bullish);
+}
+
+.hb-orders-table__side--sell {
+  color: var(--bearish);
+}
+
+.hb-orders-table__type-badge {
+  display: inline-flex;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.hb-orders-table__status {
+  display: inline-flex;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+
+.hb-orders-table__status--neutral {
+  background: var(--bg-hover);
+  color: var(--fg-muted);
+}
+
+.hb-orders-table__status--working {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.hb-orders-table__status--positive {
+  background: var(--bullish-bg);
+  color: var(--bullish);
+}
+
+.hb-orders-table__status--negative {
+  background: var(--bearish-bg);
+  color: var(--bearish);
+}
+
+.hb-orders-table__cancel {
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--bearish);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.hb-orders-table__cancel:hover:not(:disabled) {
+  background: var(--bearish-bg);
+}
+
+.hb-orders-table__cancel:disabled {
+  color: var(--fg-muted);
+  cursor: default;
+}
+
+.hb-orders-table__empty {
+  margin: 0;
+  padding: 16px;
+  color: var(--fg-muted);
+  text-align: center;
+}

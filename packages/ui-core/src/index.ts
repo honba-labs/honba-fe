@@ -98,4 +98,21 @@ export type {
   OrderFormFieldErrors,
 } from './trading/OrderForm';
 
+// Batch D (docs/tasks.md): orders table ported/folded from bfx-hf-ui-core's src/components/
+// {OrderHistory,AtomicOrdersTable,AtomicOrdersTablePanel,AlgoOrdersTable,AlgoOrdersTablePanel,
+// AlgoOrdersHistoryButton} — one shared `OrdersTable` (statusFilter: 'open'|'history'|'all')
+// instead of separate atomic/algo/history components; see
+// `trading/OrdersTable/OrdersTable.tsx`'s header comment for why.
+export { OrdersTable } from './trading/OrdersTable';
+export type {
+  OrdersTableProps,
+  OrdersTableStatusFilter,
+  Order,
+  OrderStatus,
+  OrderRowSide,
+} from './trading/OrdersTable';
+
+export { OrdersTablePanel } from './trading/OrdersTablePanel';
+export type { OrdersTablePanelProps } from './trading/OrdersTablePanel';
+
 export const UI_CORE_VERSION = '0.1.0';
