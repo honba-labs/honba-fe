@@ -1,0 +1,26 @@
+.hb-attention-bar {
+  display: inline-block;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.hb-attention-bar:last-child {
+  margin-bottom: 0;
+}
+
+.hb-attention-bar.green {
+  color: var(--bullish);
+  background: var(--bullish-bg);
+}
+
+.hb-attention-bar.red {
+  color: var(--bearish);
+  background: var(--bearish-bg);
+}
+
+.hb-attention-bar.yellow {
+  color: var(--warning);
+  background: var(--warning-bg);
+}

@@ -1,0 +1,23 @@
+.hb-scrollbars {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.hb-scrollbars::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.hb-scrollbars::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hb-scrollbars::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-sm);
+}
+
+.hb-scrollbars::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}

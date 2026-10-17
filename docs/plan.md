@@ -292,12 +292,14 @@ Only after §7 passes:
 
 ## 9. Risks & open questions
 
-- **TypeScript 7 vs. the lint toolchain**: `@typescript-eslint/parser` (including prereleases as
-  of 2026-10-17) peer-caps at `typescript <6.1.0`; the repo runs TS 7.0.2 anyway via
-  `npm install --legacy-peer-deps`. This is unverified against TS7's actual behavior beyond
-  "it typechecks and builds" — if ESLint's TS-aware rules start misbehaving, the fallback is
-  pinning `typescript` to `6.0.3` (confirmed available and within the parser's supported range)
-  rather than fighting the mismatch.
+- **TypeScript 7 vs. the lint toolchain — resolved 2026-10-17 (Batch A)**: TS 7.0.2 made
+  `@typescript-eslint/parser@8.71.2` hard-fail at runtime (`typescript-eslint does not support
+  TS 7.0`), not just warn via its peer-dependency ceiling (`typescript <6.1.0`), so `npm run lint`
+  could not run at all. Applied the fallback this section already called out: both workspaces'
+  `typescript` devDependency is pinned to the exact `6.0.3` release (within the parser's supported
+  range) instead of `^7.0.2`. `npm install` no longer needs `--legacy-peer-deps`. Revisit the pin
+  once `@typescript-eslint` ships TS7 support (tracked at
+  https://github.com/typescript-eslint/typescript-eslint/issues/10940).
 
 - **Scope size**: this is a full terminal rewrite (6 app areas + a new shell + a new docking
   engine + a new WS data layer), not a small UI refresh. The "bfx-hf-ui needs little effort"

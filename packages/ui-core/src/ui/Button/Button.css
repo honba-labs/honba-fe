@@ -1,0 +1,50 @@
+.hb-button {
+  background: var(--bg-hover);
+  border: none;
+  color: var(--fg-primary);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  transition: background-color 0.2s, opacity 0.2s;
+  cursor: pointer;
+}
+
+.hb-button:hover:not(.disabled),
+.hb-button:focus-visible:not(.disabled) {
+  opacity: 0.85;
+}
+
+.hb-button:active:not(.disabled) {
+  transition-duration: 0.05s;
+}
+
+.hb-button.red {
+  background: var(--bearish);
+  color: var(--fg-on-accent);
+}
+
+.hb-button.green {
+  background: var(--bullish);
+  color: var(--fg-on-accent);
+}
+
+.hb-button.blue {
+  background: var(--accent);
+  color: var(--fg-on-accent);
+}
+
+.hb-button.gray {
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+}
+
+.hb-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hb-button.inactive {
+  opacity: 0.6;
+  pointer-events: none;
+}

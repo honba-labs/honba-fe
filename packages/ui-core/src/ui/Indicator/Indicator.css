@@ -1,0 +1,35 @@
+.hb-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.hb-indicator.green {
+  background-color: var(--bullish);
+}
+
+.hb-indicator.red {
+  background-color: var(--bearish);
+}
+
+.hb-indicator.white {
+  background-color: var(--fg-primary);
+}
+
+.hb-indicator.grey {
+  background-color: var(--fg-muted);
+}
+
+.hb-indicator.blinking {
+  animation: hb-indicator-blink 1.2s infinite ease-in-out;
+}
+
+@keyframes hb-indicator-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}

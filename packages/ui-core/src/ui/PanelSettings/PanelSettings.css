@@ -1,0 +1,23 @@
+.hb-panelsettings {
+  padding: 0 16px;
+}
+
+.hb-panelsettings__header {
+  width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-primary);
+  margin: 8px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-panelsettings__inner {
+  color: var(--fg-primary);
+}
+
+.hb-panelsettings__footer {
+  width: 100%;
+  margin-top: 24px;
+  padding-bottom: 16px;
+}

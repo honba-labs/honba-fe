@@ -1,0 +1,19 @@
+.hb-pl-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.hb-pl-number.positive {
+  color: var(--bullish);
+}
+
+.hb-pl-number.negative {
+  color: var(--bearish);
+}
+
+.hb-pl-number__text {
+  vertical-align: text-top;
+}
