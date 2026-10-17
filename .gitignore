@@ -1,2 +1,6 @@
 node_modules/
 dist/
+
+# Local, persistent reference checkout of bfx-hf-ui-core (Apache-2.0) used by docs/tasks.md.
+# Read-only reference material — never committed, never shipped as a dependency.
+.reference/

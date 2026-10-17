@@ -8,17 +8,19 @@ references them.
 ## Shared conventions (read this before any task below)
 
 **Reference material.** All "port from" paths below refer to `bfx-hf-ui-core` pinned at commit
-`7df411b1a60917f0b2e74edecca8012224c6c5a4` (the last commit before Bitfinex archived the repo).
-Before starting a task, fetch it fresh — don't rely on another session's clone:
+`7df411b1a60917f0b2e74edecca8012224c6c5a4` (the last commit before Bitfinex archived the repo),
+checked out locally at `honba-fe/.reference/bfx-hf-ui-core`. This directory is `.gitignore`d
+(never committed, never shipped as a dependency) but persists on disk across sessions — read it
+directly rather than re-cloning. If it's ever missing, recreate it with:
 
 ```
-git clone https://github.com/bitfinexcom/bfx-hf-ui-core.git /tmp/bfx-hf-ui-core-ref
-cd /tmp/bfx-hf-ui-core-ref && git checkout 7df411b1a60917f0b2e74edecca8012224c6c5a4
+git clone https://github.com/bitfinexcom/bfx-hf-ui-core.git .reference/bfx-hf-ui-core
+cd .reference/bfx-hf-ui-core && git checkout 7df411b1a60917f0b2e74edecca8012224c6c5a4
 ```
 
-Treat this clone as read-only reference material in a scratch directory, never as a dependency
-and never copied verbatim into `honba-fe`. It's Apache-2.0 licensed, so porting/adapting it is
-legally fine, but every port is a **rewrite**, not a copy-paste:
+Treat it as read-only reference material, never as a dependency and never copied verbatim into
+the package source. It's Apache-2.0 licensed, so porting/adapting it is legally fine, but every
+port is a **rewrite**, not a copy-paste:
 
 | From (bfx-hf-ui-core, React 16 + Redux + SCSS) | To (honba-fe, React 19 + TS + Zustand + CSS vars) |
 |---|---|
