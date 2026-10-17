@@ -1,9 +1,13 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { UI_CORE_VERSION } from '@honba/ui-core';
+import '@honba/ui-core/styles.css';
 import { AppShell } from './app-shell/shell';
 import { PlaceholderRoute } from './app-shell/placeholder-route';
 import './styles/base.css';
+
+console.info(`@honba/ui-core ${UI_CORE_VERSION}`);
 
 const router = createBrowserRouter([
   {

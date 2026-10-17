@@ -3,6 +3,12 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    // npm workspaces link @honba/ui-core via a symlink into node_modules;
+    // without this Vite resolves imports against the symlink target's own
+    // node_modules instead of the app's, which breaks React's singleton.
+    preserveSymlinks: true,
+  },
   server: {
     port: 5175,
     open: false,

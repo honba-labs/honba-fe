@@ -7,10 +7,15 @@ re-litigated without a new discussion:
 
 1. **honba-fe replaces `honba-frontend` entirely.** It is the new canonical web frontend for
    Honba. `honba-frontend` is retired once honba-fe reaches parity (see §8).
-2. **Ground-up rewrite.** honba-fe does not fork or vendor any code from `bfx-hf-ui` /
-   `bfx-hf-ui-core`. Those repos are used purely as a **UX/feature reference** — screen layouts,
-   panel composition, order-entry and algo-order workflows, information density — reimplemented
-   natively on honba's own stack and wired to honba's own backend.
+2. **Ground-up rewrite of the app itself; `packages/ui-core` is a direct, modernized port of
+   `bfx-hf-ui-core`.** Revised 2026-10-17: the trading-widget library (`packages/ui-core`, see
+   §3.5) is explicitly based on `bfx-hf-ui-core`'s actual components — ported and modernized
+   (React 16/Redux/SCSS → React 19/TypeScript/Zustand/CSS variables), not merely
+   "inspired by" — per-component mapping and exclusions are in `docs/tasks.md`. `bfx-hf-ui`'s
+   Electron shell and Bitfinex-backend wiring (`bfx-hf-server`, `bfx-hf-algo`, Grenache) are still
+   not ported; the app shell, routing, and backend integration in `apps/web` remain a from-scratch
+   build against honba's own REST/WS API. Apache-2.0 permits this; attribution lives in
+   `packages/ui-core/LICENSE` and `packages/ui-core/NOTICE.md`.
 3. **Existing honba-frontend features are in scope to reimplement**, not to skip. Screener,
    Workbench (chart + depth + order ticket), Portfolio, AlgoDesigner, Simulator, Researcher all
    have working implementations today; honba-fe must reach at least feature parity with them
@@ -29,11 +34,13 @@ Checked against the live repos before writing this plan (2026-10-17):
 | Reusable widgets | The actual trading-widget primitives (order book, depth, ticker) live in Bitfinex's separate `@ufx-ui/core` / `@ufx-ui/bfx-containers` npm packages (pinned to `0.16.0`, built for React 16), not in app code. They are not a drop-in for a React 19 app and are not meaningfully maintained outside Bitfinex's own needs.
 | License | Apache-2.0 on both repos — reuse would be legally fine, but none of the above makes it practically worthwhile. |
 
-Net: there isn't an "it just needs wiring up" shortcut here. What *is* valuable is the product
-thinking: how Bitfinex laid out a live-trading terminal (persistent chart + book + ticket +
-positions, a dockable panel grid, an algo-order builder with live preview, a code-editor-backed
-strategy canvas, a notification/toast system, connection/account management). That's what this
-plan borrows — as a reference during design, not as a dependency.
+Net: there isn't an "it just needs wiring up" shortcut here — the app as a whole (shell, backend
+wiring, build tooling) is rebuilt from scratch. But per the 2026-10-17 revision above, the actual
+component-level UI (order book, order form, position/balance tables, panels, modals) *is* ported
+directly from `bfx-hf-ui-core`'s `src/`, scoped down to what applies to honba's domain and
+rewritten onto React 19/TS/Zustand — see `docs/tasks.md` for the exact per-component breakdown,
+what's excluded (Bitfinex-branding, Electron-only chrome, account-lifecycle modals with no honba
+equivalent), and how each maps onto honba's own REST/WS API.
 
 ## 2. Baseline: what `honba-frontend` already has
 
@@ -72,26 +79,39 @@ honba-fe must not regress on any of this; it's the parity bar for §8.
 
 ### 3.1 Stack
 
-Match `honba-frontend`'s already-proven stack rather than bfx-hf-ui's legacy one — this is the
-one piece of "don't redo work" that still applies even for a ground-up UI rewrite:
+Match `honba-frontend`'s already-proven architectural choices rather than bfx-hf-ui's legacy one,
+but on each library's actual current release — re-evaluated and version-pinned against the npm
+registry on 2026-10-17 (not from memory; `npm view <pkg> version` is the source of truth, not a
+web search — search results on current package versions were unreliable/conflicting when checked):
 
-- **React 19 + TypeScript**, built with **Vite**.
-- **Zustand** for client state (per-domain stores, fine-grained selectors — avoids the
+- **React 19.3.1 + TypeScript 7.0.2**, built with **Vite 8.3.4**. TypeScript 7 is the newly-stable
+  native (Go-ported) compiler line; kept at latest per explicit instruction even though
+  `@typescript-eslint/parser` (8.x, even prerelease) still declares a peer ceiling of
+  `typescript <6.1.0` — installed with `--legacy-peer-deps` to force it. Watch for
+  typescript-eslint compatibility issues as a live risk (§9), not a resolved one.
+- **Zustand 5.0.15** for client state (per-domain stores, fine-grained selectors — avoids the
   whole-tree-rerender problem bfx-hf-ui-core's Redux+saga setup has on every tick).
-- **TanStack Query** for server-state caching/invalidation around the REST API (new — honba-frontend
-  rolls its own fetch/store hooks per feature; standardizing this avoids N bespoke polling loops).
-- **TanStack Table + TanStack Virtual** for the screener grid and any large order/trade tables.
+- **TanStack Query 5.104.3** for server-state caching/invalidation around the REST API (new —
+  honba-frontend rolls its own fetch/store hooks per feature; standardizing this avoids N bespoke
+  polling loops).
+- **TanStack Table 9.3.1 + TanStack Virtual 3.14.21** for the screener grid and any large
+  order/trade tables.
 - **openalgo-charts** for price charts (already proven in honba-frontend's Workbench; zero-dep,
-  NSE/BSE market-hours aware).
-- **@xyflow/react** for the AlgoDesigner node graph; **Monaco** (or `@uiw/react-codemirror`,
-  bfx-hf-ui-core's choice — evaluate both, Monaco is already proven in honba-frontend) for the code
-  pane.
-- **react-resizable-panels** (or `dockview` if true tabbed/floating docking is wanted — decide in
-  Phase 1, see §3.3) for the panel shell.
-- **lucide-react** for icons, **clsx** for conditional classes.
-- Styling: CSS variables / design tokens (`styles/tokens.css`), not Tailwind, not SCSS — keep a
-  single themeable source of truth per `honba-frontend/Design.md`'s requirement that the app be
-  "themeable, with customizable typography and color palette, layout presets."
+  NSE/BSE market-hours aware) — wrapped by a `ChartPanel` in `packages/ui-core`, see
+  `docs/tasks.md` Batch C.
+- **@xyflow/react 12.12.0** for the AlgoDesigner node graph; **Monaco** (already proven in
+  honba-frontend) for the code pane — not bfx-hf-ui-core's CodeMirror, see `docs/tasks.md` Batch E.
+- **react-router-dom 7.18.4** for the shell's client-side routing (§3.2).
+- Panel-docking engine: **not yet decided** — `react-resizable-panels` vs `dockview`; resolve in
+  `docs/tasks.md` Batch F and record the decision here once made.
+- **lucide-react 1.59.0** for icons, **clsx 2.1.1** for conditional classes.
+- Styling: CSS variables / design tokens (`packages/ui-core/src/styles/tokens.css`), not
+  Tailwind, not SCSS — keep a single themeable source of truth per `honba-frontend/Design.md`'s
+  requirement that the app be "themeable, with customizable typography and color palette, layout
+  presets."
+- **Monorepo tooling**: plain **npm workspaces** (`apps/web` + `packages/ui-core`), no
+  Turborepo/Nx — appropriate at 2 packages; revisit only if the package count grows well past
+  that (see §9).
 
 ### 3.2 Application shape: single shell SPA, not multi-page
 
@@ -146,52 +166,53 @@ it, backed by the **already-existing** `/profile/layouts` and `/profile/modules`
 - REST for everything request/response-shaped: order placement/cancellation, portfolio snapshots,
   backtests/sweeps, strategy CRUD, screener scans.
 
-### 3.5 Directory layout
+### 3.5 Directory layout (npm workspaces monorepo, set up 2026-10-17)
 
 ```
 honba-fe/
 ├── docs/
-│   └── plan.md
-├── index.html                     # single shell entry
-├── vite.config.ts
-├── tsconfig.json
-├── package.json
-├── Makefile                       # api / web / dev, mirrors honba-frontend's
-├── src/
-│   ├── main.tsx                   # mounts <AppShell>
-│   ├── app-shell/
-│   │   ├── shell.tsx               # top nav + bottom bar + router outlet
-│   │   ├── app-switcher.tsx        # bfx-hf-ui-style app launcher dropdown
-│   │   ├── symbol-search.tsx
-│   │   ├── status-bar.tsx
-│   │   └── notifications/          # toast/alert center
-│   ├── core/
-│   │   ├── api/
-│   │   │   ├── generated/          # codegen output (domain types + client) — DO NOT EDIT
-│   │   │   ├── client.ts           # thin wrapper: auth, base URL, error envelope handling
-│   │   │   └── query-keys.ts       # TanStack Query key factories
-│   │   ├── ws/
-│   │   │   ├── socket.ts           # single shared WS connection + reconnect/backoff
-│   │   │   └── channels.ts         # typed subscribe helpers (quotes, depth, orders, positions)
-│   │   ├── store/                  # Zustand stores: market, orders, positions, layout, theme
-│   │   └── types/generated/        # codegen output — DO NOT EDIT
-│   ├── features/
-│   │   ├── screener/
-│   │   ├── workbench/               # chart + depth + order-ticket + positions/orders panel
-│   │   ├── algodesigner/
-│   │   ├── simulator/
-│   │   ├── researcher/
-│   │   ├── portfolio/
-│   │   └── settings/                 # connections, profile, layout presets
-│   ├── components/
-│   │   ├── ui/                     # design-system primitives
-│   │   └── domain/                 # chart cards, technicals, fundamentals widgets
-│   └── styles/
-│       ├── tokens.css
-│       ├── base.css
-│       └── theme.css
-└── .github/workflows/ci.yml
+│   ├── plan.md
+│   └── tasks.md                    # per-component task breakdown for implementation agents
+├── package.json                    # workspace root: ["apps/*", "packages/*"]
+├── tsconfig.base.json              # shared compilerOptions, extended by each package
+├── Makefile                        # api / web / dev, mirrors honba-frontend's
+├── packages/
+│   └── ui-core/                    # @honba/ui-core — ported from bfx-hf-ui-core (§0, §1)
+│       ├── LICENSE                 # Apache-2.0, carried from bfx-hf-ui-core
+│       ├── NOTICE.md               # attribution + what's ported vs. original
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── src/
+│           ├── index.ts            # public exports
+│           ├── styles/tokens.css   # design tokens, themeable per Design.md
+│           ├── ui/                 # Batch A: Button, Input, Modal, Panel, Tabs, ...
+│           ├── hooks/              # Batch B: useToggle, useHover, ...
+│           ├── market/             # Batch C: OrderBook, ChartPanel, MarketSelect, StatusBar
+│           ├── trading/            # Batch D: OrderForm, PositionsTable, BalancesTable, ...
+│           ├── strategy/           # Batch E: PerformanceMetrics, BacktestOptionsPanel, ...
+│           ├── shell/              # Batch F: layout primitives (nav, docking shell pieces)
+│           └── modals/             # Batch G: ClosePositionModal, EditOrderModal, ...
+└── apps/
+    └── web/                        # the shell SPA — composes @honba/ui-core, owns backend wiring
+        ├── index.html
+        ├── vite.config.ts           # proxies /api, /ws to `honba serve`; preserveSymlinks: true
+        ├── tsconfig.json
+        ├── package.json             # depends on "@honba/ui-core": "*"
+        └── src/
+            ├── main.tsx             # mounts router + <AppShell>
+            ├── app-shell/           # Batch F: shell.tsx, app-switcher, notifications
+            ├── core/
+            │   ├── api/
+            │   │   ├── generated/   # codegen output from honba (domain types + client) — DO NOT EDIT
+            │   │   └── query-keys.ts
+            │   ├── ws/              # Batch H: socket.ts, channels.ts
+            │   └── store/           # Batch H: Zustand stores (market, orders, positions, layout)
+            └── features/            # Batch I: screener, workbench, algodesigner, simulator,
+                                      # researcher, portfolio, settings
 ```
+
+See `docs/tasks.md` for exactly which bfx-hf-ui-core source paths feed each `packages/ui-core/src/*`
+directory, what's explicitly excluded, and how each maps onto honba's REST/WS API.
 
 ## 4. Feature map: bfx-hf-ui concept → honba-fe implementation
 
@@ -220,6 +241,10 @@ honba-fe/
   undocumented coupling to their markup).
 
 ## 6. Phased roadmap
+
+`docs/tasks.md` breaks Phases 1–7 below into granular, per-component task briefs (Batches A–I)
+sized for an implementation agent to pick up one at a time, each pinned to the exact
+bfx-hf-ui-core source paths it ports from and what's explicitly excluded. Start with Batch A.
 
 | Phase | Scope | Exit criteria |
 |---|---|---|
@@ -266,6 +291,13 @@ Only after §7 passes:
    (or mark archived) the `honba-frontend` row.
 
 ## 9. Risks & open questions
+
+- **TypeScript 7 vs. the lint toolchain**: `@typescript-eslint/parser` (including prereleases as
+  of 2026-10-17) peer-caps at `typescript <6.1.0`; the repo runs TS 7.0.2 anyway via
+  `npm install --legacy-peer-deps`. This is unverified against TS7's actual behavior beyond
+  "it typechecks and builds" — if ESLint's TS-aware rules start misbehaving, the fallback is
+  pinning `typescript` to `6.0.3` (confirmed available and within the parser's supported range)
+  rather than fighting the mismatch.
 
 - **Scope size**: this is a full terminal rewrite (6 app areas + a new shell + a new docking
   engine + a new WS data layer), not a small UI refresh. The "bfx-hf-ui needs little effort"
