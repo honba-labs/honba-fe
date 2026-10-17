@@ -115,4 +115,37 @@ export type {
 export { OrdersTablePanel } from './trading/OrdersTablePanel';
 export type { OrdersTablePanelProps } from './trading/OrdersTablePanel';
 
+// Batch D (docs/tasks.md): positions table ported from bfx-hf-ui-core's src/components/
+// {PositionsTable,PositionsTable.columns} — row type covers both the bare `Position` shape
+// (`POST /positions/close`'s response) and the richer valued `PortfolioPosition` shape that
+// `GET /portfolio/positions` actually returns (see `trading/PositionsTable/PositionsTable.tsx`'s
+// header comment for the schema nuance this uncovered vs. this task's brief).
+export { PositionsTable, formatMoney } from './trading/PositionsTable';
+export type {
+  PositionsTableProps,
+  PositionRow,
+  PositionSide,
+  PositionProduct,
+  Money,
+} from './trading/PositionsTable';
+
+export { PositionsTablePanel } from './trading/PositionsTablePanel';
+export type { PositionsTablePanelProps } from './trading/PositionsTablePanel';
+
+// Batch D (docs/tasks.md): balances table ported from bfx-hf-ui-core's src/components/
+// {BalancesTable,BalancesTable.columns} — honba has no flat per-currency balance row, so this
+// renders one row per `PortfolioAccount` (`GET /portfolio/accounts`) with its `holdings`
+// explorable via an expand toggle; see `trading/BalancesTable/BalancesTable.tsx`'s header comment.
+export { BalancesTable } from './trading/BalancesTable';
+export type {
+  BalancesTableProps,
+  PortfolioAccount,
+  PortfolioHolding,
+  PortfolioMode,
+  PortfolioGreeks,
+} from './trading/BalancesTable';
+
+export { BalancesTablePanel } from './trading/BalancesTablePanel';
+export type { BalancesTablePanelProps } from './trading/BalancesTablePanel';
+
 export const UI_CORE_VERSION = '0.1.0';

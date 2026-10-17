@@ -1,0 +1,137 @@
+.hb-balances-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+
+.hb-balances-table__scroll {
+  overflow: auto;
+  width: 100%;
+}
+
+.hb-balances-table__table {
+  width: 100%;
+  min-width: 100%;
+}
+
+.hb-balances-table__table th,
+.hb-balances-table__table td {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hb-balances-table__table thead th {
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-balances-table__table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-balances-table__table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.hb-balances-table__expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.hb-balances-table__expand:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--fg-primary);
+}
+
+.hb-balances-table__expand:disabled {
+  color: var(--border-subtle);
+  cursor: default;
+}
+
+.hb-balances-table__mode {
+  display: inline-flex;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+
+.hb-balances-table__mode--live {
+  background: var(--bullish-bg);
+  color: var(--bullish);
+}
+
+.hb-balances-table__mode--sandbox {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+/* The expanded holdings block is a single full-width cell holding its own mini-table, not the
+   usual single-line truncated cell -- override the base td rules above for it. */
+.hb-balances-table__holdings-cell {
+  display: block;
+  width: 100%;
+  white-space: normal;
+  overflow: hidden;
+  padding: 4px 8px 8px 44px;
+}
+
+.hb-balances-table__holdings {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.hb-balances-table__holdings-header,
+.hb-balances-table__holdings-row {
+  display: grid;
+  grid-template-columns: 2fr 0.8fr 1fr 1fr 1.3fr 1.3fr;
+  gap: 8px;
+  padding: 4px 8px;
+}
+
+.hb-balances-table__holdings-header {
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  font-size: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-balances-table__holdings-rows {
+  overflow: auto;
+}
+
+.hb-balances-table__holdings-row {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-balances-table__holdings-row:last-child {
+  border-bottom: none;
+}
+
+.hb-balances-table__empty {
+  margin: 0;
+  padding: 16px;
+  color: var(--fg-muted);
+  text-align: center;
+}
