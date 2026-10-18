@@ -1,136 +1,52 @@
-# honba-fe handoff (2026-10-19) — resume: Batch I (pages / app routes); Batch H is complete
+# honba-fe handoff (2026-10-19) — resume: Batch I remaining slices (AlgoDesigner → Simulator/Researcher, plus the broker-credential Settings form); slices 1–5 of Batch I are done. Batch H complete.
 
-## State: Batches A–H done and committed. The component dashboard (/components) shows batches A–G; /workbench is a real, live page as of Batch H. Nothing below is pushed.
+## State: Batches A–H done and committed; Batch I slices 1–5 (Portfolio, Workbench order entry, Workbench dockview workspace, Screener, Settings) are committed. AlgoDesigner, Simulator and Researcher routes are still placeholders. Nothing below is pushed.
 
-Last committed state on top of `211920b` ("Update handoff note: Batch G complete, resume at Batch H"):
+Commit ladder (Batch I on top; earlier Batch H/G/F/E entries via `git log`):
 
 ```
-40671c5 Batch H slice 5: end-to-end exit — Workbench feeds the OrderBookPanel live from /depth via the LiveSocket singleton + useMarketStore; shell + StatusBar wired to real connection status
-04462da Batch H slice 4: TanStack Query hooks per REST resource with envelope-aware retry policy (core/api/query)
-dc03ccf Batch H slice 3: Zustand domain stores (market quotes/depth, orders, positions, connection status, layouts persisted to /profile/layouts) — apps/web core/store
-b5ac36f Batch H slice 2: core/ws LiveSocket gateway — transport-agnostic, ref-counted channel subscriptions, polling transport default (no server-side /ws exists; see plan.md §3.4 inspection)
-ac7efa2 Batch H slice 1: hand-written wire mirrors + typed REST client for the ResponseEnvelope contract (apps/web core/{api,types})
-ab7af32 Record Batch H streaming inspection: /ws is SSE backtest-replay only; polling-transport LiveSocket design
+a4d32fb Batch I slice 5: Settings route — profile-layout-preset management (GET /profile/layouts + DELETE /profile/layouts/{name}) and the Batch G AppSettingsModal persisted into the profile via PUT /profile compare-and-swap; client getScreenerScan/putProfile + hooks useProfile/useLayouts/usePutProfile/useDeleteLayout; Screener+Settings routes wired in main.tsx
+72ee112 Batch I slice 4: Screener route — server-evaluated scans through GET /screener/scan (JSON-array universe, JSON-encoded AND-combined filter group, results table with one column per metric key), explicit-run only
+555b939 Batch I slice 3: Workbench becomes a dockview workspace — default layout is a serialized preset (grid.root group view-states + panels map), the live document round-trips /profile/layouts via useLayoutStore + LayoutControlToolbar save; ticket/working-orders slices moved onto a shared workspace selection store (useWorkbenchSelection)
+b03bd94 Batch I slice 2: Workbench order entry — OrderForm ticket posts through POST /orders, Working Orders reconciled into useOrdersStore, DELETE cancel, route page split (WorkbenchPage is a thin wrapper over WorkbenchWorkspace)
+0a8b9ea Batch I slice 1: Portfolio route — PortfolioPage (Account/Positions tab with ClosePositionModal → POST /positions/close, Trade History from /portfolio/trades), portfolio wire types + typed client + query hooks
 ```
 
-## What Batch H decided and shipped (this session)
+Batch H landed before those (ac7ab…40671c5: wire mirrors/client → LiveSocket polling gateway → Zustand stores → query hooks → exit slice; see `git log`). Batch K survey diff in `docs/plan.md`/`docs/tasks.md` is **deliberately uncommitted** — never bundle it into Batch I commits.
 
-1. **The `/ws` assumption was wrong and is now recorded**: `honba-ya-api-rest/src/streams.rs` is
-   SSE for *backtest replay* only (`GET /backtests/{id}/events`), `honba-ya-ws` is an internal
-   broadcast bus with no HTTP surface, and `honba serve` (honba-ya's real binary) exposes **no
-   WebSocket route at all**. plan.md §3.4 has the full inspection note; do not re-litigate.
-2. **State layer lives in `apps/web/src/core/`**: hand-written wire mirrors
-   (`core/types/messages.ts`, pinned to API_VERSION `1.0.0` / SCHEMA_VERSION `4` — swap for
-   codegen at the `honba/Makefile` cutover by deleting the file), typed REST client
-   (`core/api/client.ts`, one envelope-validation concern, `HonbaApiError` carries
-   `ErrorDetail.retryable`), TanStack Query hooks (`core/api/query.ts`, retry only when the
-   envelope says retryable), LiveSocket gateway (`core/ws/socket.ts` — ref-counted channels,
-   polling transport default, status machine idle→connecting→live→reconnecting→failed),
-   stores (`market`, `orders`, `positions`, `connection`, `layout`), and `core/liveSocket.ts`
-   singleton wiring gateway status → `useConnectionStore`.
-3. **Exit slice shipped**: `/workbench` is a real page (replaced the placeholder) —
-   MarketSelect → socket subscribe → `useMarketStore` → `OrderBookPanel`, and the shell
-   topbar/StatusBar reflect real connection status. Verified green: apps/web 65/65 vitest +
-   `tsc --noEmit` + eslint + `npm run build`; ui-core untouched.
-4. **Verified against a running `honba serve`**: envelope + instruments + quotes wire shapes
-   match messages.ts exactly (curl'd a live server on 127.0.0.1:8000 — it was already up in this
-   workspace; don't kill it). **The local dataset holds bars only, no order book**: `GET
-   /depth/{id}` answers `404 market_data_unavailable` (retryable), so on real data today the
-   Workbench follows the designed failure path (reconnecting → failed). Quotes work. When a
-   depth source lands server-side, the page lights up with zero FE changes.
-   Known follow-up (small): LiveSocket treats non-retryable `HonbaApiError`s like any other
-   failure (counts to the read-failure threshold) — a fast-path `failed` on `retryable === false`
-   would be slightly nicer.
-5. `useNotifications` was left exactly where Batch F put it (`core/store/notifications.ts`),
-   per the handoff's fold-not-recreate rule; Batch H's stores join the same family.
+## What Batch I decided and shipped (this session)
 
-## What Batch G decided and shipped (this session)
+1. **Sequencing followed plan.md §6** (Screener → Workbench → Portfolio → Settings), TDD red-first, one commit per slice by explicit path, all green (apps/web vitest **79/79**, `tsc --noEmit`, eslint, `vite build`; ui-core untouched this session).
+2. **`POST /positions/close` is bodyless and closes ALL positions** (honba-ya-api-rest/src/orders.rs). PortfolioPage's ClosePositionModal confirm therefore fires close-all and its notification says exactly that — do not "fix" it into a per-position call.
+3. **Order draft → wire mapping** (`OrdersRequest`): `trigger_price` / `trail_*` are dropped (the wire type has them not); `client_order_id` auto-generated as `hb-${crypto.randomUUID()}` per submit; wire `Order` → table row maps `filled_at` → ISO string and drops `gtd` (the column isn't rendered).
+4. **dockview v8.6.0 serialization format — probe-verified fact**: the saved document is the verbatim `SerializedDockview` shape — `grid: {orientation:'HORIZONTAL', height, width, root:{type:'branch', data:[leaf groups carrying group view-states {id, views:[panelId], activeView}]}}`, plus a `panels` map keyed by panel id `{id, contentComponent, title}`, plus `activeGroup`. The earlier imagined "grid branch of leaf nodes with {component, tab}" shape silently no-ops (`root must be of type branch`, then silence).
+5. **Boot workspaces from a serialized preset, never imperative `addPanel`**: under jsdom `addPanel` folds all panels into ONE group, and inactive tabs inside a group do not render their content DOM at all — a serialized document is the only deterministic path that mounts every preset for tests and "default layout" alike. The default layout and a saved layout share one code path by construction.
+6. **jsdom stubs for dockview (+ virtualized tables)**: `ResizeObserver` stub plus `clientHeight/clientWidth/offsetHeight/offsetWidth` = 600–700 on `HTMLElement.prototype`. Batch H tests needed the same stubs once the Workbench became a dockview host.
+7. **Test-pollution gotchas worth remembering**: module-level Zustand stores leak between tests — `useWorkbenchSelection.getState().setSelected(null)` must be reset in `WorkbenchPage.test`'s `beforeEach`; and the ticket's order upsert lives on the `placeOrder.mutate(..., { onSuccess })` callback (losing it made the "row appears" assertion hang). dockview tab accessible names are the panel *title* when booted from a document with `title`s.
+8. **Screener contract facts** (verified against honba-ya + honba-me/honba-kokoro sources): `universe` is a REQUIRED JSON-array *string* at runtime (`missing_universe` 422) even though the OpenAPI schema marks it optional; `filters` is a JSON-encoded `{operator:'AND'|'OR', items:[{key,op,value}]}`; `op` vocabulary is snake_caseFilterOp (`eq neq gt gte lt lte between in not_in like has crosses_above crosses_below` — page exposes 9); metric keys the evaluator supports today: `open high low close volume price_52_week_low price_52_week_high rsi` and `sma<N>`. A scan answers `ScreenerResponse {rows:[{instrument_id, metrics}]}` where `metrics` carries exactly the keys the filter group reads. Page runs scans **explicitly only** (`staleTime: Infinity`, enabled-gated) — reading bars server-side is expensive.
+9. **Settings via `PUT /profile` CAS**: the profile is one document with a monotonic `revision`; writes are read-modify-write with the read revision (stale → 409 `revision_conflict`, surfaced inline; retry by reopening). SettingsPage manages named layout presets (list + delete; *saving* stays in the Workbench toolbar) and runs the Batch G `AppSettingsModal`, merging its patch into `preferences` on the whole-document PUT. `PUT /profile` answers the stored profile (bumped revision).
+10. **Open owner item unchanged**: broker/adapter credential management (Settings form) waits for the `honba-adapters` contract; SettingsPage carries an explicit deferred note.
 
-1. **`RefillBalanceModal` skipped per the brief's confirmation requirement**: the reference
-   itself is a stub (both callbacks are commented out — `// todo`), and no paper-balance
-   reset/refill flow exists anywhere in `honba-core` (Rust src: decision/error/lib/market/
-   order/types only) or `honba-adapters`. Revisit if honba grows one; noted in the ui-core
-   index.ts export block.
-2. **The 6 modals, all in `packages/ui-core/src/modals/<Name>/` (own folder discipline,
-   23 new tests)**, all built on Batch A's `Modal` (isOpen/onClose/domain props in, intents
-   out, zero global reads):
-   - `ClosePositionModal` — confirm-close warning (icon + position summary + OK/Cancel);
-     `onConfirm()` hands the close intent to the caller (Redux/`authToken` dropped).
-   - `EditOrderModal` — honba-fied: amends quantity/price of a working Batch D `Order`
-     (the reference's `bfx-hf-algo` AO-edit machinery + OrderForm field-rendering framework
-     don't exist in honba; a full type/TIF rewrite stays cancel-and-replace at the feature
-     layer). Client validation + caller `error` prop (broker 400) as red AttentionBar;
-     update gated until a real change is made; emits `OrderPatch`.
-   - `AppSettingsModal` — theme (dark/light) + status-bar clock (24h/12h) only; caller-owned
-     state via `settings` + `onChange(patch)` (persistence = `PUT /profile/settings`, Batch
-     H). Reference's ApiKeys/About/Beta/OverrideTimer tabs dropped: ApiKeys becomes the
-     broker-connection Settings form (Batch I, needs `honba-adapters` credential shape —
-     still the one open owner item), the rest are Bitfinex/Electron.
-   - `InstrumentInfoModal` (rename of `CcyInfoModal`) — trusted server article HTML via
-     `dangerouslySetInnerHTML` + the reference's anchor hardening (target/rel post-pass);
-     article arrives as props (fetch wiring = Batch H), coingecko widget theming dropped.
-   - `ActiveOrdersModal` (rename of `ActiveAlgoOrdersModal`) — reconnect resume/cancel over
-     plain working Orders (no AO subsystem): per-row checkboxes + select-all, Cancel
-     selected / Resend selected gated on selection, green AttentionBar when
-     `restoredAfterReconnect`. Deliberate change: closing the modal is a no-op (the
-     reference wired Escape/outside-click to cancel-all — that must never be an implicit
-     order-routing shortcut in honba); main/paper split collapsed to one list.
-   - `OrderDetailsModal` (rename of `AlgoOrderDetailsModal`) — order fact grid + fills
-     table (Batch D `Trade[]`); export button only renders with `onExport` (saveAsJSON
-     stays app-owned so filenames/toasts match Batch H conventions).
-3. **ui-core `Modal` accessible-name fixed** (the one carry-over from the F handoff): title
-   is now an `<h1>` wired via `useId` as `aria-labelledby`, so dialogs are addressable —
-   `getByRole('dialog', { name })` — and the old dashboard `.hb-modal__close` workaround
-   test still passes untouched. Also added the reference Dialog's `width` prop
-   (inline `min(<n>px, 90vw)`; used by the G modals at 480–980px). New tests in
-   `Modal.test.tsx` cover both (6 total).
-4. **Shared `.hb-modal-footer`** CSS lives in ClosePositionModal's stylesheet (right-aligned
-   buttons, top border) — reused by the other modals; ui-core's Modal primitive stays
-   footer-free deliberately.
-5. **Dashboard**: `demos-modals.tsx` (6 tiles — one per modal, each with local open state
-   and its intents rendered inline as JSON via a small `IntentBox`), section
-   `Batch G — Modals`, nav regex widened to `^Batch [A-G] — `, test updated to 7 sections +
-   a new interaction test (open close-position → OK → intent recorded; settings dialog
-   resolved by its now-named role).
+## Remaining Batch I scope (resume here)
 
-Verified this session: `tsc --noEmit` and `eslint src` green in **both** workspaces;
-`vitest run` **248/248** in `packages/ui-core` and **14/14** in `apps/web`; `npm run build`
-green in all workspaces.
+- **AlgoDesigner** (route is a placeholder): the largest single port — node graph (`@xyflow/react` 12.12.0, already installed), Monaco Python editor with code↔graph round-trip, AI chat column, param/sweep panels, save-to-library (plan.md §6 row 5; budget accordingly).
+- **Simulator**: replay engine, equity curve, monthly heatmap, trade journal, multi-chart, drawing canvas (§6 row 6). Note Batch K's tbt-paper-terminal survey flags a possible "live paper mode" that needs an order-model owner sign-off first — don't absorb it silently.
+- **Researcher**: at whatever fidelity `honba-frontend` currently has (early stage).
+- **Settings**: the broker-credential form (blocked on honba-adapters).
 
-## Interpretation notes for Batch H (docs/tasks.md §Batch H)
+## Interpretation notes for the next steps (docs/tasks.md §Batch I tail + §Batch J)
 
-- **Read `honba-api-rest::streams` (the `/ws` Rust route) FIRST** — §H explicitly says its
-  message schema hasn't been inspected; design `core/ws/channels.ts` against the real
-  contract, not an assumed one.
-- Fold the existing app-local notifications store (`apps/web/src/core/store/notifications.ts`,
-  Batch F) into the `core/store/` family rather than recreating a
-  `useNotificationsStore` from scratch.
-- API client: today post-cutover hand-write a thin typed client against
-  `honba/schema/openapi/openapi.json` if the `honba/Makefile` codegen targets aren't pointed
-  at honba-fe yet (plan.md §3.4) — don't block on the Makefile edit.
-- `dockview-react` (installed since Batch F, spike-approved) still has zero usages — its
-  first real consumer is the Workbench layout work in H/I; remember `useLayoutStore`
-  round-trips `api.toJSON()/fromJSON()` onto honba's `/profile/layouts`.
-- Exit criterion is an end-to-end slice: Workbench OrderBook rendering live `/depth` or
-  `/ws` depth-channel data through a real `useMarketStore` subscription.
+- Parity target per route is `honba-frontend`'s app (`docs/plan.md` §4/§7), not bfx-hf-ui-core's page structure; bfx informs only Workbench-like layouts and the Settings Authentication flow.
+- Workbench with the real dataset: `GET /depth/{id}` answers `404 market_data_unavailable` (retryable) — no order-book source exists server-side today; the page follows designed failure paths (reconnecting → failed). Quotes work. When a depth source lands, the FE lights up unchanged.
+- Small LiveSocket follow-up (Batch H note): non-retryable `HonbaApiError`s currently count toward the read-failure threshold; a fast-path `failed` on `retryable === false` would be slightly nicer.
+- Batch J (reporting widgets) maps `bfx-report-ui` sources to historical/derivative views and needs new honba endpoints for some — read its brief before touching report UI.
 
 ## Still-valid operating notes (don't re-litigate)
 
-- Batch mode: decisions on record are in `docs/plan.md` §0/§3.3; keep moving without
-  re-asking. Only genuinely open item left: broker-credential shape (Batch I's Settings
-  form, needs `honba-adapters`).
-- **TypeScript pinned to exact `6.0.3`** in both workspaces — `@typescript-eslint/parser`
-  hard-crashes on TS 7.x. Don't bump until upstream ships TS7 support.
-- ui-core stays strictly presentational/backend-agnostic (no fetch/WS/Zustand stores; those
-  are apps/web's). Every unit: own folder with `.tsx` + `.css` + `.test.tsx` + `index.ts`,
-  exported from `src/index.ts` append-only. Banned imports: `@ufx-ui/*`, `bfx-*`, `redux`,
-  `redux-saga`, `prop-types`, `.scss`. CSS comments must be `/* */` (lightningcss).
-- Tables need jsdom stubs wherever demos are tested: `ResizeObserver` stub +
-  `clientHeight`/`offsetHeight` = 600 on `HTMLElement.prototype` (see the dashboard test's
-  `beforeEach`); dockview works out-of-the-box under jsdom (spiked), only assumes sized
-  containers for actual geometry math.
-- Env rules: never build in /tmp; run pytest with `--basetemp=$HOME/.cache/pytest-honba` in
-  the honba repo only (not relevant here); commit by explicit path, no Co-Authored-By/any
-  trailer; one sonnet/haiku subagent at a time (never opus); TDD red-first; nothing pushed.
-- A second agent applied changes concurrently during Batch E/F (two catches logged there);
-  Batch G ran clean — verify `git log`/`git status` before and after committing anyway.
+- Batch mode: decisions on record live in `docs/plan.md` §0/§3.3/§3.4; keep moving without re-asking.
+- **TypeScript pinned to exact `6.0.3`** in both workspaces — `@typescript-eslint/parser` hard-crashes on TS 7.x. Don't bump until upstream ships TS7 support.
+- ui-core stays strictly presentational/backend-agnostic (no fetch/WS/Zustand; those are apps/web's job). Every ui-core unit: own folder with `.tsx` + `.css` + `.test.tsx` + `index.ts`, exported append-only from `src/index.ts`. Banned imports: `@ufx-ui/*`, `bfx-*`, `redux`, `redux-saga`, `prop-types`, `.scss`. CSS comments must be `/* */` (lightningcss).
+- jsdom stubs: tables need `ResizeObserver` + sized element props; dockview facts are in items 5–7 above.
+- Wire-mirror rule: `core/types/messages.ts` is hand-written, pinned to API_VERSION `1.0.0` / SCHEMA_VERSION `4`; verify against `honba/schema/openapi/openapi.json` (now at `honba-ya/schema/openapi/openapi.json`) and the honba-ya-api-rest sources; swap for codegen at the `honba/Makefile` cutover by deleting the file.
+- Env rules: never build in /tmp; commit by explicit path, no Co-Authored-By/any trailer; TDD red-first; nothing pushed; verify `git log`/`git status` before and after committing (a past concurrent agent logged two catches).
+- A live `honba serve` may be running on 127.0.0.1:8000 — do NOT kill it; it was used to verify wire shapes.

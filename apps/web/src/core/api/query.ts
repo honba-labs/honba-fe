@@ -9,7 +9,7 @@ import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/re
 import { createApiClient, HonbaApiError } from './client';
 import type { ApiClient } from './client';
 import type { DepthOptions, InstrumentsQuery } from './client';
-import type { InstrumentId, OrdersRequest, TradingState } from '../types/messages';
+import type { InstrumentId, OrdersRequest, Profile, TradingState } from '../types/messages';
 
 export type { ApiClient } from './client';
 
@@ -153,6 +153,22 @@ export function useTrades() {
   });
 }
 
+/** `GET /screener/scan` — explicit-gated: nothing scans until the page asks (bars are read
+ * server-side per instrument, so accidental auto-scans are wasteful). */
+export function useScreenerScan(
+  params: { universe: string; filters?: string; tf?: string; asOf?: string },
+  options: { enabled: boolean } = { enabled: true },
+) {
+  return useQuery({
+    queryKey: ['screener', params],
+    queryFn: () => getApiClient().getScreenerScan(params),
+    enabled: options.enabled && params.universe.trim().length > 0,
+    // A scan is a fresh evaluation, not a live subscription: keep results for the session
+    // only, refetch exclusively on Run.
+    staleTime: Infinity,
+  });
+}
+
 /**
  * `POST /positions/close` — bodyless and **close-all** (every non-zero ledger position gets an
  * opposite-side market order). Invalidates every portfolio/trading slice plus orders (each
@@ -209,6 +225,50 @@ export function useSetTradingState() {
       getApiClient().putTradingState(input.state, input.reason),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.tradingState() });
+    },
+  });
+}
+
+/** `GET /profile` — the caller's whole profile (layouts, modules, watchlists, preferences,
+ * revision; the Settings page's app preferences persist into this document). */
+export function useProfile() {
+  return useQuery({
+    queryKey: queryKeys.profile(),
+    queryFn: () => getApiClient().getProfile(),
+  });
+}
+
+/** `GET /profile/layouts` — named workbench layouts by name (both keys for the Workbench store
+ * and any layout preset management UI). */
+export function useLayouts() {
+  return useQuery({
+    queryKey: queryKeys.layouts(),
+    queryFn: () => getApiClient().getLayouts(),
+  });
+}
+
+/** `PUT /profile` — read-modify-write CAS: callers merge their patch into the profile they
+ * read and send the body with its read `revision`. Invalidates profile + layouts (layouts is
+ * a sub-document of the profile answer). */
+export function usePutProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (profile: Profile) => getApiClient().putProfile(profile),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.profile() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.layouts() });
+    },
+  });
+}
+
+/** `DELETE /profile/layouts/{name}` — removes a named workbench layout preset. */
+export function useDeleteLayout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => getApiClient().deleteLayout(name),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.layouts() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.profile() });
     },
   });
 }

@@ -24,6 +24,7 @@ import type {
   PortfolioSnapshot,
   Profile,
   QuoteTick,
+  ScreenerResponse,
   TradingState,
   Trade,
   ErrorDetail,
@@ -164,6 +165,26 @@ export interface ApiClient {
   getTradingState(): Promise<TradingState>;
   putTradingState(state: TradingState, reason?: string): Promise<TradingState>;
   getProfile(): Promise<Profile>;
+  /**
+   * `PUT /profile` — the **whole** profile compare-and-swapped on the body's `revision`
+   * (honba-ya-api-rest/src/profile.rs): a stale revision is a 409 `revision_conflict`, and the
+   * answer is the stored profile with the revision the store now holds. Read-modify-write
+   * therefore goes through this one route — including preference patches.
+   */
+  putProfile(profile: Profile): Promise<Profile>;
+  /**
+   * `GET /screener/scan` — `universe` is a **JSON array string** of instrument ids
+   * (`["TCS.NSE",…]`, required; missing is a 422 `invalid_universe` per honba-ya-api's
+   * `parse_universe`), `filters` a JSON-encoded `ScreenerFilterGroup`, `tf` the timeframe
+   * (default `1d` on the server). The server reads bars, so this is a heavier call than the
+   * quote-family resources.
+   */
+  getScreenerScan(params: {
+    universe: string;
+    filters?: string;
+    tf?: string;
+    asOf?: string;
+  }): Promise<ScreenerResponse>;
   getLayouts(): Promise<{ layouts: Record<string, LayoutDocument> }>;
   putLayout(name: string, document: LayoutDocument): Promise<unknown>;
   deleteLayout(name: string): Promise<unknown>;
@@ -278,6 +299,18 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     },
     getProfile() {
       return request<Profile>('GET', '/profile');
+    },
+    putProfile(profile) {
+      return request<Profile>('PUT', '/profile', undefined, profile);
+    },
+    getScreenerScan(params) {
+      return request('GET', '/screener/scan', {
+        universe: params.universe,
+        filters: params.filters,
+        tf: params.tf,
+        // The wire parameter is snake_case.
+        as_of: params.asOf,
+      });
     },
     getLayouts() {
       return request('GET', '/profile/layouts');

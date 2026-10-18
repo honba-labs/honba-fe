@@ -263,6 +263,33 @@ export interface Trade {
   ts_init: UnixNanos;
 }
 
+// --- Screener (screener.rs / honba-kokoro-entities screener.rs) -------------------------------
+
+/** One predicate of a screener filter group: `{key, op, value}` on the wire (`op` is honba-kokoro-entities'
+ * snake_case `FilterOp` vocabulary: eq/neq/gt/gte/lt/lte/between/in/not_in/like/has/crosses_above/crosses_below). */
+export interface ScreenerFilterPredicate {
+  key: string;
+  op: string;
+  value?: unknown;
+}
+
+/** `{operator: 'AND'|'OR', items: [...]}`; items are predicates or nested groups. */
+export interface ScreenerFilterGroup {
+  operator: 'AND' | 'OR';
+  items: (ScreenerFilterPredicate | ScreenerFilterGroup)[];
+}
+
+/** `ScreenerResultRow` — one matching instrument with its requested metrics. */
+export interface ScreenerResultRow {
+  instrument_id: InstrumentId;
+  metrics: Record<string, number | null>;
+}
+
+/** `GET /screener/scan` response — `ScreenerResponse { rows }`. */
+export interface ScreenerResponse {
+  rows: ScreenerResultRow[];
+}
+
 // --- Profile (profile.rs) --------------------------------------------------------------------
 
 /** `GET/PUT /profile/layouts` — layouts by name, documents opaque to the server (dockview JSON). */
