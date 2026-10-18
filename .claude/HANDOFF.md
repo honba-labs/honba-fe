@@ -41,7 +41,7 @@ it). Every component/hook: own folder, `.tsx`/`.ts` + `.css` (if visual) + `.tes
 keep it that way. Nothing in `packages/ui-core` fetches, uses WS, or imports from `apps/web` —
 it's strictly presentational; backend wiring is `apps/web`'s job (Batch H/I, not started).
 
-## Batch D in progress: D1 OrderForm done (46f507c). Next: D2 orders tables (fold Algo into Order table+badge), D3 positions/balances, D4 trades/trading-state.
+## Batch D DONE (46f507c,695d5c8,1d8bee5,02fabc1). All green. Next: Batch E (strategy/backtest widgets, docs/tasks.md).
 
 ## Next: Batch D (`docs/tasks.md` — order entry & position/balance widgets)
 
