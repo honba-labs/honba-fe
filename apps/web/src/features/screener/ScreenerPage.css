@@ -1,0 +1,180 @@
+/* Batch I slice 4 — Screener route chrome. Token-based per src/styles conventions. */
+.screener {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+  height: 100%;
+  overflow: auto;
+  padding: var(--space-4, 16px);
+}
+
+.screener__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+.screener__header h2 {
+  margin: 0;
+}
+
+.screener__hint {
+  color: var(--text-muted, #8a94a6);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.screener__hint code {
+  color: var(--text-primary, inherit);
+}
+
+.screener__controls {
+  align-items: flex-end;
+  background: var(--bg-surface, #161b26);
+  border: 1px solid var(--border-subtle, #262d3d);
+  border-radius: var(--radius-md, 8px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  padding: var(--space-3, 12px);
+}
+
+.screener__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  width: 100%;
+}
+
+.screener__field > span {
+  color: var(--text-muted, #8a94a6);
+  font-size: 0.8rem;
+}
+
+.screener__universe {
+  background: var(--bg-input, #0f131c);
+  border: 1px solid var(--border-subtle, #262d3d);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-primary, inherit);
+  font-family: var(--font-mono, monospace);
+  padding: 6px 8px;
+  width: 100%;
+}
+
+.screener__predicates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  width: 100%;
+}
+
+.screener__predicate {
+  align-items: center;
+  display: flex;
+  gap: var(--space-2, 8px);
+}
+
+.screener__and {
+  color: var(--text-muted, #8a94a6);
+  flex: 0 0 52px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.screener__key,
+.screener__value {
+  background: var(--bg-input, #0f131c);
+  border: 1px solid var(--border-subtle, #262d3d);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-primary, inherit);
+  font-family: var(--font-mono, monospace);
+  padding: 6px 8px;
+}
+
+.screener__key {
+  flex: 2 1 auto;
+}
+
+.screener__op {
+  background: var(--bg-input, #0f131c);
+  border: 1px solid var(--border-subtle, #262d3d);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-primary, inherit);
+  flex: 0 0 auto;
+  padding: 6px 4px;
+}
+
+.screener__value {
+  flex: 1 1 auto;
+}
+
+.screener__remove,
+.screener__add {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-muted, #8a94a6);
+  cursor: pointer;
+}
+
+.screener__remove:hover,
+.screener__add:hover {
+  color: var(--text-primary, inherit);
+}
+
+.screener__add {
+  align-self: flex-start;
+  padding: 4px 8px;
+}
+
+.screener__run {
+  align-self: flex-end;
+  background: var(--accent-primary, #3b82f6);
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 8px 20px;
+}
+
+.screener__run:hover {
+  filter: brightness(1.1);
+}
+
+.screener__results {
+  flex: 1 1 auto;
+}
+
+.screener__error {
+  color: var(--danger, #ef4444);
+}
+
+.screener__pending,
+.screener__empty {
+  color: var(--text-muted, #8a94a6);
+}
+
+.screener__table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.screener__table th,
+.screener__table td {
+  border-bottom: 1px solid var(--border-subtle, #262d3d);
+  font-family: var(--font-mono, monospace);
+  padding: 6px 10px;
+  text-align: right;
+}
+
+.screener__table th:first-child,
+.screener__table td:first-child {
+  text-align: left;
+}
+
+.screener__table thead th {
+  color: var(--text-muted, #8a94a6);
+  font-size: 0.8rem;
+  text-transform: none;
+}
