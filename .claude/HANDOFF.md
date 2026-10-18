@@ -1,82 +1,75 @@
-# honba-fe handoff (2026-10-18)
+# honba-fe handoff (2026-10-18, late evening) — resume: Batch F (app shell & layout chrome)
 
-## State: Batches A, B, C of the ui-core port are done and committed. Stop here until resumed.
+## State: Batches A–E done and committed. The component dashboard (/components) shows batches A–E. Nothing below is pushed.
+
+Last committed state on top of `0f32c10` ("Batch D complete, resume at Batch E"):
 
 ```
-f2f1e94 Add Batch C market/trading display widgets to ui-core
-7aa1afd Port Batch B hooks from bfx-hf-ui-core into ui-core
-9e77e64 Port ui-core atomic primitives from bfx-hf-ui-core (Batch A)
-1f90571 Add vitest/jsdom/testing-library to ui-core; persist bfx-hf-ui-core reference locally
-54b3230 Restructure as npm workspaces: packages/ui-core + apps/web
-655cbcb Add package-lock.json
-aa203c0 Bootstrap honba-fe: Phase 0 scaffold + implementation plan
+4b51514 Add Batch E strategy/backtest widgets to ui-core (PerformanceMetrics, StrategyTradesTable, StrategiesListTable, BacktestOptionsPanel, BacktestProgressBar) — based on src/components/{StrategyPerfomanceMetrics,StrategyTradesTable,StrategiesListTable,BacktestOptionsPanel,BacktestProgressBar}
+fc586f8 Add ui-core component dashboard at /components (apps/web)
 ```
 
-All on `main`, nothing pushed, working tree clean. `npm run typecheck && npm run lint && npm run
-test && npm run build` all green at the repo root as of this commit.
+How Batch E finished (this session, from the previous handoff's "evening" note):
 
-## What this repo is
+1. **Batch E acceptance — the 6 failing tests were assertion bugs, all fixed as prescribed:**
+   - `StrategyTradesTable.test.tsx`: positive `formatPnl` output is `'+7,200'` (not `'7,200'`),
+     fixed in the row-render and sign-color tests; the expand test now uses
+     `getAllByRole('button', { name: 'Expand trade' })[0]` (two rows → two buttons).
+   - `component-dashboard.test.tsx`: added the missing `clientHeight`/`offsetHeight` stubs
+     (`@tanstack/react-virtual` rendered zero rows otherwise); the Modal close now queries
+     `document.querySelector('.hb-modal__close')` because the PanelSettings demo tile's "Close"
+     Button collides with role-queries and ui-core's Modal dialog has no accessible name.
+2. **Dashboard Batch E section added**: `demos-strategy.tsx` (5 tiles via 4 demo components —
+   the options panel embeds a bare `BacktestProgressBar` too; simulated run is pure local
+   timers), fixtures appended to `fixtures.ts` (`strategyMetricsFixture`, `strategyTradesFixture`,
+   `strategiesListFixture`, `backtestConfigFixture`), section wired in `component-dashboard.tsx`
+   (nav regex widened to `^Batch [A-E] — `), tests extended (section heading, nav label, live
+   Batch E widget assertions `+₹18,40,842` / `+7,200` / `Active (2)`).
 
-Read `docs/plan.md` first (full rationale), then `docs/tasks.md` (the per-batch task briefs).
-Short version: honba-fe replaces `honba-frontend` as Honba's web frontend. It's an npm-workspaces
-monorepo — `packages/ui-core` (a from-scratch-but-faithful port of
-[bfx-hf-ui-core](https://github.com/bitfinexcom/bfx-hf-ui-core), Apache-2.0, modernized to React
-19/TS/Zustand/CSS-vars) + `apps/web` (the shell SPA that will consume it and own all backend
-wiring). The reference source is checked out locally at `.reference/bfx-hf-ui-core` (gitignored,
-pinned commit `7df411b1a60917f0b2e74edecca8012224c6c5a4` — read-only, never vendored).
+Verified this session: `tsc --noEmit` and `eslint src` green in **both** workspaces; `vitest run`
+**203/203** in `packages/ui-core` and **7/7** in `apps/web`.
 
-## Done so far (packages/ui-core/src/)
+## Not ported from Batch E (per docs/tasks.md brief, still true)
 
-- **Batch A** (`ui/`): Button, Input, Dropdown, SimpleDropdown, Modal, Panel, PanelSettings,
-  Tabs, RadioButton, DatePicker, ProgressBar, Indicator, PLNumber, Scrollbars, AttentionBar.
-- **Batch B** (`hooks/`): useToggle, useSize, useHover, useCountdown, useModalFocus.
-- **Batch C** (`market/`): OrderBook, OrderBookPanel, ChartPanel (wraps `openalgo-charts`, not
-  bfx-hf-ui-core's own chart — see commit `f2f1e94` for the integration pattern, modeled on
-  `honba-frontend/src/components/features/workbench/openalgo-chart.tsx`), MarketSelect,
-  TimeFrameDropdown, InstrumentInfoBar (renamed from ExchangeInfoBar), StatusBar.
+`StrategyEditor` (AlgoDesigner gets honba-frontend's graph + Monaco — Batch I), `StrategyLiveChart`
+(reuse Batch C's `ChartPanel` with a trade-marker overlay when a feature needs it),
+`StrategyOptionsPanel`. ui-core's `Modal` still has no accessible title — worth fixing when a
+feature (G/I) needs to query it accessibly.
 
-All exported from `packages/ui-core/src/index.ts` (append-only so far — don't rewrite it, add to
-it). Every component/hook: own folder, `.tsx`/`.ts` + `.css` (if visual) + `.test.tsx`/`.test.ts`
-+ `index.ts`. Zero `@ufx-ui/*`, `bfx-*`, `redux`, `redux-saga`, `prop-types`, `.scss` anywhere —
-keep it that way. Nothing in `packages/ui-core` fetches, uses WS, or imports from `apps/web` —
-it's strictly presentational; backend wiring is `apps/web`'s job (Batch H/I, not started).
+## Next: Batch F — app shell & layout chrome (docs/tasks.md §Batch F)
 
-## Batch D DONE (46f507c,695d5c8,1d8bee5,02fabc1). All green. Next: Batch E (strategy/backtest widgets, docs/tasks.md).
+1. **The docking-engine decision is still open: `react-resizable-panels` vs `dockview`.** Spike
+   both against the placeholder shell (`apps/web/src/app-shell/shell.tsx` — extend, don't
+   replace); reference is bfx-hf-ui-core's `GridLayout`/`LayoutControlToolbar` (UX only,
+   `.reference/bfx-hf-ui-core` pinned at `7df411b1a60917f0b2e74edecca8012224c6c5a4`). Record the
+   choice in `docs/plan.md` §3.3 once made. (Per owner: spike it, don't default. This is the one
+   genuinely open fork — ask there, not mid-batch.)
+2. Port layout primitives → `packages/ui-core/src/shell/*`; composed shell (top nav with app
+   switcher + symbol search slot + account status, bottom status bar) → `apps/web/src/app-shell/*`.
+3. Electron-only pieces are skipped by the brief (`SwitchMode`, `FullscreenModeBar`,
+   `AppUpdateBar`, `HFUI`, `HFUIWrapper`). `CrashHandler` → a clean React 19 error boundary,
+   not a line-for-line port.
+4. `NotificationsSidebar` UX → toast list with severity colors + dismiss/clear-all; its queue
+   lives in `apps/web/src/core/store` (small Zustand store, NOT ui-core).
+5. The dashboard route is the natural smoke surface: new shell components should get tiles there
+   (extend `demos-*.tsx`; the Batch F section goes under `shell/` at `^Batch [A-F] — `).
 
-## Next: Batch D (`docs/tasks.md` — order entry & position/balance widgets)
+## Still-valid operating notes (don't re-litigate)
 
-OrderForm, OrderHistory, AtomicOrdersTable(+Panel), AlgoOrdersTable(+Panel)+HistoryButton,
-PositionsTable(+Panel), BalancesTable(+Panel), TradesTablePanel, TradingStatePanel →
-`packages/ui-core/src/trading/*`. Uses `@tanstack/react-table` + `@tanstack/react-virtual` (not
-yet a dependency of `packages/ui-core` — add them, current versions were `9.3.1` / `3.14.21` as
-of 2026-10-17, re-check with `npm view` rather than trusting that). Read the task brief for the
-honba-endpoint mapping notes (`/orders`, `/portfolio/positions`, `/positions/close`, etc.) — those
-are for later batches to wire up, Batch D itself stays props-in like A/B/C.
-
-Then E (strategy/backtest widgets) → F (shell/layout, **docking-engine choice still undecided —
-react-resizable-panels vs dockview, resolve in F**) → G (modals) → H (real state layer: Zustand +
-`/ws` + TanStack Query, reading `honba`'s `honba-api-rest/src/streams.rs` for the actual WS
-contract first) → I (assemble into apps/web routes, parity-check against `honba-frontend`).
-
-## Operating notes for whoever resumes this
-
-- **Batch mode, don't re-ask**: the big fork-in-the-road decisions (ground-up rewrite, ui-core
-  literally ported from bfx-hf-ui-core not just "inspired by", stack versions, npm workspaces)
-  are already made — see `docs/plan.md` §0. Keep moving through the batch queue one at a time
-  without pausing for confirmation. Still stop and ask about things flagged as genuinely open in
-  the task briefs (the docking-engine pick in F; broker-credential shape in D/G needs
-  `honba-adapters` input).
-- **One subagent at a time**, sonnet/haiku, each batch is one subagent call with a self-contained
-  prompt (see this conversation's history for the Batch A/B/C prompts as templates — same
-  structure works for D onward: point at `docs/tasks.md`'s section, the local `.reference/`
-  checkout, the established per-unit file layout, the acceptance bar, the git-commit rules).
-- **TypeScript is pinned to exact `6.0.3`, not latest (`7.0.2`)**, deliberately, even though an
-  earlier instruction said "keep at latest". Verified firsthand: `@typescript-eslint/parser`
-  throws `typescript-eslint does not support TS 7.0` as a hard runtime crash, not a soft peer
-  warning (upstream tracking: the error message links a GitHub issue for TS ≥7.1 support). Don't
-  re-bump to 7.x until that's resolved upstream — check `npm view @typescript-eslint/parser` /
-  that issue before trying again.
-- Verify every batch's claims yourself before trusting them (I caught the TS version point by
-  reproducing the crash directly, not just taking the subagent's word for it) — but don't
-  re-review line-by-line; spot-check the risky/surprising claim, trust the mechanical ones
-  (typecheck/lint/test/build passing is easy to just re-run).
+- Batch mode: decisions on record are in `docs/plan.md` §0; keep moving without re-asking.
+  Remaining genuinely open items: docking-engine pick (F, above); broker-credential shape (G,
+  needs `honba-adapters`).
+- **TypeScript pinned to exact `6.0.3`** in both workspaces — `@typescript-eslint/parser`
+  hard-crashes on TS 7.x. Don't bump until upstream ships TS7 support.
+- ui-core stays strictly presentational/backend-agnostic (no fetch/WS/Zustand stores; those are
+  apps-web/Batch H). Every unit: own folder with `.tsx` + `.css` + `.test.tsx` + `index.ts`,
+  exported from `src/index.ts` append-only. Banned imports: `@ufx-ui/*`, `bfx-*`, `redux`,
+  `redux-saga`, `prop-types`, `.scss`.
+- Routes/layout: `/components` is wired in `apps/web/src/main.tsx` with a "Components" topbar
+  link in `app-shell/shell.tsx` + `styles/base.css`.
+- Tables need jsdom stubs wherever demos are tested: `ResizeObserver` stub +
+  `clientHeight`/`offsetHeight` = 600 on `HTMLElement.prototype` (see the dashboard test's
+  `beforeEach`); Expansion/testing tolerances mirror `OrdersTable.test.tsx`.
+- Env rules: never build in /tmp; run pytest with `--basetemp=$HOME/.cache/pytest-honba` in the
+  honba repo only (not relevant here); commit by explicit path, no Co-Authored-By/any trailer;
+  one sonnet/haiku subagent at a time (never opus); TDD red-first; nothing pushed.
