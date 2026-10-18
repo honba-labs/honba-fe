@@ -5,10 +5,11 @@
 // StatusBar, CrashHandler, SimpleDropdown, Indicator, Input) are all ui-core units — Batch F's
 // ui-core exports — composed here exactly as the reference's Layout+Navbar+StatusBar did.
 //
-// Deliberately-not-yet (Batches G/H/I): real connection state (static until the `/ws` store
-// exists), credential/account badge (needs the broker-credential shape, Batch G ←
-// honba-adapters), search results (this slot renders an inert input), and dockview-powered
-// app workspaces (decision recorded in docs/plan.md §3.3; workspaces land with each app).
+// Deliberately-not-yet (Batches G/H/I): credential/account badge (needs the broker-credential
+// shape, Batch I ← honba-adapters), search results (this slot renders an inert input), and
+// dockview-powered app workspaces (decision recorded in docs/plan.md §3.3; workspaces land with
+// each app). Since Batch H the connection status is live: the LiveSocket gateway
+// (core/liveSocket.ts) drives useConnectionStore, which both the topbar pill and StatusBar read.
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 
@@ -25,6 +26,7 @@ import {
   StatusBar,
 } from '@honba/ui-core';
 import { useNotifications } from '../core/store/notifications';
+import { useConnectionStore } from '../core/store/connection';
 import '../styles/base.css';
 
 // The app switcher's "apps" mirror the router in main.tsx (routes already exist as
@@ -43,6 +45,9 @@ const APPS = [
 export function AppShell() {
   const navigate = useNavigate();
   const { rows, visible, setVisible, remove, clearAll } = useNotifications();
+  // Batch H: global connection status from the LiveSocket gateway. The shell subscribes via the
+  // store so it re-renders only when the status actually changes.
+  const connectionStatus = useConnectionStore((state) => state.status);
 
   return (
     <CrashHandler className="app-shell-crash">
@@ -79,9 +84,9 @@ export function AppShell() {
             />
           </div>
           <div className="app-shell__status">
-            {/* Batch H feeds this from the `/ws` connection store. */}
-            <Indicator color="red" />
-            <span>Not connected</span>
+            {/* Batch H: the LiveSocket gateway (core/liveSocket.ts) feeds this live. */}
+            <Indicator color={connectionStatus === 'live' ? 'green' : 'red'} />
+            <span>{connectionStatus === 'live' ? 'Connected' : 'Not connected'}</span>
           </div>
           <button
             type="button"
@@ -97,7 +102,7 @@ export function AppShell() {
           <Outlet />
         </LayoutMain>
         <LayoutFooter className="app-shell__status-bar">
-          <StatusBar connected={false} />
+          <StatusBar connected={connectionStatus === 'live'} />
         </LayoutFooter>
         <NotificationsSidebar
           rows={rows}

@@ -6,6 +6,7 @@ import '@honba/ui-core/styles.css';
 import { AppShell } from './app-shell/shell';
 import { PlaceholderRoute } from './app-shell/placeholder-route';
 import { ComponentDashboard } from './features/component-dashboard/component-dashboard';
+import { WorkbenchPage } from './features/workbench/WorkbenchPage';
 import './styles/base.css';
 
 console.info(`@honba/ui-core ${UI_CORE_VERSION}`);
@@ -16,7 +17,7 @@ const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <PlaceholderRoute name="Screener" /> },
-      { path: 'workbench', element: <PlaceholderRoute name="Workbench" /> },
+      { path: 'workbench', element: <WorkbenchPage /> },
       { path: 'algodesigner', element: <PlaceholderRoute name="AlgoDesigner" /> },
       { path: 'simulator', element: <PlaceholderRoute name="Simulator" /> },
       { path: 'researcher', element: <PlaceholderRoute name="Researcher" /> },

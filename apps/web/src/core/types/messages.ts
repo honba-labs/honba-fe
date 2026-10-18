@@ -72,11 +72,14 @@ export interface DepthResponse {
   asks: DepthLevel[];
 }
 
+/** `InstrumentKind` — the `kind` vocabulary in `instrument_json` (honba-ya-api/market.rs). */
+export type InstrumentKind = 'equity' | 'etf' | 'bond' | 'ipo' | 'future' | 'option' | 'fx' | 'index' | 'mutual_fund' | 'other';
+
 /** Wire shape of a `GET /instruments` item (opaque to the server; see honba-ya-api/market.rs
  * `instrument_json`): id/kind/currency/lot_size/tick_size. */
 export interface Instrument {
   id: InstrumentId;
-  kind: 'equity' | 'etf' | 'bond' | 'ipo' | 'future' | 'option' | 'fx' | 'index' | 'mutual_fund' | 'other';
+  kind: InstrumentKind;
   currency: string;
   lot_size: number;
   tick_size: number;

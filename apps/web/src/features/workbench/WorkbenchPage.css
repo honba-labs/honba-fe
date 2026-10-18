@@ -1,0 +1,50 @@
+/* Batch H: minimal layout for the Workbench proof slice (the real workspace styling lands
+   with Batch I's dockview workspaces). Uses the shared design tokens from ui-core styles. */
+.workbench {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  max-width: 520px;
+}
+
+.workbench__header h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.workbench__conn {
+  margin: 0;
+  font-size: 12px;
+  color: var(--hb-text-muted, #7a8090);
+}
+
+.workbench__conn[data-status='live'] {
+  color: var(--hb-positive, #21ce99);
+}
+
+.workbench__conn[data-status='reconnecting'],
+.workbench__conn[data-status='connecting'] {
+  color: var(--hb-warning, #f5a623);
+}
+
+.workbench__conn[data-status='failed'] {
+  color: var(--hb-negative, #e5493a);
+}
+
+.workbench__market-select {
+  min-width: 220px;
+}
+
+.workbench__waiting {
+  margin: 0;
+  font-size: 12px;
+  color: var(--hb-text-muted, #7a8090);
+  font-style: italic;
+}
+
+.workbench__error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--hb-negative, #e5493a);
+}
