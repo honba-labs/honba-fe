@@ -1,0 +1,164 @@
+/* Ported from bfx-hf-ui-core's src/components/NotificationsSidebar/style.scss + @ufx-ui/core's
+ * Notifications styling (Apache-2.0), translated to this package's token palette. */
+.hb-notifications__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hb-notifications__item {
+  position: relative;
+  margin: 0 10px 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-left-width: 3px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.hb-notifications__item--info {
+  border-left-color: var(--accent);
+}
+
+.hb-notifications__item--success {
+  border-left-color: var(--bullish);
+}
+
+.hb-notifications__item--warning {
+  border-left-color: var(--warning);
+}
+
+.hb-notifications__item--error {
+  border-left-color: var(--bearish);
+}
+
+.hb-notifications__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 18px;
+}
+
+.hb-notifications__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hb-notifications__time {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.hb-notifications__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 4px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.hb-notifications__close:hover {
+  background: var(--bg-hover);
+  color: var(--fg-primary);
+}
+
+.hb-notifications__message {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg-primary);
+  word-break: break-word;
+}
+
+/* --- Sidebar placement (port of the reference's right slide-in wrapper + backdrop) ---------- */
+.hb-notifications-sidebar__wrapper {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 500;
+  max-width: 100%;
+}
+
+.hb-notifications-sidebar__wrapper.visible {
+  transform: translateX(0%);
+  transition: transform 700ms cubic-bezier(0.29, 0.58, 0.05, 1);
+}
+
+.hb-notifications-sidebar__wrapper.hidden {
+  transform: translateX(100%);
+  transition: transform 700ms cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.hb-notifications-sidebar__wrapper .hb-notifications__list--sidebar {
+  min-height: 100%;
+}
+
+.hb-notifications-sidebar__wrapper .hb-panel {
+  height: 100%;
+  border-right: none;
+}
+
+.hb-notifications-sidebar__wrapper .hb-panel__content {
+  padding: 0 2px;
+}
+
+.hb-notifications-sidebar__clear {
+  font-size: 12px;
+}
+
+.hb-notifications-sidebar__empty {
+  margin: 24px 0 0;
+  text-align: center;
+  color: var(--fg-muted);
+}
+
+.hb-notifications-sidebar__background {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: var(--overlay-bg);
+  opacity: 1;
+}
+
+.hb-notifications-sidebar__background.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Toast cluster placement (the reference's `__external` floating list) ------------------- */
+.hb-notifications-toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 34px; /* clears the app's status bar */
+  z-index: 600;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: 60vh;
+  overflow: auto;
+  pointer-events: none;
+}
+
+.hb-notifications-toasts__stack {
+  display: flex;
+  flex-direction: column-reverse;
+  pointer-events: all;
+}
+
+.hb-notifications-toasts .hb-notifications__item {
+  box-shadow: var(--shadow-elevated);
+}

@@ -1,0 +1,12 @@
+/* Ported from bfx-hf-ui-core's src/components/LayoutControlToolbar/style.scss (Apache-2.0),
+ * translated to this package's tokens. The reference's absolute top-right placement is a
+ * layout-level concern — this stays a plain inline row; apps/web positions it. */
+.hb-layout-control-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hb-layout-control-toolbar__select {
+  width: 240px;
+}

@@ -201,4 +201,35 @@ export type {
   BacktestPositionMode,
 } from './strategy/BacktestOptionsPanel';
 
+// Batch F (docs/tasks.md): app-shell & layout-chrome primitives ported from bfx-hf-ui-core's
+// src/components/{Layout,CrashHandler,NotificationsSidebar,LayoutControlToolbar}. Layout chrome
+// primitives + the crash screen + the presentational notification sidebar/toasts live here;
+// the composed top nav / status bar / notifications store are apps/web's (Batch F brief:
+// notifications are app state — the Zustand store lives in apps/web/src/core/store, not here).
+// Electron-only reference pieces (SwitchMode, FullscreenModeBar, AppUpdateBar, HFUI,
+// HFUIWrapper) are skipped per the brief; dockview-react powers the dockable layouts below
+// this layer (decision recorded in docs/plan.md §3.3).
+export { Layout, LayoutHeader, LayoutMain, LayoutFooter } from './shell/Layout';
+export type { LayoutProps, LayoutSlotProps } from './shell/Layout';
+
+export { CrashHandler } from './shell/CrashHandler';
+export type { CrashHandlerProps } from './shell/CrashHandler';
+
+export {
+  NotificationList,
+  NotificationsSidebar,
+  NotificationToasts,
+  formatNotificationTime,
+} from './shell/NotificationsSidebar';
+export type {
+  NotificationListProps,
+  NotificationsSidebarProps,
+  NotificationToastsProps,
+  NotificationRow,
+  NotificationSeverity,
+} from './shell/NotificationsSidebar';
+
+export { LayoutControlToolbar } from './shell/LayoutControlToolbar';
+export type { LayoutControlToolbarProps, LayoutSummary } from './shell/LayoutControlToolbar';
+
 export const UI_CORE_VERSION = '0.1.0';

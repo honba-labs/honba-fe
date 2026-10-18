@@ -1,0 +1,76 @@
+/* Ported from bfx-hf-ui-core's src/components/CrashHandler/style.scss (Apache-2.0), restyled
+ * with the package's tokens (same dark-overlay + centered-card idea). */
+.hb-crash-screen__wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-bg);
+}
+
+.hb-crash-screen {
+  max-width: 680px;
+  max-height: 80vh;
+  overflow: auto;
+  padding: 24px 28px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  color: var(--fg-primary);
+}
+
+.hb-crash-screen h1 {
+  margin: 0 0 4px;
+  font-size: 40px;
+}
+
+.hb-crash-screen h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.hb-crash-screen h4 {
+  margin: 0 0 10px;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--fg-muted);
+  line-height: 1.6;
+}
+
+.hb-crash-screen__report {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.hb-crash-screen__report a {
+  color: var(--accent);
+}
+
+.hb-crash-screen__reset {
+  padding: 6px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--fg-on-accent);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.hb-crash-screen__crashstack,
+.hb-crash-screen__componentstack {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  max-height: 240px;
+  overflow: auto;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
