@@ -165,13 +165,26 @@ it, backed by the **already-existing** `/profile/layouts` and `/profile/modules`
   `../honba-fe/src/core/api/generated` (cutover step, see §8 — this is an edit to `honba`'s own
   `Makefile` and CI workflow, done once honba-fe is ready to take over, not on day one).
 - Dev loop identical to today's: `honba serve --addr 127.0.0.1:8000`, Vite proxy `/api` → REST,
-  `/ws` → the WebSocket stream (`honba-api-rest/src/streams.rs`). Replicate `honba-frontend`'s
-  `Makefile` (`make api`, `make web`, `make dev`) verbatim in honba-fe.
-- Live data (quotes, depth, order/position updates) over the `/ws` stream, not polling — this is
-  the one place bfx-hf-ui-core's architecture (it streams book/trade/wallet updates over a
-  persistent socket into Redux) is directly the right model; reimplement the pattern (socket →
-  normalized Zustand slice → fine-grained selectors) rather than Redux+saga's action-per-tick
-  dispatch.
+  `/ws` → the live-data gateway (`apps/web/src/core/ws`; see the inspection note below).
+  Replicate `honba-frontend`'s `Makefile` (`make api`, `make web`, `make dev`) verbatim in
+  honba-fe.
+- **Streaming inspection result (Batch H, 2026-10-18)** — the plan above assumed a live `/ws`
+  WebSocket existed server-side; inspected for real, it doesn't:
+  - `honba-ya/crates/honba-ya-api-rest/src/streams.rs` is **SSE, not WebSocket**, and serves
+    *backtest replay* only: `GET /backtests/{id}/events?resume_from_seq=N` yielding
+    `StreamFrame::Status { status, seq, error } | Record { seq, message }` frames (`id:` =
+    seq, keep-alive comments every 15s; journal replay from `events.ndjson`). `honba-ya-ws`'s
+    `EventBus` (Decision/Fill/Pnl) is an internal tokio broadcast with no HTTP surface.
+  - `honba-frontend` (the parity target) confirms this: its data-layer tries `WS /ws/market`
+    ticks `{symbol, price, …}` and *falls back to 18s HTTP polling of `/api/v1/instruments`*
+    with exponential backoff because a REST-only `honba serve` has no such route.
+  - honba-fe therefore runs live data through a transport-agnostic `LiveSocket`
+    (`core/ws/socket.ts` + `channels.ts`): one shared gateway, ref-counted channel
+    subscriptions, the same normalized-Zustand-tick pattern planned below, with a
+    **polling transport as the default** (`GET /quotes`, `GET /depth/{id}` at per-channel
+    intervals — the contract the running server actually honors today). A native-WebSocket
+    transport for a future server-side `/ws` is one adapter swap, its wire contract
+    pre-declared in `channels.ts` so the store layer doesn't move when it lands.
 - REST for everything request/response-shaped: order placement/cancellation, portfolio snapshots,
   backtests/sweeps, strategy CRUD, screener scans.
 
@@ -322,7 +335,8 @@ Only after §7 passes:
 - **License attribution**: `honba-frontend`'s `src/indicators/{MIT,GPL-3.0}` directories carry
   required `LICENSE`/`NOTICE` files from the ported indicator library; carry these forward
   unchanged if/when the indicator set is reused in honba-fe.
-- **WS protocol shape**: `honba-api-rest/src/streams.rs` exists but this plan hasn't inspected its
-  message schema yet — first task in Phase 1 is reading that file and `honba`'s streaming
-  OpenAPI/schema docs (if any) to design `core/ws/channels.ts` against the real contract, not an
-  assumed one.
+- **WS protocol shape**: resolved in Batch H (see §3.4's inspection result). Original assumption
+  kept below for traceability: "honba-api-rest/src/streams.rs exists but this plan hasn't
+  inspected its message schema yet" — reality: SSE backtest-replay only, no live WebSocket
+  route; the polling-transport gateway in honba-fe is designed against the inspected contract
+  (envelope `api_version`/`schema_version` = `1.0.0`/`4`).
