@@ -148,4 +148,20 @@ export type {
 export { BalancesTablePanel } from './trading/BalancesTablePanel';
 export type { BalancesTablePanelProps } from './trading/BalancesTablePanel';
 
+// Batch D (docs/tasks.md): trades table ported from bfx-hf-ui-core's src/components/
+// TradesTablePanel -> `GET /portfolio/trades`'s `TradesResponse { trades: Trade[] }` (schema
+// confirmed as the brief described -- no correction needed). `Money`/`formatMoney` are reused
+// from `./trading/PositionsTable` rather than re-exported again here -- see
+// `trading/TradesTablePanel/TradesTablePanel.tsx`'s header comment.
+export { TradesTablePanel } from './trading/TradesTablePanel';
+export type { TradesTablePanelProps, Trade, UnixNanos } from './trading/TradesTablePanel';
+
+// Batch D (docs/tasks.md): trading-state control panel for honba's `GET`/`PUT /trading-state`
+// (active/reducing/halted operator switch). Named after bfx-hf-ui-core's `TradingStatePanel` per
+// docs/tasks.md's mapping, but built from scratch against honba's endpoint -- the reference
+// component of the same name is an unrelated tabbed positions/orders/balances dashboard; see
+// `trading/TradingStatePanel/TradingStatePanel.tsx`'s header comment for the full explanation.
+export { TradingStatePanel } from './trading/TradingStatePanel';
+export type { TradingStatePanelProps, TradingState } from './trading/TradingStatePanel';
+
 export const UI_CORE_VERSION = '0.1.0';

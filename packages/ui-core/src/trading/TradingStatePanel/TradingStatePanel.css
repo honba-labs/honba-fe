@@ -1,0 +1,102 @@
+.hb-trading-state-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+
+.hb-trading-state-panel__current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hb-trading-state-panel__current-label {
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.hb-trading-state-panel__badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.hb-trading-state-panel__badge--active {
+  background: var(--bullish-bg);
+  color: var(--bullish);
+}
+
+.hb-trading-state-panel__badge--reducing {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.hb-trading-state-panel__badge--halted {
+  background: var(--bearish-bg);
+  color: var(--bearish);
+}
+
+.hb-trading-state-panel__reason-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.hb-trading-state-panel__reason-input {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--fg-primary);
+  font-size: 12px;
+  text-transform: none;
+}
+
+.hb-trading-state-panel__reason-input:disabled {
+  color: var(--fg-muted);
+}
+
+.hb-trading-state-panel__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.hb-trading-state-panel__action {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--fg-primary);
+  cursor: pointer;
+}
+
+.hb-trading-state-panel__action:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.hb-trading-state-panel__action:disabled {
+  color: var(--fg-muted);
+  cursor: default;
+}
+
+.hb-trading-state-panel__action--current {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.hb-trading-state-panel__pending {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+}

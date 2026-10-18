@@ -1,0 +1,60 @@
+.hb-trades-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+
+.hb-trades-table__scroll {
+  overflow: auto;
+  width: 100%;
+}
+
+.hb-trades-table__table {
+  width: 100%;
+  min-width: 100%;
+}
+
+.hb-trades-table__table th,
+.hb-trades-table__table td {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hb-trades-table__table thead th {
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-trades-table__table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-trades-table__table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.hb-trades-table__side--buy {
+  color: var(--bullish);
+}
+
+.hb-trades-table__side--sell {
+  color: var(--bearish);
+}
+
+.hb-trades-table__empty {
+  margin: 0;
+  padding: 16px;
+  color: var(--fg-muted);
+  text-align: center;
+}
