@@ -15,7 +15,25 @@ import { useConnectionStore } from '../../core/store/connection';
 import { useOrdersStore } from '../../core/store/orders';
 import { LiveSocket } from '../../core/ws/socket';
 import { setLiveSocket } from '../../core/liveSocket';
+import { useWorkbenchSelection } from './WorkbenchWorkspace';
 import { WorkbenchPage } from './WorkbenchPage';
+
+// Since Batch I slice 3 the Workbench is a dockview workspace: jsdom needs sized containers
+// for dockview (and the virtualized table) to mount panel content.
+class ResizeObserverStub {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver;
+}
+beforeEach(() => {
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, value: 700 });
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, value: 700 });
+  // Slice 3's workspace selection is a module-level store — isolate it per test.
+  useWorkbenchSelection.getState().setSelected(null);
+});
 
 // Route data (GET /instruments) and streaming payloads are injected through the client
 // stub; timers are real but the socket's first fetch happens on subscribe, so no waiting

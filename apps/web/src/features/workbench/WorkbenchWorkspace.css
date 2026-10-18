@@ -1,0 +1,52 @@
+/* Workbench dockview workspace (Batch I slice 3). dockview's own stylesheet is imported in
+   the workspace module; these are the honba-side chrome rules around it (token colors only). */
+
+.workbench-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  padding: 8px 12px 12px;
+}
+
+.workbench-workspace__toolbar {
+  flex: none;
+}
+
+.workbench-workspace__dockview {
+  flex: 1;
+  min-height: 560px;
+}
+
+/* Panel content fills its dockview body and scrolls independently. */
+.workbench-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  padding: 6px;
+  overflow-y: auto;
+}
+
+.workbench-panel--full {
+  height: 100%;
+}
+
+.workbench-panel__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--hb-text-muted, #7a8090);
+  font-style: italic;
+}
+
+.workbench-panel__error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--hb-negative, #e5493a);
+}
+
+.workbench-panel__market-select {
+  min-width: 220px;
+}
