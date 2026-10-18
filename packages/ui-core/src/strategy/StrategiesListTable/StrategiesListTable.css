@@ -1,0 +1,93 @@
+.hb-strategies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  font-size: 12px;
+  color: var(--fg-primary);
+  min-width: 0;
+}
+
+.hb-strategies-list__scroll {
+  overflow: auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.hb-strategies-list__table {
+  width: 100%;
+  min-width: 100%;
+}
+
+.hb-strategies-list__table th,
+.hb-strategies-list__table td {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hb-strategies-list__table thead th {
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-strategies-list__table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-strategies-list__table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.hb-strategies-list__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hb-strategies-list__pf {
+  font-variant-numeric: tabular-nums;
+}
+
+.hb-strategies-list__pf--bad {
+  color: var(--bearish);
+}
+
+.hb-strategies-list__actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.hb-strategies-list__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.hb-strategies-list__action:hover {
+  color: var(--fg-primary);
+  background: var(--bg-hover);
+}
+
+.hb-strategies-list__empty {
+  margin: 0;
+  padding: 12px;
+  color: var(--fg-muted);
+}

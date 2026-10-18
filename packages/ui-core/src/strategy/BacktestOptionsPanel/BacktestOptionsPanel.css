@@ -1,0 +1,66 @@
+.hb-backtest-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  min-width: 0;
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+
+.hb-backtest-options__date-row {
+  display: flex;
+  gap: 10px;
+}
+
+.hb-backtest-options__mode {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.hb-backtest-options__mode-legend {
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hb-backtest-options__mode-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hb-backtest-options__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hb-backtest-options__footer-icon {
+  color: var(--fg-muted);
+}
+
+.hb-backtest-options__running-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.hb-backtest-options__hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}

@@ -1,0 +1,67 @@
+.hb-performance-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fg-primary);
+  min-width: 0;
+}
+
+.hb-performance-metrics__label {
+  margin: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+
+.hb-performance-metrics__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 6px 18px;
+}
+
+.hb-performance-metrics__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  min-width: 0;
+}
+
+.hb-performance-metrics__item-label {
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hb-performance-metrics__item-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hb-performance-metrics__item-value--positive {
+  color: var(--bullish);
+}
+
+.hb-performance-metrics__item-value--negative {
+  color: var(--bearish);
+}
+
+.hb-performance-metrics__item-value--warning {
+  color: var(--warning);
+}
+
+.hb-performance-metrics__empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+}

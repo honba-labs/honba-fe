@@ -164,4 +164,41 @@ export type { TradesTablePanelProps, Trade, UnixNanos } from './trading/TradesTa
 export { TradingStatePanel } from './trading/TradingStatePanel';
 export type { TradingStatePanelProps, TradingState } from './trading/TradingStatePanel';
 
+// Batch E (docs/tasks.md): strategy/algo-builder & backtest widgets ported from bfx-hf-ui-core's
+// src/components/{StrategyPerfomanceMetrics,StrategyTradesTable,StrategiesListTable,
+// BacktestOptionsPanel,BacktestProgressBar}. `StrategyEditor`/`StrategyLiveChart` are NOT ports
+// (AlgoDesigner's editing surface comes from honba-frontend's graph editor + Monaco;
+// strategy charts reuse Batch C's ChartPanel) — see strategy/*'s per-file header comments for
+// what was dropped and why.
+export { PerformanceMetrics } from './strategy/PerformanceMetrics';
+export type {
+  PerformanceMetricsProps,
+  PerformanceMetric,
+  PerformanceMetricTone,
+} from './strategy/PerformanceMetrics';
+
+export { StrategyTradesTable } from './strategy/StrategyTradesTable';
+export type {
+  StrategyTradesTableProps,
+  StrategyTradeRow,
+  TradeRowSide,
+} from './strategy/StrategyTradesTable';
+
+export { StrategiesListTable } from './strategy/StrategiesListTable';
+export type {
+  StrategiesListTableProps,
+  StrategyListItem,
+  StrategyListKind,
+} from './strategy/StrategiesListTable';
+
+export { BacktestProgressBar } from './strategy/BacktestProgressBar';
+export type { BacktestProgressBarProps } from './strategy/BacktestProgressBar';
+
+export { BacktestOptionsPanel } from './strategy/BacktestOptionsPanel';
+export type {
+  BacktestOptionsPanelProps,
+  BacktestConfig,
+  BacktestPositionMode,
+} from './strategy/BacktestOptionsPanel';
+
 export const UI_CORE_VERSION = '0.1.0';

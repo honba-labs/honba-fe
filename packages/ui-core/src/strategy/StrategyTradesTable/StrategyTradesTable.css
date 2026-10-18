@@ -1,0 +1,101 @@
+.hb-strategy-trades-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+
+.hb-strategy-trades-table__scroll {
+  overflow: auto;
+  width: 100%;
+}
+
+.hb-strategy-trades-table__table {
+  width: 100%;
+  min-width: 100%;
+}
+
+.hb-strategy-trades-table__table th,
+.hb-strategy-trades-table__table td {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hb-strategy-trades-table__table thead th {
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-strategy-trades-table__table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-strategy-trades-table__table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.hb-strategy-trades-table__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.hb-strategy-trades-table__toggle:hover {
+  color: var(--fg-primary);
+  background: var(--bg-hover);
+}
+
+.hb-strategy-trades-table__pnl {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.hb-strategy-trades-table__pnl.positive {
+  color: var(--bullish);
+}
+
+.hb-strategy-trades-table__pnl.negative {
+  color: var(--bearish);
+}
+
+.hb-strategy-trades-table__detail-row td {
+  height: 100%;
+  padding: 0;
+}
+
+.hb-strategy-trades-table__detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: center;
+  min-height: 100%;
+  padding: 6px 8px;
+  background: var(--bg-input);
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.hb-strategy-trades-table__empty {
+  margin: 0;
+  padding: 12px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
