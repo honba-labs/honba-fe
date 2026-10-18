@@ -143,6 +143,15 @@ it, backed by the **already-existing** `/profile/layouts` and `/profile/modules`
 - Evaluate `react-resizable-panels` (simpler, split-only) vs `dockview` (full tabbed/floating
   docking, closer to a real trading terminal) in Phase 1; pick one and standardize across every
   app shell.
+  → **Decision (Batch F, 2026-10-18): `dockview-react` (v8.6.0, MIT, zero deps, React **16.8–19**
+  peer range — verified under React 19 + jsdom with a hands-on spike; `react-resizable-panels`
+  v4.14 was also spike-tested and works, but is split-only: no tab groups, no drag-to-dock,
+  no floating, no popout windows, and no serialization — approximating Design.md's dockable
+  tabbed panels on it means rebuilding a docking engine by hand). `dockview`'s
+  `api.toJSON()/fromJSON()` maps directly onto the `/profile/layouts` persistence below; note
+  v8 split the package into a free MIT core + `dockview-enterprise` (commercial) — everything
+  needed here (tabs/groups/DnD/floating/serialization) stays free. Revisit only if honba moves
+  to plain split panes per-app.
 - `useLayoutStore` (Zustand) holds the live layout; persists to `/profile/layouts/{name}` on
   save, loads on app mount; `localStorage` only as an offline/last-known-good cache.
 - Each app defines a default layout preset (Screener: table + detail drawer; Workbench: chart +
