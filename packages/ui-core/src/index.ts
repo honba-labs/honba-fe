@@ -232,4 +232,32 @@ export type {
 export { LayoutControlToolbar } from './shell/LayoutControlToolbar';
 export type { LayoutControlToolbarProps, LayoutSummary } from './shell/LayoutControlToolbar';
 
+// Batch G (docs/tasks.md): the modal subset — only the reference modals that map onto honba
+// concepts are ported (built on Batch A's Modal primitive; each takes isOpen/onClose +
+// domain props, none read global state). Renames per the brief:
+// CcyInfoModal → InstrumentInfoModal, ActiveAlgoOrdersModal → ActiveOrdersModal,
+// AlgoOrderDetailsModal → OrderDetailsModal. Skipped: the Bitfinex-lifecycle set
+// (DMSRemoval/OldFormat/LongTermClosedSession/CloseSession/NoConnectionAction/ResetAPIKeys/
+// ResetDataConfirm/AOPause/DiscardAOEdit — some may resurface as AlgoDesigner dialogs) and
+// RefillBalanceModal (a stub in the reference — empty callbacks — and honba has no
+// paper-balance reset flow to confirm; revisit when one exists). APIKeysConfigurateForm is
+// not a port — it becomes the broker-connection Settings form in Batch I.
+export { ClosePositionModal } from './modals/ClosePositionModal';
+export type { ClosePositionModalProps } from './modals/ClosePositionModal';
+
+export { InstrumentInfoModal } from './modals/InstrumentInfoModal';
+export type { InstrumentInfoArticle, InstrumentInfoModalProps } from './modals/InstrumentInfoModal';
+
+export { EditOrderModal } from './modals/EditOrderModal';
+export type { EditOrderModalProps, OrderPatch } from './modals/EditOrderModal';
+
+export { AppSettingsModal } from './modals/AppSettingsModal';
+export type { AppSettings, AppSettingsModalProps, ThemeSetting } from './modals/AppSettingsModal';
+
+export { ActiveOrdersModal } from './modals/ActiveOrdersModal';
+export type { ActiveOrdersModalProps } from './modals/ActiveOrdersModal';
+
+export { OrderDetailsModal } from './modals/OrderDetailsModal';
+export type { OrderDetailsModalProps } from './modals/OrderDetailsModal';
+
 export const UI_CORE_VERSION = '0.1.0';

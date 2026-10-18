@@ -44,4 +44,24 @@ describe('Modal', () => {
     fireEvent.mouseDown(container.querySelector('.hb-modal__overlay') as HTMLElement);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('wires the title as the dialog accessible name (Batch G — G modals query it)', () => {
+    render(
+      <Modal isOpen onClose={() => {}} label="Close position">
+        <p>Body</p>
+      </Modal>,
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Close position' });
+    expect(dialog.className).toContain('hb-modal');
+  });
+
+  it('applies the width prop as an inline width, clamped by CSS max-width', () => {
+    const { container } = render(
+      <Modal isOpen onClose={() => {}} label="Settings" width={640}>
+        <p>Body</p>
+      </Modal>,
+    );
+    const dialog = container.querySelector('.hb-modal') as HTMLElement;
+    expect(dialog.style.width).toBe('min(640px, 90vw)');
+  });
 });

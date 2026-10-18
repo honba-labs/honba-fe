@@ -1,0 +1,20 @@
+.hb-instrument-info-modal__article {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--fg-primary);
+}
+
+.hb-instrument-info-modal__article img {
+  max-width: 100%;
+}
+
+.hb-instrument-info-modal__article a {
+  color: var(--accent);
+}
+
+.hb-instrument-info-modal__loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted);
+}

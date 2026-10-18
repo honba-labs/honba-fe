@@ -1,0 +1,32 @@
+/* Shared modal-footer style (the reference's Modal.Footer equivalent): right-aligned buttons.
+ * Batch G's modals share this pattern; ui-core's Modal primitive stays footer-free since the
+ * reference's own Modal subcomponents were @ufx-ui Dialog surface area we replaced. */
+.hb-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px 0;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 16px;
+}
+
+/* ClosePositionModal */
+.hb-close-position-modal__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px 2px;
+}
+
+.hb-close-position-modal__body p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg-primary);
+}
+
+.hb-close-position-modal__icon {
+  flex-shrink: 0;
+  color: var(--warning);
+}

@@ -1,0 +1,64 @@
+/* OrderDetailsModal */
+.hb-order-details-modal__facts {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+}
+
+.hb-order-details-modal__fact {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+
+.hb-order-details-modal__fact:last-child {
+  border-bottom: none;
+}
+
+.hb-order-details-modal__fact span {
+  color: var(--fg-muted);
+}
+
+.hb-order-details-modal__fact strong {
+  font-family: var(--font-mono, monospace, monospace);
+  font-weight: 500;
+  color: var(--fg-primary);
+  overflow-wrap: anywhere;
+}
+
+.hb-order-details-modal__fills-label,
+.hb-order-details-modal__empty {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.hb-order-details-modal__fills {
+  max-height: 280px;
+}
+
+.hb-order-details-modal__fills-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.hb-order-details-modal__fills-table th,
+.hb-order-details-modal__fills-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.hb-order-details-modal__fills-table th {
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}

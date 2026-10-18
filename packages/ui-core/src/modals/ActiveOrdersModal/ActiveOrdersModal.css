@@ -1,0 +1,50 @@
+/* ActiveOrdersModal */
+.hb-active-orders-modal__empty {
+  margin: 8px 0;
+  text-align: center;
+  color: var(--fg-muted);
+}
+
+.hb-active-orders-modal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.hb-active-orders-modal__row {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-active-orders-modal__check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.hb-active-orders-modal__check input {
+  accent-color: var(--accent);
+}
+
+.hb-active-orders-modal__order {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono, monospace, monospace);
+}
+
+.hb-active-orders-modal__id {
+  flex-shrink: 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace, monospace);
+}
+
+.hb-active-orders-modal__check--all {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 4px;
+  color: var(--fg-muted);
+}

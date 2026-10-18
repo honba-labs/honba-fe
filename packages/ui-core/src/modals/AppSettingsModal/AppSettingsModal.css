@@ -1,0 +1,30 @@
+/* Ported patterns from bfx-hf-ui-core's AppSettingsModal/style.scss: the bordered label +
+ * control rows. */
+.hb-app-settings-modal__setting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-app-settings-modal__setting:last-child {
+  border-bottom: none;
+}
+
+.hb-app-settings-modal__setting-label {
+  margin: 0;
+  flex: 0 0 140px;
+  font-size: 13px;
+  color: var(--fg-primary);
+}
+
+.hb-app-settings-modal__dropdown {
+  min-width: 180px;
+}
+
+.hb-app-settings-modal__radio-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}

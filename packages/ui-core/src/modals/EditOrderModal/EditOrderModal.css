@@ -1,0 +1,23 @@
+/* EditOrderModal */
+.hb-edit-order-modal__context {
+  margin-bottom: 14px;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-family: var(--font-mono, monospace, monospace);
+}
+
+.hb-edit-order-modal__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hb-edit-order-modal__hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--fg-muted);
+}

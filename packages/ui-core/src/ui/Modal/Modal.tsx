@@ -2,8 +2,11 @@
 // The original wrapped Bitfinex's own `@ufx-ui/core` Dialog (a separate, unported package);
 // this is a from-scratch overlay + dialog implementation with the same isOpen/onClose/label
 // contract, using plain CSS tokens instead of SCSS.
+// Batch G additions: the title is a real heading wired as the dialog's accessible name
+// (`aria-labelledby` via useId — the dashboard's Modal test used to work around a nameless
+// dialog), and an optional `width` (the reference's Dialog had one; G's modals set 640–980px).
 import type { MouseEvent, ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
 import { X } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -14,6 +17,8 @@ export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   label?: ReactNode;
+  /** Dialog width in px; clamped by the CSS `max-width: 90vw`. */
+  width?: number;
   className?: string;
   scrollable?: boolean;
   children: ReactNode;
@@ -23,10 +28,12 @@ export function Modal({
   isOpen,
   onClose,
   label = '',
+  width,
   className = '',
   scrollable = false,
   children,
 }: ModalProps) {
+  const titleId = useId();
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -50,9 +57,15 @@ export function Modal({
 
   return (
     <div className="hb-modal__overlay" onMouseDown={onOverlayClick}>
-      <div className={clsx('hb-modal', className)} role="dialog" aria-modal="true">
+      <div
+        className={clsx('hb-modal', className)}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        style={width !== undefined ? { width: `min(${width}px, 90vw)` } : undefined}
+      >
         <div className="hb-modal__header">
-          <p className="hb-modal__title">{label}</p>
+          <h1 id={titleId} className="hb-modal__title">{label}</h1>
           <button type="button" className="hb-modal__close" onClick={onClose} aria-label="Close">
             <X size={16} />
           </button>
