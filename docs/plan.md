@@ -247,6 +247,8 @@ directory, what's explicitly excluded, and how each maps onto honba's REST/WS AP
 | Exchange/API-key connection management | **Settings** app (new) — broker adapter connections live in `honba-adapters`; honba-fe needs a UI to manage credentials/connections per adapter, something bfx-hf-ui-core has (API key permissions screen) and honba-frontend does not yet |
 | Notification/toast system for fills, errors, algo state changes | **app-shell/notifications** — new shared component, modeled on bfx-hf-ui-core's toast patterns |
 | i18n (`i18next`) | Out of scope for v1 (honba is India-first, single locale); revisit if multi-locale becomes a requirement |
+| (new, from `tbt-paper-terminal` survey, 2026-10-18 — see `docs/tasks.md` Batch K) Client-side, live-quote order-matching/simulation engine (stop-limit/take-profit/OCO/trailing-stop, simulated fills, account reset) | No direct bfx-hf-ui-core equivalent (that app traded for real on Bitfinex). Design-reference-only candidate for a **Simulator** "live paper mode" distinct from Simulator's existing historical-replay engine (§6 Phase 6) — pending sign-off from honba's order-model owner before building `apps/web/src/core/paper-trading/` |
+| (same survey) Price-cross trigger → auto-order/alert ("`AutomationPanel`") | A lighter-weight sibling to **AlgoDesigner**'s node-graph strategies, not a replacement — candidate "quick trigger"/price-alert feature, not yet scheduled to a phase |
 
 ## 5. Design system
 

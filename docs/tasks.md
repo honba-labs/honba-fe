@@ -35,6 +35,22 @@ git clone https://github.com/bitfinexcom/bfx-report-ui.git .reference/bfx-report
 cd .reference/bfx-report-ui && git checkout a55d525f19e79adfd5b09b8e34c9461d65537556
 ```
 
+Batch K (below) draws on a third pinned clone, `tbt-paper-terminal` (an independent, unaffiliated
+open-source project — "TBT Exchange UI Kit" — not a Bitfinex repo), pinned at commit
+`a82fab28f59d889837bf96e359a23b92ffca1e3d`, checked out locally at
+`honba-fe/.reference/tbt-paper-terminal`. Same `.gitignore`d, read-only treatment as above. License
+is Apache-2.0 (confirmed via both its `LICENSE` file and `package.json`'s `"license"` field), so the
+same porting/rewrite rules apply. Stack differs from the other two clones: React **18.3** + TS +
+Zustand + **CSS Modules** (`.module.css`, not `.scss` — already compatible with honba-fe's "no
+`.scss`" rule) + `decimal.js` + `react-resizable-panels` + `lightweight-charts`, no Redux at all —
+closer to honba-fe's own stack than the Bitfinex clones are. If it's ever missing, recreate it with:
+
+```
+git clone --depth 1 https://github.com/TheNewMikeMusic/tbt-paper-terminal.git .reference/tbt-paper-terminal
+```
+
+(it was cloned shallow/depth-1, so there is no older commit to `checkout` — depth-1 HEAD is the pin).
+
 | From (bfx-hf-ui-core, React 16 + Redux + SCSS) | To (honba-fe, React 19 + TS + Zustand + CSS vars) |
 |---|---|
 | Class components / `React.memo(FunctionComponent)` with `PropTypes` | Function components with TypeScript prop types (no PropTypes, no `defaultProps` — use default parameter values) |
@@ -332,3 +348,59 @@ porting table above; tables use `@tanstack/react-table` like Batch D's.
 `PositionAuditTrail`, `ConcentrationRisk`, `WeightedAverageCost`, `FeesReport`,
 `PortfolioValueChart`, `OrderFills` exported from `ui-core`, each with a render test using
 fixture data. Wiring to real honba endpoints is a Batch H/I-style follow-up, not this task.
+
+---
+
+## Batch K — paper-trading engine & risk/diagnostics widgets
+
+**Port from** `src/{store/tradingStore.ts, store/automationStore.ts, components/{RiskRibbon,
+AccountRibbon, DataConfidenceBar, ObservabilityPanel, AutomationPanel}}` (in the
+`tbt-paper-terminal` clone, see Shared conventions above) → **to** `packages/ui-core/src/{market,
+trading}/*` for the presentational pieces, `apps/web/src/core/paper-trading/` for the
+matching-engine logic (per the shared porting table's "split mixed components" rule — this repo's
+store files mix business logic and persistence, same as bfx-hf-ui-core's Redux files did).
+
+- `tradingStore.ts`'s client-side order-matching engine — stop-limit, take-profit-limit, OCO, and
+  trailing-stop conditional orders, all checked against a live order book with simulated fill
+  delay/fee and a `resetAccount()` action — is genuinely new capability: a **live-quote
+  paper-trading matching engine**, distinct from the historical-replay engine already planned for
+  the Simulator app (`docs/plan.md` §6 Phase 6). This directly answers the open question Batch G
+  flagged for `RefillBalanceModal` ("useful if/when honba has a paper-trading balance reset flow —
+  confirm this exists before porting, otherwise skip"): `resetAccount()` here is exactly that flow.
+  Treat this as design-reference only for now — rewrite the order-state machine against honba's
+  own order/fill/position shapes (`honba/schema/openapi/openapi.json`), and confirm with whoever
+  owns honba's order model whether a distinct "paper mode" is wanted before building
+  `core/paper-trading/` for real.
+- `automationStore.ts` + `AutomationPanel`/`TriggerForm`/`TriggerList`/`ExecutionLogList` →
+  **PriceTriggerPanel**, a price-cross-condition → auto-order/alert trigger system, simpler than a
+  full strategy graph — complements rather than duplicates AlgoDesigner (Batch E/I). Port the
+  tabbed layout (active/create/logs) and execution-log UX; rewrite trigger matching against
+  honba's own quote stream.
+- `RiskRibbon`/`AccountRibbon` → **RiskSummaryRibbon**, a compact top-of-view strip (position size
+  as % of portfolio, unrealized P&L %, a volatility/risk score) — no honba-fe equivalent yet,
+  reusable across Workbench and Portfolio.
+- `DataConfidenceBar` + its `DiagnosticsDrawer` → **DataConfidenceBar**, a connection-health strip
+  with a drill-down diagnostics panel (staleness, confidence score, network-event log) — a
+  companion to Batch C's `StatusBar`, not a replacement for it.
+- `ObservabilityPanel` → **DebugLogPanel**, a leveled (debug/info/warn/error) structured log viewer
+  for market-data/system events — dev-facing and low priority, but cheap to port and useful during
+  Batch H's WS integration work.
+
+**Skip entirely:** `Wallet/{DepositDrawer,WithdrawDrawer,LinkedMethodsPanel,OnboardingGuide,
+StatusCard,AccountOverviewCard,AssetBalancesPanel,LedgerTable}` and `AvatarUpload` — crypto-exchange
+account-funding/KYC UI (hardcoded list of 30+ crypto assets, deposit/withdraw chain selection), no
+honba equivalent; equities broker funding, if ever needed, belongs in `honba-adapters`, not here.
+`LanguageToggle` and the `i18n/locales` files — i18n is out of scope per `docs/plan.md` §4, same
+exclusion as Batch J. All of `src/pages/mobile/*`, `src/components/mobile/*`, `BottomNav`,
+`BottomTabs` — honba-fe's shell is desktop-first per `docs/plan.md` §3.2 with no mobile nav pattern
+defined; revisit only if a mobile phase is scoped later. `worker/{marketDataWorker,orderbook}.ts`
+(WebWorker-offloaded order-book delta merge/throttled dispatch) is an architecture pattern, not a
+component — worth reading as a performance-reference note for Batch C/H's order-book update path if
+`OrderBook` ever shows jank under high-frequency ticks, but not a port target for this batch.
+`ThemeToggle`/`SoundToggle`/`ShortcutsHelp` are trivial one-off toggles, not worth a dedicated port.
+
+**Exit:** `RiskSummaryRibbon`, `DataConfidenceBar` (+ `DiagnosticsDrawer`), `DebugLogPanel`
+exported from `ui-core`, each with a render test using fixture data. The paper-trading
+matching-engine design (`apps/web/src/core/paper-trading/`) and `PriceTriggerPanel` are flagged as
+`apps/web`-level follow-ups pending sign-off from whoever owns honba's order/paper-trading
+semantics — not blocking for this batch's `ui-core` exports.

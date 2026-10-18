@@ -188,6 +188,18 @@ export interface ApiClient {
   getLayouts(): Promise<{ layouts: Record<string, LayoutDocument> }>;
   putLayout(name: string, document: LayoutDocument): Promise<unknown>;
   deleteLayout(name: string): Promise<unknown>;
+
+  // Strategy/AlgoDesigner endpoints
+  /** `POST /strategies/verify` — verify a strategy manifest and return compiled IR */
+  postStrategiesVerify(manifest: unknown): Promise<{ data?: unknown; error?: unknown }>;
+  /** `POST /backtests` — run a backtest */
+  postBacktests(params: {
+    strategy: string;
+    universe: string;
+    seed: number;
+  }): Promise<{ data?: { run_id?: string; status?: string; metrics?: unknown; error?: unknown }; error?: unknown }>;
+  /** `PUT /profile/layouts/{name}` — save a layout preset (used for strategy library) */
+  putProfileLayoutsByName(name: string, manifest: unknown): Promise<unknown>;
 }
 
 /**
@@ -320,6 +332,15 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     },
     deleteLayout(name) {
       return request('DELETE', `/profile/layouts/${encodeURIComponent(name)}`);
+    },
+    postStrategiesVerify(manifest) {
+      return request('POST', '/strategies/verify', undefined, manifest);
+    },
+    postBacktests(params) {
+      return request('POST', '/backtests', undefined, params);
+    },
+    putProfileLayoutsByName(name, manifest) {
+      return request('PUT', `/profile/layouts/${encodeURIComponent(name)}`, undefined, manifest);
     },
   };
 }

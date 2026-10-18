@@ -10,6 +10,7 @@ import { WorkbenchPage } from './features/workbench/WorkbenchPage';
 import { PortfolioPage } from './features/portfolio/PortfolioPage';
 import { ScreenerPage } from './features/screener/ScreenerPage';
 import { SettingsPage } from './features/settings/SettingsPage';
+import { AlgoDesignerPage } from './features/algodesigner/AlgoDesignerPage';
 import './styles/base.css';
 
 console.info(`@honba/ui-core ${UI_CORE_VERSION}`);
@@ -21,7 +22,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <ScreenerPage /> },
       { path: 'workbench', element: <WorkbenchPage /> },
-      { path: 'algodesigner', element: <PlaceholderRoute name="AlgoDesigner" /> },
+      { path: 'algodesigner', element: <AlgoDesignerPage /> },
       { path: 'simulator', element: <PlaceholderRoute name="Simulator" /> },
       { path: 'researcher', element: <PlaceholderRoute name="Researcher" /> },
       { path: 'portfolio', element: <PortfolioPage /> },
