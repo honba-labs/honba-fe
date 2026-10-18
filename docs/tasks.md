@@ -22,6 +22,19 @@ Treat it as read-only reference material, never as a dependency and never copied
 the package source. It's Apache-2.0 licensed, so porting/adapting it is legally fine, but every
 port is a **rewrite**, not a copy-paste:
 
+Batch J (below) draws on a second pinned clone, `bfx-report-ui`, pinned at commit
+`a55d525f19e79adfd5b09b8e34c9461d65537556`, checked out locally at
+`honba-fe/.reference/bfx-report-ui`. Same `.gitignore`d, read-only, Apache-2.0-licensed treatment
+as above (it has a `LICENSE.md`, not a `LICENSE` file, but it's the same Apache License 2.0 text).
+It additionally depends on Redux-saga, `react-i18next`, and `@blueprintjs/core` (a UI kit, not just
+SCSS) — same porting rules apply, plus: drop `@blueprintjs/core` imports too, rebuild on Batch A's
+primitives instead. If it's ever missing, recreate it with:
+
+```
+git clone https://github.com/bitfinexcom/bfx-report-ui.git .reference/bfx-report-ui
+cd .reference/bfx-report-ui && git checkout a55d525f19e79adfd5b09b8e34c9461d65537556
+```
+
 | From (bfx-hf-ui-core, React 16 + Redux + SCSS) | To (honba-fe, React 19 + TS + Zustand + CSS vars) |
 |---|---|
 | Class components / `React.memo(FunctionComponent)` with `PropTypes` | Function components with TypeScript prop types (no PropTypes, no `defaultProps` — use default parameter values) |
@@ -272,3 +285,50 @@ AlgoDesigner's results/list views but AlgoDesigner's actual editing surface come
 `honba-frontend`, not bfx-hf-ui-core (see Batch E note).
 
 **Exit:** matches the parity checklist in `docs/plan.md` §7, one app at a time.
+
+---
+
+## Batch J — reporting & history widgets
+
+**Port from** `src/components/{Ledgers,Movements,TaxReport,Snapshots,PositionsAudit,
+ConcentrationRisk,WeightedAverages,FeesReport,AccountBalance,OrderTrades}` (in the
+`bfx-report-ui` clone, see Shared conventions above) → **to** `packages/ui-core/src/reports/*`.
+
+These are account-history views honba-fe has no equivalent of yet — Batch D's tables are all
+*live/current-state* (open orders, current positions, current balances); this batch is
+*historical/derived* reporting, which is genuinely new capability:
+- `Ledgers` → **LedgerHistory**, the full transaction journal (trades, fees, transfers,
+  adjustments) — maps to a `GET /ledgers`-shaped honba endpoint once one exists.
+- `Movements` → **MovementsHistory**, deposit/withdrawal lifecycle with status.
+- `TaxReport` → **TaxReport**, realized gains/losses — directly useful for India STCG/LTCG
+  reporting, which bfx-hf-ui-core has no equivalent of at all.
+- `Snapshots` → **PortfolioSnapshots**, point-in-time portfolio valuation history.
+- `PositionsAudit` → **PositionAuditTrail**, historical position-change log (distinct from Batch
+  D's live `PositionsTable`).
+- `ConcentrationRisk` → **ConcentrationRisk**, exposure-by-instrument risk report.
+- `WeightedAverages` → **WeightedAverageCost**, average cost basis per instrument.
+- `FeesReport` → **FeesReport**, fees-paid-over-time report.
+- `AccountBalance` → **PortfolioValueChart**, a historical net-worth/equity-curve chart — reuse
+  Batch C's `ChartPanel`/`openalgo-charts` for rendering, port only the data-shaping/filter UX.
+- `OrderTrades` → **OrderFills**, the fills belonging to a single order (complements Batch D's
+  `OrderHistory`, which is order-level, not fill-level).
+
+**Skip entirely:** `FundingCreditHistory`, `FundingLoanHistory`, `FundingOfferHistory`,
+`FundingPayment`, `LoanReport`, `StakingPayments`, `PublicFunding`, `Derivatives` — crypto
+margin-funding/staking/perps concepts with no equities equivalent. `Candles`, `Tickers`,
+`PublicTrades`, `Wallets` — duplicate Batch C's market-data components or Batch D's
+`BalancesTable`. `AccountSummary`, `TradedVolume`, `AverageWinLoss` — dashboard-tile variants of
+`FeesReport`/`PortfolioValueChart`, low priority, skip for now. `AffiliatesEarnings`,
+`AppDownload`, `AppUpdateToast`, `Auth`, `ChangeLogs`, `ElectronMenu`, `ErrorDialog`,
+`ExportDialog`/`ExportFailDialog`/`ExportSuccessDialog`, `ExtraInfoDialog`, `GoToRangeDialog`,
+`MaintenanceDialog`, `PaginationDialog`, `Preferences`, `SubAccounts`, `TaxPrecisionDialog`,
+`Header`, `Main`, `Status`, `Logins` — Bitfinex account-lifecycle/app-chrome specific, no honba
+equivalent.
+
+All ten components here also drop `redux-saga`/`react-i18next`/`@blueprintjs/core` per the
+porting table above; tables use `@tanstack/react-table` like Batch D's.
+
+**Exit:** `LedgerHistory`, `MovementsHistory`, `TaxReport`, `PortfolioSnapshots`,
+`PositionAuditTrail`, `ConcentrationRisk`, `WeightedAverageCost`, `FeesReport`,
+`PortfolioValueChart`, `OrderFills` exported from `ui-core`, each with a render test using
+fixture data. Wiring to real honba endpoints is a Batch H/I-style follow-up, not this task.
