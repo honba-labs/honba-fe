@@ -1,0 +1,178 @@
+/* Layout chrome for the component dashboard. Colors/spacing all come from
+   packages/ui-core/src/styles/tokens.css — no hardcoded palette values here. */
+.component-dashboard {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  min-height: 0;
+}
+
+.component-dashboard__sidebar {
+  position: sticky;
+  top: 12px;
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.component-dashboard__sidebar h2 {
+  margin: 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-muted);
+}
+
+.component-dashboard__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.component-dashboard__nav-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-primary);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.component-dashboard__nav-button:hover {
+  background: var(--bg-hover);
+}
+
+.component-dashboard__nav-button--active {
+  background: var(--accent-bg);
+  color: var(--fg-primary);
+}
+
+.component-dashboard__nav-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.component-dashboard__meta {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+
+.component-dashboard__meta code {
+  color: var(--fg-primary);
+}
+
+.component-dashboard__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.component-dashboard__section-header h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.component-dashboard__section-header p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.component-dashboard__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.component-dashboard__section h3 {
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 6px;
+}
+
+.component-dashboard__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+.component-dashboard__grid .demo-tile--wide {
+  grid-column: 1 / -1;
+}
+
+/* Shared helpers used across the demo tiles. */
+.demo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.demo-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.demo-label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  min-width: 110px;
+}
+
+.demo-value {
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+
+.demo-box {
+  padding: 10px 14px;
+  background: var(--bg-hover);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  font-size: 12px;
+  resize: vertical;
+  overflow: auto;
+  min-height: 40px;
+}
+
+.demo-tag {
+  font: inherit;
+  font-size: 12px;
+  color: var(--fg-muted);
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.demo-tag[aria-pressed='true'],
+.demo-tag:active {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--fg-primary);
+}

@@ -36,6 +36,22 @@ body {
   font-weight: 600;
 }
 
+.app-shell__topbar-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app-shell__topbar-links a {
+  color: var(--fg-muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.app-shell__topbar-links a:hover {
+  color: var(--fg-primary);
+}
+
 .app-shell__content {
   flex: 1;
   padding: 16px;
