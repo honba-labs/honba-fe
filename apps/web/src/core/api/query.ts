@@ -40,6 +40,7 @@ export const queryKeys = {
     ['orders', params ?? {}] as const,
   positions: () => ['positions'] as const,
   accounts: () => ['accounts'] as const,
+  portfolio: () => ['portfolio'] as const,
   trades: () => ['trades'] as const,
   tradingState: () => ['trading-state'] as const,
   layouts: () => ['layouts'] as const,
@@ -125,6 +126,47 @@ export function usePositions() {
   return useQuery({
     queryKey: queryKeys.positions(),
     queryFn: () => getApiClient().getPositions(),
+  });
+}
+
+/** `GET /portfolio/accounts` — accounts with their holdings (BalancesTable's row source). */
+export function useAccounts() {
+  return useQuery({
+    queryKey: queryKeys.accounts(),
+    queryFn: () => getApiClient().getAccounts(),
+  });
+}
+
+/** `GET /portfolio` — the full valued snapshot (KPI header source; accounts also included). */
+export function usePortfolio() {
+  return useQuery({
+    queryKey: queryKeys.portfolio(),
+    queryFn: () => getApiClient().getPortfolio(),
+  });
+}
+
+/** `GET /portfolio/trades` — the fill ledger for the Trade History tab. */
+export function useTrades() {
+  return useQuery({
+    queryKey: queryKeys.trades(),
+    queryFn: () => getApiClient().getTrades(),
+  });
+}
+
+/**
+ * `POST /positions/close` — bodyless and **close-all** (every non-zero ledger position gets an
+ * opposite-side market order). Invalidates every portfolio/trading slice plus orders (each
+ * close is itself a POST /orders path order).
+ */
+export function useClosePositions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => getApiClient().postPositionsClose(),
+    onSuccess: () => {
+      for (const key of [['orders'], ['positions'], ['accounts'], ['portfolio'], ['trades']]) {
+        void queryClient.invalidateQueries({ queryKey: key });
+      }
+    },
   });
 }
 

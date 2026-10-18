@@ -18,7 +18,10 @@ import type {
   LayoutDocument,
   Order,
   OrdersRequest,
+  PortfolioAccount,
   PortfolioPosition,
+  PortfolioPositionsResponse,
+  PortfolioSnapshot,
   Profile,
   QuoteTick,
   TradingState,
@@ -144,10 +147,20 @@ export interface ApiClient {
   getOrders(params?: { exchange?: string; symbol?: string }): Promise<{ orders: Order[] }>;
   postOrder(request: OrdersRequest): Promise<Order>;
   deleteOrder(orderId: string): Promise<{ status: string }>;
-  getPositions(): Promise<{ positions: PortfolioPosition[] }>;
-  getAccounts(): Promise<unknown[]>;
+  getPositions(): Promise<PortfolioPositionsResponse>;
+  getAccounts(): Promise<{ accounts: PortfolioAccount[] }>;
   getTrades(): Promise<{ trades: Trade[] }>;
   getMoney(): Promise<unknown>;
+  /** `GET /portfolio` — the full valued snapshot (totals + accounts). */
+  getPortfolio(): Promise<PortfolioSnapshot>;
+  /**
+   * `POST /positions/close` — the endpoint takes **no body** and closes *every* instrument
+   * with a non-zero ledger position (one opposite-side market order each — see
+   * honba-ya-api-rest/src/orders.rs). There is intentionally no per-instrument variant today;
+   * the wire answer is `{"status": "closing"}` (the schema's `PositionsResponse` shape is the
+   * documented intent, the served body is the status object — verify at runtime).
+   */
+  postPositionsClose(): Promise<{ status: string }>;
   getTradingState(): Promise<TradingState>;
   putTradingState(state: TradingState, reason?: string): Promise<TradingState>;
   getProfile(): Promise<Profile>;
@@ -238,13 +251,19 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       return request('GET', '/portfolio/positions');
     },
     getAccounts() {
-      return request<unknown[]>('GET', '/portfolio/accounts');
+      return request('GET', '/portfolio/accounts');
     },
     getTrades() {
       return request('GET', '/portfolio/trades');
     },
     getMoney() {
       return request('GET', '/portfolio');
+    },
+    getPortfolio() {
+      return request('GET', '/portfolio');
+    },
+    postPositionsClose() {
+      return request('POST', '/positions/close');
     },
     getTradingState() {
       // TradingStateResponse { state } (honba-ya-api/src/responses.rs).

@@ -147,6 +147,9 @@ export interface Order {
 
 // --- Positions & trades (portfolio.rs) -------------------------------------------------------
 
+/** `Currency` — the settlement-currency vocabulary (`INR`/`USD`/`EUR`/`GBP`). */
+export type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
+
 /** `PositionSide` — sign carried here, not in `quantity`. */
 export type PositionSide = 'long' | 'short' | 'no_position_side';
 
@@ -165,6 +168,87 @@ export interface PortfolioPosition {
   group_name?: string | null;
   strategy_id?: string | null;
   tags?: string[];
+}
+
+/** `GET /portfolio/positions` response — `PortfolioPositionsResponse { positions }`. */
+export interface PortfolioPositionsResponse {
+  positions: PortfolioPosition[];
+}
+
+/** `PortfolioSource` — honba's own ledger vs. a broker-synced account (ADR 0032 §2). */
+export type PortfolioSource = 'ledger' | 'broker';
+
+/** `PortfolioHolding` — a delivery holding: carried position without an intraday side. */
+export interface PortfolioHolding {
+  instrument_id: InstrumentId;
+  /** Absolute quantity held. */
+  quantity: number;
+  avg_price: number;
+  mark: number;
+  market_value: Money;
+  realized_pnl: Money;
+  unrealized_pnl: Money;
+  group_name?: string | null;
+  tags?: string[];
+}
+
+/** `PortfolioGreeks` — net aggregate option Greeks (present when options are held). */
+export interface PortfolioGreeks {
+  delta: number;
+  gamma: number;
+  theta: number;
+  vega: number;
+}
+
+/** `PortfolioAccount` — cash, equity, margins and the positions it holds; required fields are
+ * schema-quoted (`source`/`mode` discriminate ledger vs broker-synced, live vs sandbox). */
+export interface PortfolioAccount {
+  id: string;
+  name: string;
+  /** The broker this account is synced from, when `source` is `broker`. */
+  broker?: string | null;
+  mode: 'live' | 'sandbox';
+  currency: Currency;
+  /** Free cash. */
+  cash: Money;
+  /** Cash plus mark-to-market value of the open positions (and holdings). */
+  equity: Money;
+  /** Mark-to-market value of the open positions (and holdings). */
+  market_value: Money;
+  margin_used: Money;
+  margin_available: Money;
+  /** Account leverage, 1.0 when unlevered. */
+  leverage: number;
+  /** Summed realized PnL over the account's positions. */
+  realized_pnl: Money;
+  unrealized_pnl: Money;
+  source: PortfolioSource;
+  holdings: PortfolioHolding[];
+  positions: PortfolioPosition[];
+  greeks?: PortfolioGreeks | null;
+}
+
+/** `PortfolioTotals` — totals across every account (`GET /portfolio`'s `totals`). */
+export interface PortfolioTotals {
+  cash: Money;
+  equity: Money;
+  market_value: Money;
+  realized_pnl: Money;
+  unrealized_pnl: Money;
+  /** Realized plus unrealized. */
+  total_pnl: Money;
+}
+
+/** `GET /portfolio` response — `PortfolioSnapshot` (the valued, per-user portfolio). */
+export interface PortfolioSnapshot {
+  accounts: PortfolioAccount[];
+  as_of: UnixNanos;
+  base_currency: Currency;
+  /** The user this portfolio belongs to (`token_id` or `default`). */
+  owner: string;
+  /** Monotonic revision, bumped on every write. */
+  revision: number;
+  totals: PortfolioTotals;
 }
 
 /** `Trade` — a completed fill. */

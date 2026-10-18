@@ -7,6 +7,7 @@ import { AppShell } from './app-shell/shell';
 import { PlaceholderRoute } from './app-shell/placeholder-route';
 import { ComponentDashboard } from './features/component-dashboard/component-dashboard';
 import { WorkbenchPage } from './features/workbench/WorkbenchPage';
+import { PortfolioPage } from './features/portfolio/PortfolioPage';
 import './styles/base.css';
 
 console.info(`@honba/ui-core ${UI_CORE_VERSION}`);
@@ -21,7 +22,7 @@ const router = createBrowserRouter([
       { path: 'algodesigner', element: <PlaceholderRoute name="AlgoDesigner" /> },
       { path: 'simulator', element: <PlaceholderRoute name="Simulator" /> },
       { path: 'researcher', element: <PlaceholderRoute name="Researcher" /> },
-      { path: 'portfolio', element: <PlaceholderRoute name="Portfolio" /> },
+      { path: 'portfolio', element: <PortfolioPage /> },
       { path: 'settings', element: <PlaceholderRoute name="Settings" /> },
       {
         path: 'components',
