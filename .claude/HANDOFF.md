@@ -1,15 +1,48 @@
-# honba-fe handoff (2026-10-19) — resume: Batch H (state layer)
+# honba-fe handoff (2026-10-19) — resume: Batch I (pages / app routes); Batch H is complete
 
-## State: Batches A–G done and committed. The component dashboard (/components) shows batches A–G. Nothing below is pushed.
+## State: Batches A–H done and committed. The component dashboard (/components) shows batches A–G; /workbench is a real, live page as of Batch H. Nothing below is pushed.
 
-Last committed state on top of `b73a602` ("Update handoff note: Batch F complete, resume at Batch G"):
+Last committed state on top of `211920b` ("Update handoff note: Batch G complete, resume at Batch H"):
 
 ```
-7e33415 Add Batch G modal tiles to the ui-core component dashboard
-2a17412 Add the Batch G modal set to ui-core (plus Modal accessible name + width)
-0c7cdb3 Add Batch F shell tiles to the ui-core component dashboard
-6b71541 Compose the real app shell (apps/web): top nav w/ app switcher + search slot + connection status, bottom status bar, notifications via app-local Zustand store, CrashHandler boundary
+40671c5 Batch H slice 5: end-to-end exit — Workbench feeds the OrderBookPanel live from /depth via the LiveSocket singleton + useMarketStore; shell + StatusBar wired to real connection status
+04462da Batch H slice 4: TanStack Query hooks per REST resource with envelope-aware retry policy (core/api/query)
+dc03ccf Batch H slice 3: Zustand domain stores (market quotes/depth, orders, positions, connection status, layouts persisted to /profile/layouts) — apps/web core/store
+b5ac36f Batch H slice 2: core/ws LiveSocket gateway — transport-agnostic, ref-counted channel subscriptions, polling transport default (no server-side /ws exists; see plan.md §3.4 inspection)
+ac7efa2 Batch H slice 1: hand-written wire mirrors + typed REST client for the ResponseEnvelope contract (apps/web core/{api,types})
+ab7af32 Record Batch H streaming inspection: /ws is SSE backtest-replay only; polling-transport LiveSocket design
 ```
+
+## What Batch H decided and shipped (this session)
+
+1. **The `/ws` assumption was wrong and is now recorded**: `honba-ya-api-rest/src/streams.rs` is
+   SSE for *backtest replay* only (`GET /backtests/{id}/events`), `honba-ya-ws` is an internal
+   broadcast bus with no HTTP surface, and `honba serve` (honba-ya's real binary) exposes **no
+   WebSocket route at all**. plan.md §3.4 has the full inspection note; do not re-litigate.
+2. **State layer lives in `apps/web/src/core/`**: hand-written wire mirrors
+   (`core/types/messages.ts`, pinned to API_VERSION `1.0.0` / SCHEMA_VERSION `4` — swap for
+   codegen at the `honba/Makefile` cutover by deleting the file), typed REST client
+   (`core/api/client.ts`, one envelope-validation concern, `HonbaApiError` carries
+   `ErrorDetail.retryable`), TanStack Query hooks (`core/api/query.ts`, retry only when the
+   envelope says retryable), LiveSocket gateway (`core/ws/socket.ts` — ref-counted channels,
+   polling transport default, status machine idle→connecting→live→reconnecting→failed),
+   stores (`market`, `orders`, `positions`, `connection`, `layout`), and `core/liveSocket.ts`
+   singleton wiring gateway status → `useConnectionStore`.
+3. **Exit slice shipped**: `/workbench` is a real page (replaced the placeholder) —
+   MarketSelect → socket subscribe → `useMarketStore` → `OrderBookPanel`, and the shell
+   topbar/StatusBar reflect real connection status. Verified green: apps/web 65/65 vitest +
+   `tsc --noEmit` + eslint + `npm run build`; ui-core untouched.
+4. **Verified against a running `honba serve`**: envelope + instruments + quotes wire shapes
+   match messages.ts exactly (curl'd a live server on 127.0.0.1:8000 — it was already up in this
+   workspace; don't kill it). **The local dataset holds bars only, no order book**: `GET
+   /depth/{id}` answers `404 market_data_unavailable` (retryable), so on real data today the
+   Workbench follows the designed failure path (reconnecting → failed). Quotes work. When a
+   depth source lands server-side, the page lights up with zero FE changes.
+   Known follow-up (small): LiveSocket treats non-retryable `HonbaApiError`s like any other
+   failure (counts to the read-failure threshold) — a fast-path `failed` on `retryable === false`
+   would be slightly nicer.
+5. `useNotifications` was left exactly where Batch F put it (`core/store/notifications.ts`),
+   per the handoff's fold-not-recreate rule; Batch H's stores join the same family.
 
 ## What Batch G decided and shipped (this session)
 
