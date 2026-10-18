@@ -1,0 +1,508 @@
+.wunder-app {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-page);
+  color: var(--fg-primary);
+  overflow: hidden;
+}
+
+/* 1. Primary Left Icon Bar (68px) */
+.wunder-nav-primary {
+  width: 68px;
+  min-width: 68px;
+  background-color: var(--bg-card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  z-index: 50;
+}
+
+.wunder-logo-wrapper {
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.wunder-logo-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(0, 192, 118, 0.15) 0%, rgba(41, 98, 255, 0.15) 100%);
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wunder-logo-mark:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px var(--primary-glow);
+}
+
+.wunder-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+  flex: 1;
+}
+
+.wunder-nav-item {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.wunder-nav-item:hover {
+  color: var(--fg-primary);
+  background-color: var(--bg-hover);
+}
+
+.wunder-nav-item.active {
+  color: var(--primary);
+  background-color: var(--bullish-bg);
+}
+
+.wunder-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -13px;
+  width: 4px;
+  height: 20px;
+  border-radius: 0 4px 4px 0;
+  background-color: var(--primary);
+}
+
+.wunder-nav-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.wunder-icon-btn {
+  background: transparent;
+}
+
+.wunder-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* 2. Secondary Contextual Sub-Sidebar (230px) */
+.wunder-nav-sub {
+  width: 230px;
+  min-width: 230px;
+  background-color: var(--bg-card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  gap: 18px;
+  overflow-y: auto;
+}
+
+.wunder-sub-header {
+  margin-bottom: 2px;
+}
+
+.wunder-sub-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fg-primary);
+}
+
+.wunder-sub-subtitle {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+
+.wunder-sub-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wunder-sub-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wunder-sub-link:hover {
+  background-color: var(--bg-hover);
+  color: var(--fg-primary);
+}
+
+.wunder-sub-link.active {
+  background-color: var(--bg-hover);
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+
+.wunder-sub-link-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  background-color: var(--bg-page);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+
+/* Sub-sidebar Watchlist */
+.wunder-sub-watchlist {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+
+.wunder-watchlist-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.wunder-watchlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wunder-watchlist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.wunder-watchlist-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.wunder-watchlist-coin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wunder-coin-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wunder-coin-sym {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.wunder-watchlist-prices {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.wunder-watchlist-price {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-primary);
+}
+
+.wunder-watchlist-change {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.color-bullish {
+  color: var(--bullish);
+}
+
+.color-bearish {
+  color: var(--bearish);
+}
+
+/* Environment Notice */
+.wunder-env-card {
+  background-color: var(--warning-bg);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wunder-env-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wunder-env-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.wunder-env-text {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.4;
+}
+
+/* 3. Main Wrapper */
+.wunder-main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.wunder-header {
+  height: 64px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  gap: 20px;
+  z-index: 40;
+}
+
+.wunder-header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.wunder-header-center {
+  flex: 1;
+  max-width: 440px;
+}
+
+.wunder-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wunder-search-box:hover {
+  border-color: var(--border-strong);
+  background-color: var(--bg-hover);
+}
+
+.wunder-search-placeholder {
+  font-size: 13px;
+  color: var(--fg-muted);
+  flex: 1;
+}
+
+.wunder-kbd {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  color: var(--fg-muted);
+}
+
+.wunder-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wunder-pill-env {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--warning-bg);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: var(--warning);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.wunder-pill-dot-warning {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--warning);
+}
+
+.wunder-pill-feed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bullish-bg);
+  border: 1px solid var(--bullish-border);
+  color: var(--bullish);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.wunder-deposit-btn {
+  font-weight: 600;
+}
+
+.wunder-header-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background-color: var(--bg-input);
+  color: var(--fg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.wunder-header-icon-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--fg-primary);
+  border-color: var(--border-strong);
+}
+
+.wunder-bell-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background-color: var(--bearish);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wunder-notifications-panel {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 320px;
+  background-color: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-strong);
+  z-index: 100;
+}
+
+.wunder-notifications-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.wunder-notifications-body {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.wunder-notification-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.15s ease;
+}
+
+.wunder-notification-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.wunder-header-user {
+  cursor: pointer;
+}
+
+.wunder-user-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--bg-hover);
+  border: 1px solid var(--border-strong);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Content Area */
+.wunder-content {
+  flex: 1;
+  overflow-y: auto;
+  background-color: var(--bg-page);
+}
+
+@media (max-width: 1024px) {
+  .wunder-nav-sub {
+    display: none;
+  }
+}

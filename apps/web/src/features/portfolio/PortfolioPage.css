@@ -30,7 +30,7 @@
 .portfolio__kpi {
   padding: 8px 12px;
   border: 1px solid var(--border-subtle);
-  background: var(--bg-secondary);
+  background: var(--bg-card);
 }
 
 .portfolio__kpi dt {

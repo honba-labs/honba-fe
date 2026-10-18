@@ -20,6 +20,16 @@ import {
   TradesTablePanel,
 } from '@honba/ui-core';
 import type { TabItem } from '@honba/ui-core';
+import {
+  LedgerHistory,
+  TaxReport,
+  PortfolioSnapshots,
+  PositionAuditTrail,
+  ConcentrationRisk,
+  WeightedAverageCost,
+  FeesReport,
+  PortfolioValueChart,
+} from '@honba/ui-core';
 
 import {
   useAccounts,
@@ -27,17 +37,44 @@ import {
   usePositions,
   usePortfolio,
   useTrades,
+  useLedgerHistory,
+  useTaxReport,
+  usePortfolioSnapshots,
+  usePositionAudit,
+  useConcentrationRisk,
+  useWeightedAverageCost,
+  useFeesReport,
+  useEquityCurve,
 } from '../../core/api/query';
 import { useNotifications } from '../../core/store/notifications';
 import type { Money, PortfolioPosition } from '../../core/types/messages';
 import './PortfolioPage.css';
 
-type PortfolioTab = 'accounts' | 'positions' | 'trades';
+type PortfolioTab =
+  | 'accounts'
+  | 'positions'
+  | 'trades'
+  | 'ledger'
+  | 'tax'
+  | 'snapshots'
+  | 'audit'
+  | 'concentration'
+  | 'wac'
+  | 'fees'
+  | 'equity-curve';
 
 const TABS: TabItem<PortfolioTab>[] = [
   { label: 'Accounts', value: 'accounts' },
   { label: 'Positions', value: 'positions' },
   { label: 'Trade History', value: 'trades' },
+  { label: 'Ledger', value: 'ledger' },
+  { label: 'Tax Report', value: 'tax' },
+  { label: 'Snapshots', value: 'snapshots' },
+  { label: 'Position Audit', value: 'audit' },
+  { label: 'Concentration', value: 'concentration' },
+  { label: 'Avg Cost', value: 'wac' },
+  { label: 'Fees', value: 'fees' },
+  { label: 'Equity Curve', value: 'equity-curve' },
 ];
 
 /** KPI-strip money formatting (`formatMoney` in ui-core renders `3150.00 INR`; the header
@@ -59,6 +96,16 @@ export function PortfolioPage() {
   const trades = useTrades();
   const closeAll = useClosePositions();
   const push = useNotifications((state) => state.push);
+
+  // Report hooks
+  const ledger = useLedgerHistory();
+  const taxReport = useTaxReport();
+  const snapshots = usePortfolioSnapshots();
+  const audit = usePositionAudit();
+  const concentration = useConcentrationRisk();
+  const wac = useWeightedAverageCost();
+  const fees = useFeesReport();
+  const equityCurve = useEquityCurve();
 
   const [tab, setTab] = useState<PortfolioTab>('accounts');
   const [closing, setClosing] = useState<PortfolioPosition | null>(null);
@@ -180,6 +227,78 @@ export function PortfolioPage() {
               <p className="portfolio__error">Trades failed: {(trades.error as Error).message}</p>
             )}
             <TradesTablePanel rows={trades.data?.trades ?? []} />
+          </>
+        )}
+
+        {tab === 'ledger' && (
+          <>
+            {ledger.error && (
+              <p className="portfolio__error">Ledger failed: {(ledger.error as Error).message}</p>
+            )}
+            <LedgerHistory />
+          </>
+        )}
+
+        {tab === 'tax' && (
+          <>
+            {taxReport.error && (
+              <p className="portfolio__error">Tax report failed: {(taxReport.error as Error).message}</p>
+            )}
+            <TaxReport />
+          </>
+        )}
+
+        {tab === 'snapshots' && (
+          <>
+            {snapshots.error && (
+              <p className="portfolio__error">Snapshots failed: {(snapshots.error as Error).message}</p>
+            )}
+            <PortfolioSnapshots />
+          </>
+        )}
+
+        {tab === 'audit' && (
+          <>
+            {audit.error && (
+              <p className="portfolio__error">Audit failed: {(audit.error as Error).message}</p>
+            )}
+            <PositionAuditTrail />
+          </>
+        )}
+
+        {tab === 'concentration' && (
+          <>
+            {concentration.error && (
+              <p className="portfolio__error">Concentration failed: {(concentration.error as Error).message}</p>
+            )}
+            <ConcentrationRisk />
+          </>
+        )}
+
+        {tab === 'wac' && (
+          <>
+            {wac.error && (
+              <p className="portfolio__error">WAC failed: {(wac.error as Error).message}</p>
+            )}
+            <WeightedAverageCost />
+          </>
+        )}
+
+        {tab === 'fees' && (
+          <>
+            {fees.error && (
+              <p className="portfolio__error">Fees failed: {(fees.error as Error).message}</p>
+            )}
+            <FeesReport />
+          </>
+        )}
+
+        {tab === 'equity-curve' && (
+          <>
+            {equityCurve.error && (
+              <p className="portfolio__error">Equity curve failed: {(equityCurve.error as Error).message}</p>
+            )}
+            <PortfolioValueChart />
           </>
         )}
       </div>

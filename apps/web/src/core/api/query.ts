@@ -8,8 +8,19 @@ import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/re
 
 import { createApiClient, HonbaApiError } from './client';
 import type { ApiClient } from './client';
-import type { DepthOptions, InstrumentsQuery } from './client';
+import type { DepthOptions, InstrumentsQuery, ReportsQuery } from './client';
 import type { InstrumentId, OrdersRequest, Profile, TradingState } from '../types/messages';
+import type {
+  LedgerHistoryResponse,
+  TaxReportResponse,
+  PortfolioSnapshotsResponse,
+  PositionAuditTrailResponse,
+  ConcentrationRiskResponse,
+  WeightedAverageCostResponse,
+  FeesReportResponse,
+  PortfolioValueChartResponse,
+  OrderFillsResponse,
+} from '../types/messages';
 
 export type { ApiClient } from './client';
 
@@ -157,15 +168,13 @@ export function useTrades() {
  * server-side per instrument, so accidental auto-scans are wasteful). */
 export function useScreenerScan(
   params: { universe: string; filters?: string; tf?: string; asOf?: string },
-  options: { enabled: boolean } = { enabled: true },
+  options: { enabled?: boolean; staleTime?: number } = { enabled: true, staleTime: Infinity },
 ) {
   return useQuery({
     queryKey: ['screener', params],
     queryFn: () => getApiClient().getScreenerScan(params),
-    enabled: options.enabled && params.universe.trim().length > 0,
-    // A scan is a fresh evaluation, not a live subscription: keep results for the session
-    // only, refetch exclusively on Run.
-    staleTime: Infinity,
+    enabled: (options.enabled ?? true) && params.universe.trim().length > 0,
+    staleTime: options.staleTime ?? Infinity,
   });
 }
 
@@ -270,5 +279,100 @@ export function useDeleteLayout() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.layouts() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.profile() });
     },
+  });
+}
+
+/** Reports query keys. */
+export const reportKeys = {
+  ledger: (params?: ReportsQuery) => ['reports', 'ledger', params ?? {}] as const,
+  tax: (params?: ReportsQuery) => ['reports', 'tax', params ?? {}] as const,
+  snapshots: (params?: ReportsQuery) => ['reports', 'snapshots', params ?? {}] as const,
+  audit: (params?: ReportsQuery) => ['reports', 'audit', params ?? {}] as const,
+  concentration: () => ['reports', 'concentration'] as const,
+  wac: () => ['reports', 'wac'] as const,
+  fees: (params?: ReportsQuery) => ['reports', 'fees', params ?? {}] as const,
+  equityCurve: (params?: ReportsQuery) => ['reports', 'equity-curve', params ?? {}] as const,
+  fills: (orderId: string, params?: ReportsQuery) => ['reports', 'fills', orderId, params ?? {}] as const,
+};
+
+/** `GET /reports/ledger` — Full transaction journal (trades, fees, transfers, adjustments). */
+export function useLedgerHistory(params?: ReportsQuery) {
+  return useQuery<LedgerHistoryResponse>({
+    queryKey: reportKeys.ledger(params),
+    queryFn: () => getApiClient().getLedgerHistory(params),
+    staleTime: 30_000,
+  });
+}
+
+/** `GET /reports/tax` — Realized gains/losses for India STCG/LTCG reporting. */
+export function useTaxReport(params?: ReportsQuery) {
+  return useQuery<TaxReportResponse>({
+    queryKey: reportKeys.tax(params),
+    queryFn: () => getApiClient().getTaxReport(params),
+    staleTime: 30_000,
+  });
+}
+
+/** `GET /reports/snapshots` — Point-in-time portfolio valuation history. */
+export function usePortfolioSnapshots(params?: ReportsQuery) {
+  return useQuery<PortfolioSnapshotsResponse>({
+    queryKey: reportKeys.snapshots(params),
+    queryFn: () => getApiClient().getPortfolioSnapshots(params),
+    staleTime: 30_000,
+  });
+}
+
+/** `GET /reports/audit` — Historical position-change log. */
+export function usePositionAudit(params?: ReportsQuery) {
+  return useQuery<PositionAuditTrailResponse>({
+    queryKey: reportKeys.audit(params),
+    queryFn: () => getApiClient().getPositionAudit(params),
+    staleTime: 30_000,
+  });
+}
+
+/** `GET /reports/concentration` — Exposure-by-instrument risk report. */
+export function useConcentrationRisk() {
+  return useQuery<ConcentrationRiskResponse>({
+    queryKey: reportKeys.concentration(),
+    queryFn: () => getApiClient().getConcentrationRisk(),
+    staleTime: 30_000,
+  });
+}
+
+/** `GET /reports/wac` — Weighted average cost basis per instrument. */
+export function useWeightedAverageCost() {
+  return useQuery<WeightedAverageCostResponse>({
+    queryKey: reportKeys.wac(),
+    queryFn: () => getApiClient().getWeightedAverageCost(),
+    staleTime: 30_000,
+  });
+}
+
+/** `GET /reports/fees` — Fees-paid-over-time report. */
+export function useFeesReport(params?: ReportsQuery) {
+  return useQuery<FeesReportResponse>({
+    queryKey: reportKeys.fees(params),
+    queryFn: () => getApiClient().getFeesReport(params),
+    staleTime: 30_000,
+  });
+}
+
+/** `GET /reports/equity-curve` — Historical net-worth/equity-curve chart data. */
+export function useEquityCurve(params?: ReportsQuery) {
+  return useQuery<PortfolioValueChartResponse>({
+    queryKey: reportKeys.equityCurve(params),
+    queryFn: () => getApiClient().getEquityCurve(params),
+    staleTime: 30_000,
+  });
+}
+
+/** `GET /reports/fills/:order_id` — Fills belonging to a single order. */
+export function useOrderFills(orderId: string, params?: ReportsQuery) {
+  return useQuery<OrderFillsResponse>({
+    queryKey: reportKeys.fills(orderId, params),
+    queryFn: () => getApiClient().getOrderFills(orderId, params),
+    enabled: orderId.trim().length > 0,
+    staleTime: 30_000,
   });
 }

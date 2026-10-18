@@ -9,6 +9,26 @@
 import { useState } from 'react';
 
 import { AppSettingsModal, type AppSettings } from '@honba/ui-core';
+import {
+  LedgerHistory,
+  TaxReport,
+  PortfolioSnapshots,
+  PositionAuditTrail,
+  ConcentrationRisk,
+  WeightedAverageCost,
+  FeesReport,
+  PortfolioValueChart,
+} from '@honba/ui-core';
+import {
+  useLedgerHistory,
+  useTaxReport,
+  usePortfolioSnapshots,
+  usePositionAudit,
+  useConcentrationRisk,
+  useWeightedAverageCost,
+  useFeesReport,
+  useEquityCurve,
+} from '../../core/api/query';
 
 import { useDeleteLayout, useLayouts, useProfile, usePutProfile } from '../../core/api/query';
 import type { Profile } from '../../core/types/messages';
@@ -27,6 +47,16 @@ export function SettingsPage() {
   const layouts = useLayouts();
   const putProfile = usePutProfile();
   const deleteLayout = useDeleteLayout();
+
+  // Report hooks
+  const ledger = useLedgerHistory();
+  const taxReport = useTaxReport();
+  const snapshots = usePortfolioSnapshots();
+  const audit = usePositionAudit();
+  const concentration = useConcentrationRisk();
+  const wac = useWeightedAverageCost();
+  const fees = useFeesReport();
+  const equityCurve = useEquityCurve();
 
   const [settings, setSettings] = useState<AppSettings>(readSettings(undefined));
   const [seededRevision, setSeededRevision] = useState<number | null>(null);
@@ -114,6 +144,56 @@ export function SettingsPage() {
           Credential management arrives with the honba-adapters contract (owner item, Batch I);
           nothing to configure today.
         </p>
+      </section>
+
+      <section className="settings__section" aria-label="Reports">
+        <h3>Portfolio Reports</h3>
+        <p className="settings__hint">
+          Historical and derived reporting widgets (Batch J). Each widget fetches from its
+          dedicated honba endpoint (`GET /reports/*`).
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 16, marginTop: 16 }}>
+          <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
+            <h4 style={{ marginBottom: 8 }}>Ledger History</h4>
+            {ledger.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(ledger.error as Error).message}</p>}
+            <LedgerHistory />
+          </div>
+          <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
+            <h4 style={{ marginBottom: 8 }}>Tax Report (STCG/LTCG)</h4>
+            {taxReport.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(taxReport.error as Error).message}</p>}
+            <TaxReport />
+          </div>
+          <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
+            <h4 style={{ marginBottom: 8 }}>Portfolio Snapshots</h4>
+            {snapshots.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(snapshots.error as Error).message}</p>}
+            <PortfolioSnapshots />
+          </div>
+          <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
+            <h4 style={{ marginBottom: 8 }}>Position Audit Trail</h4>
+            {audit.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(audit.error as Error).message}</p>}
+            <PositionAuditTrail />
+          </div>
+          <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
+            <h4 style={{ marginBottom: 8 }}>Concentration Risk</h4>
+            {concentration.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(concentration.error as Error).message}</p>}
+            <ConcentrationRisk />
+          </div>
+          <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
+            <h4 style={{ marginBottom: 8 }}>Weighted Average Cost</h4>
+            {wac.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(wac.error as Error).message}</p>}
+            <WeightedAverageCost />
+          </div>
+          <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
+            <h4 style={{ marginBottom: 8 }}>Fees Report</h4>
+            {fees.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(fees.error as Error).message}</p>}
+            <FeesReport />
+          </div>
+          <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
+            <h4 style={{ marginBottom: 8 }}>Equity Curve</h4>
+            {equityCurve.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(equityCurve.error as Error).message}</p>}
+            <PortfolioValueChart />
+          </div>
+        </div>
       </section>
 
       <AppSettingsModal

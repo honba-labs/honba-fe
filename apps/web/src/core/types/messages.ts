@@ -1,320 +1,17 @@
-// Batch H (docs/tasks.md): hand-written wire mirrors of the honba messages the FE consumes,
-// transcribed from `honba/schema/openapi/openapi.json` (which is generated from the Rust
-// `honba-kokoro-messages` crate) — the doc-gen'd-TS cutover from `honba-kao`/`honba`-codegen
-// (plan.md §3.4) hasn't been pointed at honba-fe yet, so these stand in until it is. Keep this
-// file a *mirror*: every type here must quote the schema file it came from and stay
-// name-compatible with the wire (snake_case), so a future swap to generated types is a
-// delete of this file, not a rename.
-//
-// Version pins are part of the contract: `ResponseEnvelope` rejects api/schema versions it
-// wasn't built for (honba-kokoro-messages/src/api.rs), and this client validates the same axes.
-// Pinned to what honba-ya currently serves: API_VERSION = "1.0.0", SCHEMA_VERSION = 4.
+// honba-fe — hand-written mirror of honba-kokoro-messages types
+// Source: honba/schema/openapi/openapi.json (API_VERSION 1.0.0, SCHEMA_VERSION 4)
+// Used by the thin typed client (core/api/client.ts) to avoid depending on generated code.
+
 export const API_VERSION = '1.0.0';
 export const SCHEMA_VERSION = 4;
 
-// --- Shared scalars (openapi.json) -----------------------------------------------------------
-
-/** `UnixNanos` — `{ iso, unix_nanos }` wire pair. */
 export interface UnixNanos {
-  iso: string;
+  /** Nanoseconds since epoch as a decimal string (avoids JS integer overflow). */
   unix_nanos: string;
+  /** ISO-8601 fallback when string parsing fails. */
+  iso?: string;
 }
 
-/** `Money` — integer minor units (paise for INR). */
-export interface Money {
-  amount: number;
-  currency: string;
-}
-
-/** `Exchange` — a plain string (`NSE`, `BSE`, …). */
-export type Exchange = string;
-
-/** `InstrumentId` — symbol + exchange. */
-export interface InstrumentId {
-  exchange: Exchange;
-  symbol: string;
-}
-
-/** Path form for endpoints taking `{id}` (`SYMBOL.EXCHANGE`; `parse_instrument_id` rsplit '.'). */
-export function instrumentIdPath(id: InstrumentId): string {
-  return `${id.symbol}.${id.exchange}`;
-}
-
-/** Canonical wire key for charts/stores (`exchange:symbol`); mirrors Rentropy-era conventions. */
-export function instrumentIdKey(id: InstrumentId): string {
-  return `${id.exchange}:${id.symbol}`;
-}
-
-// --- Market data (market.rs responses) -------------------------------------------------------
-
-/** `QuoteTick` — top-of-book quote. */
-export interface QuoteTick {
-  instrument_id: InstrumentId;
-  bid_price: number;
-  bid_size: number;
-  ask_price: number;
-  ask_size: number;
-  ts_event: UnixNanos;
-  ts_init: UnixNanos;
-}
-
-/** `DepthLevel` — one price level of the book. */
-export interface DepthLevel {
-  price: number;
-  size: number;
-  /** Number of resting orders at the level; absent when the source doesn't track it. */
-  orders?: number;
-}
-
-/** `GET /depth/{id}` response — bids best (highest) first, asks best (lowest) first. */
-export interface DepthResponse {
-  bids: DepthLevel[];
-  asks: DepthLevel[];
-}
-
-/** `InstrumentKind` — the `kind` vocabulary in `instrument_json` (honba-ya-api/market.rs). */
-export type InstrumentKind = 'equity' | 'etf' | 'bond' | 'ipo' | 'future' | 'option' | 'fx' | 'index' | 'mutual_fund' | 'other';
-
-/** Wire shape of a `GET /instruments` item (opaque to the server; see honba-ya-api/market.rs
- * `instrument_json`): id/kind/currency/lot_size/tick_size. */
-export interface Instrument {
-  id: InstrumentId;
-  kind: InstrumentKind;
-  currency: string;
-  lot_size: number;
-  tick_size: number;
-}
-
-// --- Orders (orders.rs) ----------------------------------------------------------------------
-
-/** `OrderStatus` lifecycle enum. */
-export type OrderStatus =
-  | 'initialized'
-  | 'submitted'
-  | 'accepted'
-  | 'partially_filled'
-  | 'filled'
-  | 'cancelled'
-  | 'rejected'
-  | 'expired';
-
-/** `OrderSide` — includes the record-only `no_order_side`. */
-export type OrderSide = 'buy' | 'sell' | 'no_order_side';
-
-/** `OrderType` — the fixed five honba types (no algo catalog). */
-export type OrderType = 'market' | 'limit' | 'stop_market' | 'stop_limit' | 'trailing_stop';
-
-/** `TimeInForce` — note honba's `gtd` (the ui-core OrderForm's draft union has no gtd yet). */
-export type TimeInForce = 'day' | 'gtc' | 'ioc' | 'fok' | 'gtd';
-
-/** `Product` — the holding-period vocabulary (ADR 0010). */
-export type Product = 'delivery' | 'intraday' | 'carry';
-
-/** `POST /orders` request — `OrdersRequest` verbatim (idempotency key = client_order_id). */
-export interface OrdersRequest {
-  instrument_id?: InstrumentId | null;
-  order_type?: OrderType | null;
-  price?: number | null;
-  qty?: number | null;
-  side?: 'buy' | 'sell' | null;
-  tif?: TimeInForce | null;
-  client_order_id?: string | null;
-}
-
-/** `Order` row (`GET /orders` → `OrdersResponse`); schema-quoted field-for-field. */
-export interface Order {
-  order_id: string;
-  instrument_id: InstrumentId;
-  side: OrderSide;
-  order_type: OrderType;
-  status: OrderStatus;
-  quantity: number;
-  /** Cumulative filled qty (0 until a fill; omitted from the wire while 0 — ADR 0012 rule 1). */
-  filled_qty?: number;
-  price?: number | null;
-  trigger_price?: number | null;
-  trail_amount?: number | null;
-  trail_percent?: number | null;
-  avg_fill_price?: number | null;
-  time_in_force?: TimeInForce;
-  product?: Product | null;
-  cancel_requested?: boolean;
-  reject_reason?: { code: string; message: string } | null;
-  filled_at?: UnixNanos | null;
-  ts_event: UnixNanos;
-  ts_init: UnixNanos;
-}
-
-// --- Positions & trades (portfolio.rs) -------------------------------------------------------
-
-/** `Currency` — the settlement-currency vocabulary (`INR`/`USD`/`EUR`/`GBP`). */
-export type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
-
-/** `PositionSide` — sign carried here, not in `quantity`. */
-export type PositionSide = 'long' | 'short' | 'no_position_side';
-
-/** `PortfolioPosition` — the valued open position (ADR 0032 §2). */
-export interface PortfolioPosition {
-  instrument_id: InstrumentId;
-  side: PositionSide;
-  /** Absolute quantity held. */
-  quantity: number;
-  avg_price: number;
-  mark: number;
-  market_value: Money;
-  realized_pnl: Money;
-  unrealized_pnl: Money;
-  product: Product;
-  group_name?: string | null;
-  strategy_id?: string | null;
-  tags?: string[];
-}
-
-/** `GET /portfolio/positions` response — `PortfolioPositionsResponse { positions }`. */
-export interface PortfolioPositionsResponse {
-  positions: PortfolioPosition[];
-}
-
-/** `PortfolioSource` — honba's own ledger vs. a broker-synced account (ADR 0032 §2). */
-export type PortfolioSource = 'ledger' | 'broker';
-
-/** `PortfolioHolding` — a delivery holding: carried position without an intraday side. */
-export interface PortfolioHolding {
-  instrument_id: InstrumentId;
-  /** Absolute quantity held. */
-  quantity: number;
-  avg_price: number;
-  mark: number;
-  market_value: Money;
-  realized_pnl: Money;
-  unrealized_pnl: Money;
-  group_name?: string | null;
-  tags?: string[];
-}
-
-/** `PortfolioGreeks` — net aggregate option Greeks (present when options are held). */
-export interface PortfolioGreeks {
-  delta: number;
-  gamma: number;
-  theta: number;
-  vega: number;
-}
-
-/** `PortfolioAccount` — cash, equity, margins and the positions it holds; required fields are
- * schema-quoted (`source`/`mode` discriminate ledger vs broker-synced, live vs sandbox). */
-export interface PortfolioAccount {
-  id: string;
-  name: string;
-  /** The broker this account is synced from, when `source` is `broker`. */
-  broker?: string | null;
-  mode: 'live' | 'sandbox';
-  currency: Currency;
-  /** Free cash. */
-  cash: Money;
-  /** Cash plus mark-to-market value of the open positions (and holdings). */
-  equity: Money;
-  /** Mark-to-market value of the open positions (and holdings). */
-  market_value: Money;
-  margin_used: Money;
-  margin_available: Money;
-  /** Account leverage, 1.0 when unlevered. */
-  leverage: number;
-  /** Summed realized PnL over the account's positions. */
-  realized_pnl: Money;
-  unrealized_pnl: Money;
-  source: PortfolioSource;
-  holdings: PortfolioHolding[];
-  positions: PortfolioPosition[];
-  greeks?: PortfolioGreeks | null;
-}
-
-/** `PortfolioTotals` — totals across every account (`GET /portfolio`'s `totals`). */
-export interface PortfolioTotals {
-  cash: Money;
-  equity: Money;
-  market_value: Money;
-  realized_pnl: Money;
-  unrealized_pnl: Money;
-  /** Realized plus unrealized. */
-  total_pnl: Money;
-}
-
-/** `GET /portfolio` response — `PortfolioSnapshot` (the valued, per-user portfolio). */
-export interface PortfolioSnapshot {
-  accounts: PortfolioAccount[];
-  as_of: UnixNanos;
-  base_currency: Currency;
-  /** The user this portfolio belongs to (`token_id` or `default`). */
-  owner: string;
-  /** Monotonic revision, bumped on every write. */
-  revision: number;
-  totals: PortfolioTotals;
-}
-
-/** `Trade` — a completed fill. */
-export interface Trade {
-  order_id: string;
-  instrument_id: InstrumentId;
-  side: 'buy' | 'sell';
-  quantity: number;
-  price: number;
-  costs: Money;
-  ts_event: UnixNanos;
-  ts_init: UnixNanos;
-}
-
-// --- Screener (screener.rs / honba-kokoro-entities screener.rs) -------------------------------
-
-/** One predicate of a screener filter group: `{key, op, value}` on the wire (`op` is honba-kokoro-entities'
- * snake_case `FilterOp` vocabulary: eq/neq/gt/gte/lt/lte/between/in/not_in/like/has/crosses_above/crosses_below). */
-export interface ScreenerFilterPredicate {
-  key: string;
-  op: string;
-  value?: unknown;
-}
-
-/** `{operator: 'AND'|'OR', items: [...]}`; items are predicates or nested groups. */
-export interface ScreenerFilterGroup {
-  operator: 'AND' | 'OR';
-  items: (ScreenerFilterPredicate | ScreenerFilterGroup)[];
-}
-
-/** `ScreenerResultRow` — one matching instrument with its requested metrics. */
-export interface ScreenerResultRow {
-  instrument_id: InstrumentId;
-  metrics: Record<string, number | null>;
-}
-
-/** `GET /screener/scan` response — `ScreenerResponse { rows }`. */
-export interface ScreenerResponse {
-  rows: ScreenerResultRow[];
-}
-
-// --- Profile (profile.rs) --------------------------------------------------------------------
-
-/** `GET/PUT /profile/layouts` — layouts by name, documents opaque to the server (dockview JSON). */
-export type LayoutDocument = Record<string, unknown>;
-
-/** `Profile` — everything stored for one user; revision is checked on `PUT` (optimistic). */
-export interface Profile {
-  layouts: Record<string, LayoutDocument>;
-  modules: Record<string, unknown>;
-  workbench: unknown;
-  preferences: unknown;
-  alerts: unknown;
-  shortlist: string[];
-  watchlists: Record<string, string[]>;
-  revision: number;
-}
-
-// --- Engine (trading_state.rs) ---------------------------------------------------------------
-
-/** `GET/PUT /trading-state` — active/reducing/halted operator switch. */
-export type TradingState = 'active' | 'reducing' | 'halted';
-
-// --- Errors & envelope (honba-kokoro-messages/src/{api,errors}.rs) ---------------------------
-
-/** `ErrorDetail` — every failure, REST responses and envelopes alike. */
 export interface ErrorDetail {
   code: string;
   message: string;
@@ -322,7 +19,510 @@ export interface ErrorDetail {
   context?: unknown;
 }
 
-/** `StreamFrame` (streams.rs): SSE frames on `GET /backtests/{id}/events`. */
-export type StreamFrame =
-  | { status: { status: string; seq: number; error?: ErrorDetail | null }; seq: number; kind: 'status' }
-  | { seq: number; message: unknown; kind: 'record' };
+export interface InstrumentId {
+  symbol: string;
+  exchange: string;
+}
+
+/** Convert `SYMBOL.EXCHANGE` → `{symbol, exchange}` for path params. */
+export function instrumentIdPath(id: InstrumentId): string {
+  return `${id.symbol}.${id.exchange}`;
+}
+
+/** Parse `SYMBOL.EXCHANGE` → `{symbol, exchange}`. */
+export function parseInstrumentId(path: string): InstrumentId {
+  const idx = path.lastIndexOf('.');
+  if (idx <= 0 || idx === path.length - 1) {
+    throw new Error(`invalid instrument id: ${path}`);
+  }
+  return { symbol: path.slice(0, idx), exchange: path.slice(idx + 1) };
+}
+
+/** Key function for map/object keys: `EXCHANGE:SYMBOL` (colon-separated, matches bfx-hf-ui-core convention). */
+export function instrumentIdKey(id: InstrumentId): string {
+  return `${id.exchange}:${id.symbol}`;
+}
+
+export interface Instrument {
+  instrument_id: InstrumentId;
+  /** Human-readable name (e.g., "TCS Ltd"). */
+  name?: string;
+  /** `equity` | `index` | `future` | `option` | ... */
+  kind?: string;
+  lot_size?: number;
+  tick_size?: number;
+  /** `true` if the instrument is tradable in the current session. */
+  tradable?: boolean;
+}
+
+export interface QuoteTick {
+  instrument_id: InstrumentId;
+  ts_event: UnixNanos;
+  bid_price?: number;
+  bid_size?: number;
+  ask_price?: number;
+  ask_size?: number;
+  last_price?: number;
+  last_size?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
+  volume?: number;
+  change_pct?: number;
+}
+
+export interface DepthLevel {
+  price: number;
+  size: number;
+  order_count?: number;
+}
+
+export interface DepthResponse {
+  instrument_id: InstrumentId;
+  ts_event: UnixNanos;
+  bids: DepthLevel[];
+  asks: DepthLevel[];
+}
+
+export type OrderSideValue = 'buy' | 'sell';
+
+export type OrderTypeValue = 'market' | 'limit' | 'stop_limit';
+
+export type TimeInForceValue = 'day' | 'ioc' | 'gtc' | 'gtd';
+
+export interface OrdersRequest {
+  client_order_id: string;
+  instrument_id: InstrumentId;
+  side: OrderSideValue;
+  type: OrderTypeValue;
+  quantity: number;
+  price?: number;
+  trigger_price?: number;
+  time_in_force?: TimeInForceValue;
+  /** ISO date for GTD orders. */
+  expire_date?: string;
+  /** Strategy/order algo metadata (optional). */
+  meta?: Record<string, unknown>;
+}
+
+export interface Order {
+  order_id: string;
+  client_order_id: string;
+  instrument_id: InstrumentId;
+  side: OrderSideValue;
+  type: OrderTypeValue;
+  quantity: number;
+  price?: number;
+  trigger_price?: number;
+  filled_quantity: number;
+  avg_fill_price?: number;
+  status: 'open' | 'partial' | 'filled' | 'cancelled' | 'rejected' | 'expired';
+  time_in_force: TimeInForceValue;
+  expire_date?: string;
+  ts_init: UnixNanos;
+  ts_event: UnixNanos;
+  meta?: Record<string, unknown>;
+}
+
+export interface PortfolioAccount {
+  account_id: string;
+  name: string;
+  currency: string;
+  mode: 'live' | 'sandbox' | 'paper';
+  /** Total equity (cash + positions mark-to-market). */
+  equity: number;
+  /** Available cash for new orders. */
+  available_cash: number;
+  /** Initial deposit / capital. */
+  initial_capital?: number;
+}
+
+export interface PortfolioPosition {
+  instrument_id: InstrumentId;
+  quantity: number;
+  avg_price: number;
+  current_price: number;
+  unrealized_pnl: number;
+  realized_pnl: number;
+  market_value: number;
+  side: 'long' | 'short';
+  ts_open: UnixNanos;
+}
+
+export interface PortfolioPositionsResponse {
+  positions: PortfolioPosition[];
+}
+
+export interface PortfolioSnapshot {
+  accounts: PortfolioAccount[];
+  positions: PortfolioPosition[];
+  /** Totals across all accounts. */
+  total_equity: number;
+  total_unrealized_pnl: number;
+  total_realized_pnl: number;
+  total_cash: number;
+}
+
+export interface Trade {
+  trade_id: string;
+  order_id: string;
+  instrument_id: InstrumentId;
+  side: OrderSideValue;
+  price: number;
+  quantity: number;
+  costs: { amount: number; currency: string };
+  ts_event: UnixNanos;
+  ts_init: UnixNanos;
+}
+
+export interface ScreenerFilterItem {
+  key: string;
+  op: string;
+  value: string | number | [number, number];
+}
+
+export interface ScreenerFilterGroup {
+  operator: 'AND' | 'OR';
+  items: (ScreenerFilterItem | ScreenerFilterGroup)[];
+}
+
+export type Timeframe =
+  | '1m' | '5m' | '15m' | '30m'
+  | '1h' | '2h' | '4h'
+  | '1d' | '1w' | '1M';
+
+export type TimeframeValue = Timeframe;
+
+export interface ScreenerRow {
+  instrument_id: InstrumentId;
+  /** Metric key → value (e.g., "rsi": 65.2, "sma_20": 1500). */
+  metrics: Record<string, number | string | null>;
+  /** Optional sector/industry metadata for grouping/filtering. */
+  sector?: string;
+}
+
+export interface ScreenerResponse {
+  rows: ScreenerRow[];
+  /** Metric keys returned for this scan. */
+  metric_keys: string[];
+}
+
+export interface TradingState {
+  /** Global kill switch — when `true`, new order placement is rejected. */
+  trading_halted: boolean;
+  /** Per-account overrides (optional). */
+  accounts?: Record<string, { trading_halted: boolean }>;
+  /** Max notional per order (in account currency). */
+  max_notional_per_order?: number;
+  /** Max position size per instrument (in lots). */
+  max_position_per_instrument?: number;
+  /** Max drawdown from peak equity (fraction, e.g., 0.1 = 10%). */
+  max_drawdown_pct?: number;
+  /** Max orders per minute per account. */
+  max_order_rate_per_minute?: number;
+}
+
+export interface Profile {
+  revision: number;
+  preferences: Record<string, unknown>;
+  layouts: Record<string, LayoutDocument>;
+}
+
+export interface LayoutDocument {
+  version: number;
+  /** Serialized dockview state. */
+  document: unknown;
+  updated_at: string;
+}
+
+export interface BacktestMetrics {
+  total_return?: number;
+  sharpe?: number;
+  max_drawdown?: number;
+  net_pnl?: number;
+  trades?: number;
+}
+
+export interface BacktestResponse {
+  run_id?: string;
+  status?: 'idle' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  metrics?: BacktestMetrics;
+  error?: ErrorDetail | null;
+  /** Validation badges (DSR/PBO) — server-side computed. */
+  validation?: {
+    dsr_passed?: boolean;
+    pbo_passed?: boolean;
+  };
+  /** Assumptions the backtest engine did NOT model. */
+  assumptions?: {
+    not_modelled?: string[];
+  };
+  start_date?: string;
+  end_date?: string;
+}
+
+export type RunStatus = 'idle' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+
+export interface Event {
+  type: string;
+  [key: string]: unknown;
+}
+
+export interface Message {
+  event: Event;
+  [key: string]: unknown;
+}
+
+export interface StreamFrame {
+  kind: 'status' | 'record';
+  seq: number;
+  status?: RunStatus;
+  error?: ErrorDetail;
+  message?: Message;
+}
+
+export interface Bar {
+  ts_event: UnixNanos;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
+}
+
+export interface BarsResponse {
+  bars: Bar[];
+}
+
+export interface TradesResponse {
+  trades: Trade[];
+}
+
+// ===== Batch J: Reporting Types =====
+
+export interface ReportsQuery {
+  page?: number;
+  page_size?: number;
+  from?: string | number;
+  to?: string | number;
+  search?: string;
+  instrument?: string;
+}
+
+export interface LedgerEntry {
+  id: string;
+  ts_event: UnixNanos;
+  date: string;
+  category: string;
+  description: string;
+  currency: string;
+  amount: number;
+  amount_usd?: number;
+  balance: number;
+  balance_usd?: number;
+  wallet?: string;
+  instrument?: string;
+  side?: 'buy' | 'sell';
+  fees?: number;
+}
+
+export interface LedgerHistoryResponse {
+  entries: LedgerEntry[];
+  total_count: number;
+}
+
+export interface TaxTransaction {
+  id: string;
+  ts_event: UnixNanos;
+  date: string;
+  instrument: string;
+  symbol: string;
+  exchange: string;
+  side: 'buy' | 'sell';
+  quantity: number;
+  buy_price: number;
+  sell_price: number;
+  buy_date: string;
+  sell_date: string;
+  holding_period_days: number;
+  gain_loss: number;
+  gain_loss_usd?: number;
+  stcg: number;
+  ltcg: number;
+  stt: number;
+  stamp_duty: number;
+  exchange_charges: number;
+  sebi_fees: number;
+  gst: number;
+  total_charges: number;
+  net_gain_loss: number;
+  tax_liability: number;
+  category: 'STCG' | 'LTCG' | 'Exempt';
+}
+
+export interface TaxReportSummary {
+  total_stcg: number;
+  total_ltcg: number;
+  total_stt: number;
+  total_stamp_duty: number;
+  total_exchange_charges: number;
+  total_sebi_fees: number;
+  total_gst: number;
+  total_net_gain_loss: number;
+  total_tax_liability: number;
+}
+
+export interface TaxReportResponse {
+  transactions: TaxTransaction[];
+  total_count: number;
+  summary: TaxReportSummary;
+}
+
+export interface SnapshotEntry {
+  id: string;
+  ts_event: UnixNanos;
+  date: string;
+  total_equity: number;
+  total_cash: number;
+  positions_value: number;
+  unrealized_pnl: number;
+  realized_pnl: number;
+  day_change: number;
+  day_change_pct: number;
+  accounts: number;
+  positions: number;
+}
+
+export interface PortfolioSnapshotsResponse {
+  snapshots: SnapshotEntry[];
+  total_count: number;
+}
+
+export interface AuditEntry {
+  id: string;
+  ts_event: UnixNanos;
+  date: string;
+  instrument: string;
+  side: 'buy' | 'sell';
+  quantity_change: number;
+  price: number;
+  position_after: number;
+  avg_price_after: number;
+  realized_pnl: number;
+  order_id: string;
+  reason: string;
+}
+
+export interface PositionAuditTrailResponse {
+  entries: AuditEntry[];
+  total_count: number;
+}
+
+export interface ConcentrationEntry {
+  instrument: string;
+  symbol: string;
+  exchange: string;
+  market_value: number;
+  pct_of_portfolio: number;
+  quantity: number;
+  avg_price: number;
+  mark: number;
+  unrealized_pnl: number;
+  realized_pnl: number;
+  sector?: string;
+}
+
+export interface ConcentrationRiskResponse {
+  entries: ConcentrationEntry[];
+  total_portfolio_value: number;
+  hhi: number;
+  top5_concentration: number;
+  top10_concentration: number;
+}
+
+export interface WACEntry {
+  instrument: string;
+  symbol: string;
+  exchange: string;
+  quantity: number;
+  weighted_avg_cost: number;
+  mark: number;
+  market_value: number;
+  unrealized_pnl: number;
+  realized_pnl: number;
+  total_cost_basis: number;
+  total_proceeds: number;
+}
+
+export interface WeightedAverageCostResponse {
+  entries: WACEntry[];
+}
+
+export interface FeeEntry {
+  id: string;
+  ts_event: UnixNanos;
+  date: string;
+  fee_type: string;
+  instrument?: string;
+  amount: number;
+  currency: string;
+  order_id?: string;
+}
+
+export interface FeeTypeSummary {
+  fee_type: string;
+  total_amount: number;
+  count: number;
+}
+
+export interface FeesReportResponse {
+  entries: FeeEntry[];
+  total_count: number;
+  by_type: FeeTypeSummary[];
+}
+
+export interface EquityPoint {
+  ts_event: UnixNanos;
+  date: string;
+  equity: number;
+  cash: number;
+  positions_value: number;
+  unrealized_pnl: number;
+  realized_pnl: number;
+  drawdown: number;
+  drawdown_pct: number;
+}
+
+export interface EquityCurveSummary {
+  start_equity: number;
+  end_equity: number;
+  total_return: number;
+  total_return_pct: number;
+  max_drawdown: number;
+  max_drawdown_pct: number;
+  sharpe?: number;
+}
+
+export interface PortfolioValueChartResponse {
+  points: EquityPoint[];
+  summary: EquityCurveSummary;
+}
+
+export interface FillEntry {
+  id: string;
+  order_id: string;
+  ts_event: UnixNanos;
+  date: string;
+  instrument: string;
+  side: 'buy' | 'sell';
+  quantity: number;
+  price: number;
+  costs: number;
+  currency: string;
+}
+
+export interface OrderFillsResponse {
+  fills: FillEntry[];
+  total_count: number;
+}

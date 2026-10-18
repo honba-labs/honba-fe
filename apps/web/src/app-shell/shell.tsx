@@ -32,7 +32,8 @@ import '../styles/base.css';
 // The app switcher's "apps" mirror the router in main.tsx (routes already exist as
 // placeholders). Same order as the reference Navbar's Routes + honba's app set.
 const APPS = [
-  { path: '/', label: 'Screener' },
+  { path: '/', label: 'Portfolio' },
+  { path: '/screener', label: 'Screener' },
   { path: '/workbench', label: 'Workbench' },
   { path: '/algodesigner', label: 'AlgoDesigner' },
   { path: '/simulator', label: 'Simulator' },

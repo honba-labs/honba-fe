@@ -28,6 +28,21 @@ import type {
   TradingState,
   Trade,
   ErrorDetail,
+  Bar,
+  BarsResponse,
+  BacktestResponse,
+  RunStatus,
+  StreamFrame,
+  TradesResponse,
+  LedgerHistoryResponse,
+  TaxReportResponse,
+  PortfolioSnapshotsResponse,
+  PositionAuditTrailResponse,
+  ConcentrationRiskResponse,
+  WeightedAverageCostResponse,
+  FeesReportResponse,
+  PortfolioValueChartResponse,
+  OrderFillsResponse,
 } from '../types/messages';
 
 /** An honba failure, normalized to `ErrorDetail` wherever the failure came from (error
@@ -90,6 +105,15 @@ export interface InstrumentsQuery {
 export interface DepthOptions {
   /** Number of levels per side. */
   depth?: number;
+}
+
+export interface ReportsQuery {
+  page?: number;
+  page_size?: number;
+  from?: string | number;
+  to?: string | number;
+  search?: string;
+  instrument?: string;
 }
 
 function buildUrl(baseUrl: string, path: string, params?: Record<string, string | number | undefined>): URL {
@@ -189,17 +213,56 @@ export interface ApiClient {
   putLayout(name: string, document: LayoutDocument): Promise<unknown>;
   deleteLayout(name: string): Promise<unknown>;
 
+  // Reports endpoints (Batch J)
+  /** `GET /reports/ledger` — Full transaction journal */
+  getLedgerHistory(params?: ReportsQuery): Promise<LedgerHistoryResponse>;
+  /** `GET /reports/tax` — Realized gains/losses for India STCG/LTCG */
+  getTaxReport(params?: ReportsQuery): Promise<TaxReportResponse>;
+  /** `GET /reports/snapshots` — Point-in-time portfolio valuation history */
+  getPortfolioSnapshots(params?: ReportsQuery): Promise<PortfolioSnapshotsResponse>;
+  /** `GET /reports/audit` — Historical position-change log */
+  getPositionAudit(params?: ReportsQuery): Promise<PositionAuditTrailResponse>;
+  /** `GET /reports/concentration` — Exposure-by-instrument risk report */
+  getConcentrationRisk(): Promise<ConcentrationRiskResponse>;
+  /** `GET /reports/wac` — Weighted average cost basis per instrument */
+  getWeightedAverageCost(): Promise<WeightedAverageCostResponse>;
+  /** `GET /reports/fees` — Fees-paid-over-time report */
+  getFeesReport(params?: ReportsQuery): Promise<FeesReportResponse>;
+  /** `GET /reports/equity-curve` — Historical net-worth/equity-curve chart data */
+  getEquityCurve(params?: ReportsQuery): Promise<PortfolioValueChartResponse>;
+  /** `GET /reports/fills/:order_id` — Fills belonging to a single order */
+  getOrderFills(orderId: string, params?: ReportsQuery): Promise<OrderFillsResponse>;
+
   // Strategy/AlgoDesigner endpoints
   /** `POST /strategies/verify` — verify a strategy manifest and return compiled IR */
   postStrategiesVerify(manifest: unknown): Promise<{ data?: unknown; error?: unknown }>;
+  /** `POST /strategies/compile` — compile a strategy graph to a strategy_id */
+  postStrategiesCompile(graph: unknown): Promise<{ data?: { strategy_id: string }; error?: unknown }>;
   /** `POST /backtests` — run a backtest */
   postBacktests(params: {
     strategy: string;
     universe: string;
     seed: number;
-  }): Promise<{ data?: { run_id?: string; status?: string; metrics?: unknown; error?: unknown }; error?: unknown }>;
+    start?: string;
+    end?: string;
+    bar_spec?: string;
+    fill_model?: string;
+    initial_capital?: number;
+    commission_per_fill?: number;
+    slippage_bps?: number;
+  }): Promise<{ data?: BacktestResponse; error?: unknown }>;
+  /** `GET /backtests/{id}` — poll backtest status */
+  getBacktestsById(id: string): Promise<{ data?: BacktestResponse }>;
+  /** `GET /backtests/{id}/journal` — get fills/trades for a completed run */
+  getBacktestsByIdJournal(id: string): Promise<{ data?: TradesResponse }>;
+  /** `GET /backtests/{id}/events` — SSE stream for run events */
+  streamBacktestEvents(id: string, query?: { resume_from_seq?: number }): AsyncGenerator<StreamFrame, void, unknown>;
   /** `PUT /profile/layouts/{name}` — save a layout preset (used for strategy library) */
   putProfileLayoutsByName(name: string, manifest: unknown): Promise<unknown>;
+
+  // Bars endpoint (for Simulator chart)
+  /** `GET /bars/{id}` — get historical bars for an instrument */
+  getBarsById(id: string, query?: { from?: string; tf?: string; to?: string }): Promise<{ data?: BarsResponse }>;
 }
 
 /**
@@ -333,14 +396,89 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     deleteLayout(name) {
       return request('DELETE', `/profile/layouts/${encodeURIComponent(name)}`);
     },
+    getLedgerHistory(params) {
+      return request<LedgerHistoryResponse>('GET', '/reports/ledger', params as Record<string, string | number | undefined>);
+    },
+    getTaxReport(params) {
+      return request<TaxReportResponse>('GET', '/reports/tax', params as Record<string, string | number | undefined>);
+    },
+    getPortfolioSnapshots(params) {
+      return request<PortfolioSnapshotsResponse>('GET', '/reports/snapshots', params as Record<string, string | number | undefined>);
+    },
+    getPositionAudit(params) {
+      return request<PositionAuditTrailResponse>('GET', '/reports/audit', params as Record<string, string | number | undefined>);
+    },
+    getConcentrationRisk() {
+      return request<ConcentrationRiskResponse>('GET', '/reports/concentration');
+    },
+    getWeightedAverageCost() {
+      return request<WeightedAverageCostResponse>('GET', '/reports/wac');
+    },
+    getFeesReport(params) {
+      return request<FeesReportResponse>('GET', '/reports/fees', params as Record<string, string | number | undefined>);
+    },
+    getEquityCurve(params) {
+      return request<PortfolioValueChartResponse>('GET', '/reports/equity-curve', params as Record<string, string | number | undefined>);
+    },
+    getOrderFills(orderId, params) {
+      return request<OrderFillsResponse>('GET', `/reports/fills/${encodeURIComponent(orderId)}`, params as Record<string, string | number | undefined>);
+    },
     postStrategiesVerify(manifest) {
       return request('POST', '/strategies/verify', undefined, manifest);
+    },
+    postStrategiesCompile(graph) {
+      return request('POST', '/strategies/compile', undefined, graph);
+    },
+    putProfileLayoutsByName(name, manifest) {
+      return request('PUT', `/profile/layouts/${encodeURIComponent(name)}`, undefined, manifest);
     },
     postBacktests(params) {
       return request('POST', '/backtests', undefined, params);
     },
-    putProfileLayoutsByName(name, manifest) {
-      return request('PUT', `/profile/layouts/${encodeURIComponent(name)}`, undefined, manifest);
+    getBacktestsById(id) {
+      return request('GET', `/backtests/${encodeURIComponent(id)}`);
+    },
+    getBacktestsByIdJournal(id) {
+      return request('GET', `/backtests/${encodeURIComponent(id)}/journal`);
+    },
+    async *streamBacktestEvents(id, query) {
+      const url = buildUrl(baseUrl, `/backtests/${encodeURIComponent(id)}/events`, query as Record<string, string | number>);
+      const response = await fetchImpl(url.toString(), {
+        headers: { accept: 'text/event-stream' },
+      });
+      if (!response.ok) {
+        throw new HonbaApiError({
+          code: 'transport_error',
+          message: `SSE connection failed: ${response.status}`,
+          retryable: true,
+        });
+      }
+      const reader = response.body?.getReader();
+      if (!reader) return;
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const frame = JSON.parse(line.slice(6)) as StreamFrame;
+              yield frame;
+            } catch {
+              // Ignore parse errors
+            }
+          }
+        }
+      }
+    },
+    getBarsById(id, query) {
+      return request('GET', `/bars/${encodeURIComponent(id)}`, query as Record<string, string>);
     },
   };
 }

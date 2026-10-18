@@ -1,0 +1,384 @@
+.markets-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.markets-header-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.markets-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--fg-primary);
+}
+
+.markets-subtitle {
+  font-size: 13px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+
+/* 1. Metric Grid */
+.markets-metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 16px;
+}
+
+.markets-cap-card,
+.markets-fear-card,
+.markets-trending-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.markets-cap-head {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.markets-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.markets-card-sub {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.markets-cap-val-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.markets-cap-val {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--fg-primary);
+}
+
+.markets-cap-chart {
+  margin-top: auto;
+}
+
+/* Fear Greed Gauge */
+.fear-greed-gauge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.fear-greed-score-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -24px;
+  margin-bottom: 8px;
+}
+
+.fear-greed-score {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--fg-primary);
+  line-height: 1;
+}
+
+.fear-greed-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 2px;
+}
+
+.fear-greed-legend {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+
+/* Trending Coins */
+.markets-card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.markets-viewall-btn {
+  font-size: 12px;
+  color: var(--fg-secondary);
+  cursor: pointer;
+}
+.markets-viewall-btn:hover {
+  color: var(--primary);
+}
+
+.markets-trending-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.markets-trending-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  font-size: 11px;
+  color: var(--fg-muted);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.markets-trending-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.markets-trending-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.markets-trending-coin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.markets-trending-sym {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.markets-trending-price {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--fg-primary);
+}
+
+.markets-trending-spark {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Majors Grid */
+.markets-majors-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.markets-majors-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.markets-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.markets-viewall-link {
+  font-size: 12px;
+  color: var(--fg-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.markets-viewall-link:hover {
+  color: var(--primary);
+}
+
+.markets-majors-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.markets-major-card {
+  padding: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s ease;
+}
+
+.markets-major-card:hover {
+  border-color: var(--border-strong);
+}
+
+.markets-major-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.markets-major-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.markets-major-sym {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.markets-major-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.markets-major-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fg-primary);
+}
+
+/* Table Section */
+.markets-table-section {
+  padding: 20px;
+}
+
+.markets-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.markets-table-filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.markets-filter-pill {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--fg-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.markets-filter-pill:hover {
+  color: var(--fg-primary);
+  border-color: var(--border);
+}
+
+.markets-filter-pill.active {
+  background-color: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.markets-table-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  height: 36px;
+  width: 240px;
+}
+
+.markets-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--fg-primary);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  width: 100%;
+}
+
+.markets-table-scroll {
+  overflow-x: auto;
+}
+
+.markets-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.markets-table th {
+  padding: 10px 12px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.markets-table-row {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.15s ease;
+}
+
+.markets-table-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.markets-table td {
+  padding: 12px;
+  white-space: nowrap;
+}
+
+.markets-table-coin-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.markets-coin-name {
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.markets-coin-sym {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+@media (max-width: 1200px) {
+  .markets-metric-grid {
+    grid-template-columns: 1fr;
+  }
+  .markets-majors-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
