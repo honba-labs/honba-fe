@@ -48,7 +48,7 @@ function renderDashboard() {
 }
 
 describe('ComponentDashboard', () => {
-  it('renders the six batch sections and the overview header', () => {
+  it('renders the seven batch sections and the overview header', () => {
     renderDashboard();
     expect(screen.getByRole('heading', { name: 'Component dashboard' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Batch A — UI primitives' })).toBeInTheDocument();
@@ -57,6 +57,7 @@ describe('ComponentDashboard', () => {
     expect(screen.getByRole('heading', { name: 'Batch D — Trading widgets' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Batch E — Strategy widgets' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Batch F — Shell chrome' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Batch G — Modals' })).toBeInTheDocument();
   });
 
   it('exposes each batch in the section nav', () => {
@@ -69,6 +70,7 @@ describe('ComponentDashboard', () => {
       'Trading widgets',
       'Strategy widgets',
       'Shell chrome',
+      'Modals',
     ]) {
       // The nav label is the section title minus its batch prefix.
       expect(nav.textContent).toContain(label);
@@ -126,6 +128,21 @@ describe('ComponentDashboard', () => {
     // tile also renders a Button labelled "Close", so role-queries collide — query the class.
     fireEvent.click(document.querySelector('.hb-modal__close')!);
     expect(screen.queryByText('Edit order ORD-182')).not.toBeInTheDocument();
+  });
+
+  it('renders live modal (Batch G) widgets — intents flow out, dialogs are named', () => {
+    renderDashboard();
+    // ClosePositionModal demo: confirming records the intent payload and closes the modal.
+    fireEvent.click(screen.getByRole('button', { name: 'Open close-position' }));
+    expect(screen.getByText(/Are you sure you want to close/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    expect(screen.getByText(/"action": "close-position"/)).toBeInTheDocument();
+    expect(screen.queryByText(/Are you sure you want to close/)).not.toBeInTheDocument();
+
+    // Batch G's Modal accessible-name fix: the dialog is addressable by its title.
+    fireEvent.click(screen.getByRole('button', { name: 'Open app settings' }));
+    expect(screen.getByRole('dialog', { name: 'App settings' })).toBeInTheDocument();
+    expect(screen.getAllByRole('radio', { name: '24-hour' })).toHaveLength(1);
   });
 
   it('keeps demo state isolated when navigating sections', () => {
