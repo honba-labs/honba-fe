@@ -9,9 +9,10 @@ import type { ReactNode } from 'react';
 
 import { createApiClient, type ApiClient } from '../../core/api/client';
 import { createQueryClient, setApiClient } from '../../core/api/query';
-import type { DepthResponse, Instrument } from '../../core/types/messages';
+import type { DepthResponse, Instrument, Order as WireOrder } from '../../core/types/messages';
 import { useMarketStore } from '../../core/store/market';
 import { useConnectionStore } from '../../core/store/connection';
+import { useOrdersStore } from '../../core/store/orders';
 import { LiveSocket } from '../../core/ws/socket';
 import { setLiveSocket } from '../../core/liveSocket';
 import { WorkbenchPage } from './WorkbenchPage';
@@ -120,5 +121,95 @@ describe('WorkbenchPage (Batch H end-to-end slice)', () => {
     fireEvent.click(screen.getByText('NSE:RELIANCE'));
     await waitFor(() => expect(useConnectionStore.getState().status).toBe('reconnecting'));
     expect(screen.getByText(/Reconnecting…/)).toBeInTheDocument();
+  });
+});
+
+// --- Batch I slice 2: order entry (ticket → POST /orders, orders panel, cancel) -----------------
+// Table containers need sized stubs for @tanstack/react-virtual (same tolerances as the
+// component-dashboard test).
+beforeEach(() => {
+  class ResizeObserverStub {
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+  }
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver;
+  }
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, value: 600 });
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, value: 600 });
+  useOrdersStore.getState().reset();
+});
+
+const WORKING_ORDER: WireOrder = {
+  order_id: 'ord-1',
+  instrument_id: { exchange: 'NSE', symbol: 'RELIANCE' },
+  side: 'buy',
+  order_type: 'limit',
+  status: 'accepted',
+  quantity: 10,
+  price: 2950,
+  time_in_force: 'day',
+  ts_event: { iso: '2026-10-19T04:00:00Z', unix_nanos: '1760846400000000000' },
+  ts_init: { iso: '2026-10-19T04:00:00Z', unix_nanos: '1760846400000000000' },
+};
+
+describe('WorkbenchPage order entry (Batch I slice 2)', () => {
+  it('reconciles the orders store from GET /orders and cancels a working order via DELETE', async () => {
+    const client = stubbedStack({
+      getOrders: vi.fn().mockResolvedValue({ orders: [WORKING_ORDER] }),
+      deleteOrder: vi.fn().mockResolvedValue({ status: 'cancelled' }),
+    });
+    setLiveSocket(new LiveSocket({ client, quoteIntervalMs: 60_000, depthIntervalMs: 60_000 }));
+    renderPage();
+
+    // The orders panel shows the snapshot row.
+    expect(await screen.findByText('ord-1')).toBeInTheDocument();
+    // Store reconciled from the snapshot too (the fill/cancel-path subscribers' target).
+    expect(useOrdersStore.getState().orderIds).toEqual(['ord-1']);
+
+    // Cancel control → DELETE /orders/{id}.
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+    await waitFor(() => expect(client.deleteOrder).toHaveBeenCalledWith('ord-1'));
+  });
+
+  it('submits the order ticket through POST /orders and upserts the returned row', async () => {
+    const placedOrder: WireOrder = {
+      ...WORKING_ORDER,
+      order_id: 'ord-2',
+      status: 'accepted',
+    };
+    const postOrder = vi.fn().mockResolvedValue(placedOrder);
+    const client = stubbedStack({ postOrder });
+    setLiveSocket(new LiveSocket({ client, quoteIntervalMs: 60_000, depthIntervalMs: 60_000 }));
+    renderPage();
+
+    // Need a selected instrument before the ticket renders.
+    fireEvent.click(await openMarketSelect());
+    fireEvent.click(screen.getByText('NSE:RELIANCE'));
+
+    // Fill the ticket: Buy, market order, 10 lots (default order type is Market so no
+    // dropdown interaction needed; ui-core Input labels are <p>, so find by placeholder).
+    fireEvent.click(screen.getByLabelText('Buy'));
+    const qty = screen.getByPlaceholderText('Qty');
+    fireEvent.change(qty, { target: { value: '10' } });
+
+    fireEvent.submit(screen.getByRole('button', { name: 'Buy' }).closest('form')!);
+
+    // Wire body: draft → OrdersRequest (client_order_id auto-generated as idempotency key).
+    await waitFor(() => expect(postOrder).toHaveBeenCalledTimes(1));
+    const body = postOrder.mock.calls[0][0];
+    expect(body).toMatchObject({
+      instrument_id: { exchange: 'NSE', symbol: 'RELIANCE' },
+      side: 'buy',
+      order_type: 'market',
+      qty: 10,
+      tif: 'day',
+    });
+    expect(body.client_order_id).toBeTruthy();
+
+    // The row lands in the store (upsert) and the open-orders panel.
+    await waitFor(() => expect(useOrdersStore.getState().orderIds).toContain('ord-2'));
+    expect(await screen.findByText('ord-2')).toBeInTheDocument();
   });
 });
