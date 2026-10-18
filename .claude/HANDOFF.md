@@ -1,75 +1,93 @@
-# honba-fe handoff (2026-10-18, late evening) — resume: Batch F (app shell & layout chrome)
+# honba-fe handoff (2026-10-19, early) — resume: Batch G (modals)
 
-## State: Batches A–E done and committed. The component dashboard (/components) shows batches A–E. Nothing below is pushed.
+## State: Batches A–F done and committed. The component dashboard (/components) shows batches A–F. Nothing below is pushed.
 
-Last committed state on top of `0f32c10` ("Batch D complete, resume at Batch E"):
+Last committed state on top of `8199609` ("Update handoff note: Batch E complete, resume at Batch F"):
 
 ```
-4b51514 Add Batch E strategy/backtest widgets to ui-core (PerformanceMetrics, StrategyTradesTable, StrategiesListTable, BacktestOptionsPanel, BacktestProgressBar) — based on src/components/{StrategyPerfomanceMetrics,StrategyTradesTable,StrategiesListTable,BacktestOptionsPanel,BacktestProgressBar}
-fc586f8 Add ui-core component dashboard at /components (apps/web)
+0c7cdb3 Add Batch F shell tiles to the ui-core component dashboard
+6b71541 Compose the real app shell (apps/web): top nav w/ app switcher + search slot + connection status, bottom status bar, notifications via app-local Zustand store, CrashHandler boundary
+b00f7fb Add shell/layout chrome primitives to ui-core (Layout, CrashHandler, NotificationsSidebar + NotificationList/NotificationToasts, LayoutControlToolbar) — based on src/components/{Layout,CrashHandler,NotificationsSidebar,LayoutControlToolbar}
+d3c8b4e Record docking-engine decision: dockview-react (spike: react-resizable-panels v4 vs dockview-react v8 under React 19), keep dockview-react dep
 ```
 
-How Batch E finished (this session, from the previous handoff's "evening" note):
+## What Batch F decided and shipped (this session)
 
-1. **Batch E acceptance — the 6 failing tests were assertion bugs, all fixed as prescribed:**
-   - `StrategyTradesTable.test.tsx`: positive `formatPnl` output is `'+7,200'` (not `'7,200'`),
-     fixed in the row-render and sign-color tests; the expand test now uses
-     `getAllByRole('button', { name: 'Expand trade' })[0]` (two rows → two buttons).
-   - `component-dashboard.test.tsx`: added the missing `clientHeight`/`offsetHeight` stubs
-     (`@tanstack/react-virtual` rendered zero rows otherwise); the Modal close now queries
-     `document.querySelector('.hb-modal__close')` because the PanelSettings demo tile's "Close"
-     Button collides with role-queries and ui-core's Modal dialog has no accessible name.
-2. **Dashboard Batch E section added**: `demos-strategy.tsx` (5 tiles via 4 demo components —
-   the options panel embeds a bare `BacktestProgressBar` too; simulated run is pure local
-   timers), fixtures appended to `fixtures.ts` (`strategyMetricsFixture`, `strategyTradesFixture`,
-   `strategiesListFixture`, `backtestConfigFixture`), section wired in `component-dashboard.tsx`
-   (nav regex widened to `^Batch [A-E] — `), tests extended (section heading, nav label, live
-   Batch E widget assertions `+₹18,40,842` / `+7,200` / `Active (2)`).
+1. **Docking-engine fork RESOLVED — `dockview-react` v8.6.0 (MIT, zero deps, `react` peer
+   `^16.8 || ^17 || ^18 || ^19`)**: both engines were spike-tested hands-on (a throwaway
+   jsdom test that is NOT in the repo): RRP v4.14 works but is split-only (no tab groups,
+   drag-to-dock, floating, popouts, serialization — Design.md's dockable tabbed panels would
+   have to be rebuilt by hand); dockview-react renders real docked tab groups under React 19
+   and round-trips `api.toJSON()/fromJSON()` straight onto `/profile/layouts`. Note: dockview
+   v8 split into a free MIT core + `dockview-enterprise` (commercial "superset"); everything
+   needed (tabs/groups/DnD/floating/serialization) stays free. Decision recorded in
+   `docs/plan.md` §3.3; `dockview-react` is now a dependency of `apps/web`.
+2. **ui-core `src/shell/*` (4 units, 20 new tests)**: `Layout`/`LayoutHeader`/`LayoutMain`/
+   `LayoutFooter` (frame slots; Electron min-width + hard Navbar/StatusBar imports dropped),
+   `CrashHandler` (clean React 19 class error boundary w/ Retry + `onCrash` telemetry hook;
+   reportUrl prop replaces the Bitfinex issue link), `NotificationList`/`NotificationsSidebar`
+   /`NotificationToasts` (the @ufx-ui `Notifications` list re-implemented in-package — severity
+   cards, per-row dismiss, clear-all, backdrop + slide-in panel, toast cluster; the 5s recency
+   window is the host's job), `LayoutControlToolbar` (layout dropdown + Add/Save/Delete with
+   the reference's disabled-state logic; Add Component button dropped — dockview's UI covers it).
+3. **apps/web real shell** (`app-shell/shell.tsx` + `core/store/notifications.ts`): topbar =
+   brand + `SimpleDropdown` app switcher (all 8 routes, incl. /components), inert symbol-search
+   Input slot, `Indicator` "Not connected" status, notifications bell toggling the
+   `NotificationsSidebar`; footer = `StatusBar` (static disconnected until Batch H's `/ws`
+   store); everything wrapped in `CrashHandler`. Notifications live in a small Zustand store
+   (`useNotifications`: push/remove/clearAll/visible) per the Batch F brief — Batch H should
+   fold it into `core/store` rather than recreate a `useNotificationsStore` from scratch.
+4. **Dashboard**: `demos-shell.tsx` (6 tiles — Layout frame, NotificationList, NotificationToasts
+   with a push/clear simulator, the real fixed-position NotificationsSidebar overlay, a fully
+   interactive LayoutControlToolbar, and a live "crash this tile" CrashHandler demo), section
+   `Batch F — Shell chrome`, nav regex widened to `^Batch [A-F] — `.
 
-Verified this session: `tsc --noEmit` and `eslint src` green in **both** workspaces; `vitest run`
-**203/203** in `packages/ui-core` and **7/7** in `apps/web`.
+Verified this session: `tsc --noEmit` and `eslint src` green in **both** workspaces;
+`vitest run` **223/223** in `packages/ui-core` and **13/13** in `apps/web`; `npm run build`
+green in all workspaces (after fixing invalid `//` CSS comments in component-dashboard.css
+— lightningcss rejects them; keep CSS comments `/* */`).
 
-## Not ported from Batch E (per docs/tasks.md brief, still true)
+Also landed this session (concurrently with Batch E's last step): the 6 Batch-E test fixes
+from the previous handoff were applied, and the dashboard got its Batch E section; commits
+`4b51514` + `fc586f8` + `8199609`.
 
-`StrategyEditor` (AlgoDesigner gets honba-frontend's graph + Monaco — Batch I), `StrategyLiveChart`
-(reuse Batch C's `ChartPanel` with a trade-marker overlay when a feature needs it),
-`StrategyOptionsPanel`. ui-core's `Modal` still has no accessible title — worth fixing when a
-feature (G/I) needs to query it accessibly.
+## Interpretation notes for Batch G (docs/tasks.md §Batch G)
 
-## Next: Batch F — app shell & layout chrome (docs/tasks.md §Batch F)
-
-1. **The docking-engine decision is still open: `react-resizable-panels` vs `dockview`.** Spike
-   both against the placeholder shell (`apps/web/src/app-shell/shell.tsx` — extend, don't
-   replace); reference is bfx-hf-ui-core's `GridLayout`/`LayoutControlToolbar` (UX only,
-   `.reference/bfx-hf-ui-core` pinned at `7df411b1a60917f0b2e74edecca8012224c6c5a4`). Record the
-   choice in `docs/plan.md` §3.3 once made. (Per owner: spike it, don't default. This is the one
-   genuinely open fork — ask there, not mid-batch.)
-2. Port layout primitives → `packages/ui-core/src/shell/*`; composed shell (top nav with app
-   switcher + symbol search slot + account status, bottom status bar) → `apps/web/src/app-shell/*`.
-3. Electron-only pieces are skipped by the brief (`SwitchMode`, `FullscreenModeBar`,
-   `AppUpdateBar`, `HFUI`, `HFUIWrapper`). `CrashHandler` → a clean React 19 error boundary,
-   not a line-for-line port.
-4. `NotificationsSidebar` UX → toast list with severity colors + dismiss/clear-all; its queue
-   lives in `apps/web/src/core/store` (small Zustand store, NOT ui-core).
-5. The dashboard route is the natural smoke surface: new shell components should get tiles there
-   (extend `demos-*.tsx`; the Batch F section goes under `shell/` at `^Batch [A-F] — `).
+- Port ONLY the 6 listed modals to `packages/ui-core/src/modals/*`, built on Batch A's
+  `Modal` primitive (isOpen/onClose/domain props in; no global reads). Skips listed in the
+  brief are Bitfinex-lifecycle-specific and stay skipped.
+- `RefillBalanceModal`: confirm a paper-trading balance reset flow exists in honba before
+  porting; otherwise skip with a note.
+- `APIKeysConfigurateForm` is NOT a port — it becomes the broker-connection Settings form
+  (Batch I), reusing Batch A primitives; its real field shape needs `honba-adapters` input
+  (the one genuinely open item in G — check with the owner before blocking; plan.md
+  §broker-credential note).
+- ui-core's `Modal` still has **no accessible name** on its `role="dialog"` (title is a plain
+  `<p>`; the dashboard's Modal test works around it via `.hb-modal__close`). Fix the title's
+  headline to an `<h1>…aria-labelledby` id while porting G's modals — every G modal will
+  want it.
+- Done for G, the dashboard gains a `Batch G — Modals` section (`^Batch [A-G] — `) with one
+  demo tile per modal (open/close via local state), same as E/F.
 
 ## Still-valid operating notes (don't re-litigate)
 
-- Batch mode: decisions on record are in `docs/plan.md` §0; keep moving without re-asking.
-  Remaining genuinely open items: docking-engine pick (F, above); broker-credential shape (G,
-  needs `honba-adapters`).
+- Batch mode: decisions on record are in `docs/plan.md` §0/§3.3; keep moving without
+  re-asking. Only genuinely open items left: broker-credential shape (G, needs
+  `honba-adapters`).
 - **TypeScript pinned to exact `6.0.3`** in both workspaces — `@typescript-eslint/parser`
   hard-crashes on TS 7.x. Don't bump until upstream ships TS7 support.
-- ui-core stays strictly presentational/backend-agnostic (no fetch/WS/Zustand stores; those are
-  apps-web/Batch H). Every unit: own folder with `.tsx` + `.css` + `.test.tsx` + `index.ts`,
+- ui-core stays strictly presentational/backend-agnostic (no fetch/WS/Zustand stores; those
+  are apps/web's). Every unit: own folder with `.tsx` + `.css` + `.test.tsx` + `index.ts`,
   exported from `src/index.ts` append-only. Banned imports: `@ufx-ui/*`, `bfx-*`, `redux`,
-  `redux-saga`, `prop-types`, `.scss`.
-- Routes/layout: `/components` is wired in `apps/web/src/main.tsx` with a "Components" topbar
-  link in `app-shell/shell.tsx` + `styles/base.css`.
+  `redux-saga`, `prop-types`, `.scss`. CSS comments must be `/* */` (lightningcss).
 - Tables need jsdom stubs wherever demos are tested: `ResizeObserver` stub +
   `clientHeight`/`offsetHeight` = 600 on `HTMLElement.prototype` (see the dashboard test's
-  `beforeEach`); Expansion/testing tolerances mirror `OrdersTable.test.tsx`.
-- Env rules: never build in /tmp; run pytest with `--basetemp=$HOME/.cache/pytest-honba` in the
-  honba repo only (not relevant here); commit by explicit path, no Co-Authored-By/any trailer;
-  one sonnet/haiku subagent at a time (never opus); TDD red-first; nothing pushed.
+  `beforeEach`); dockview works out-of-the-box under jsdom (spiked), only assumes sized
+  containers for actual geometry math.
+- Env rules: never build in /tmp; run pytest with `--basetemp=$HOME/.cache/pytest-honba` in
+  the honba repo only (not relevant here); commit by explicit path, no Co-Authored-By/any
+  trailer; one sonnet/haiku subagent at a time (never opus); TDD red-first; nothing pushed.
+- The working tree had a second agent applying changes concurrently during Batch E/F finish
+  (annotate: the same session applied fixes that had to be re-based into clean slices) —
+  if another agent is still alive, coordinate before Batch G; commit per-slice with explicit
+  paths and verify `git log` after.
