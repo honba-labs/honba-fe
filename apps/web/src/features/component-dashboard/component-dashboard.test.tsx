@@ -48,7 +48,7 @@ function renderDashboard() {
 }
 
 describe('ComponentDashboard', () => {
-  it('renders the five batch sections and the overview header', () => {
+  it('renders the six batch sections and the overview header', () => {
     renderDashboard();
     expect(screen.getByRole('heading', { name: 'Component dashboard' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Batch A — UI primitives' })).toBeInTheDocument();
@@ -56,12 +56,20 @@ describe('ComponentDashboard', () => {
     expect(screen.getByRole('heading', { name: 'Batch C — Market widgets' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Batch D — Trading widgets' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Batch E — Strategy widgets' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Batch F — Shell chrome' })).toBeInTheDocument();
   });
 
   it('exposes each batch in the section nav', () => {
     renderDashboard();
     const nav = screen.getByRole('navigation', { name: 'Component sections' });
-    for (const label of ['UI primitives', 'Hooks', 'Market widgets', 'Trading widgets', 'Strategy widgets']) {
+    for (const label of [
+      'UI primitives',
+      'Hooks',
+      'Market widgets',
+      'Trading widgets',
+      'Strategy widgets',
+      'Shell chrome',
+    ]) {
       // The nav label is the section title minus its batch prefix.
       expect(nav.textContent).toContain(label);
     }
@@ -96,6 +104,17 @@ describe('ComponentDashboard', () => {
     expect(screen.getByText('+7,200')).toBeInTheDocument();
     // StrategiesListTable: tabbed list shows the active strategies kind first
     expect(screen.getByText('Active (2)')).toBeInTheDocument();
+  });
+
+  it('renders live shell (Batch F) widgets with interactive chrome', () => {
+    renderDashboard();
+    // Layout demo frame's three slots
+    expect(screen.getByText('header slot — apps/web composes the top nav here')).toBeInTheDocument();
+    // NotificationsSidebar demo tile: the open button is present and rows render on open
+    expect(screen.getAllByText('Order filled').length).toBeGreaterThanOrEqual(1);
+    // LayoutControlToolbar demo: layout switcher row + the active layout listed
+    expect(screen.getByRole('button', { name: 'Add layout' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ORB scalping/ })).toBeInTheDocument();
   });
 
   it('opens and closes the Modal demo', () => {

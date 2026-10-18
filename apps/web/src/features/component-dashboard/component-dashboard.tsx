@@ -1,7 +1,7 @@
 // @honba/ui-core component dashboard — a single dashboard route (/components) that renders
 // every component exported from `packages/ui-core/src` live, with fixture data, as a
 // scrolling showcase organized by the Batches in docs/tasks.md (A: ui, B: hooks, C: market,
-// D: trading, E: strategy). It's a developer-facing acceptance surface: each time a batch lands,
+// D: trading, E: strategy, F: shell). It's a developer-facing acceptance surface: each time a batch lands,
 // its components appear here and can be eyeballed without wiring a backend.
 //
 // Everything compositional lives in this file; the demos themselves live in demos-*.tsx and
@@ -14,6 +14,7 @@ import { hookTiles, uiTiles } from './demos-ui';
 import { marketTiles } from './demos-market';
 import { tradingTiles } from './demos-trading';
 import { strategyTiles } from './demos-strategy';
+import { shellTiles } from './demos-shell';
 import { DemoTile } from './demo-tile';
 import './component-dashboard.css';
 
@@ -40,6 +41,7 @@ const sections: Section[] = [
   { id: 'market', title: 'Batch C — Market widgets', tiles: marketTiles },
   { id: 'trading', title: 'Batch D — Trading widgets', tiles: tradingTiles },
   { id: 'strategy', title: 'Batch E — Strategy widgets', tiles: strategyTiles },
+  { id: 'shell', title: 'Batch F — Shell chrome', tiles: shellTiles },
 ];
 
 export function ComponentDashboard() {
@@ -75,7 +77,7 @@ export function ComponentDashboard() {
                 }
                 onClick={() => scrollTo(section.id)}
               >
-                {section.title.replace(/^Batch [A-E] — /, '')}
+                {section.title.replace(/^Batch [A-F] — /, '')}
                 <span className="component-dashboard__nav-count">{section.tiles.length}</span>
               </button>
             ))}
