@@ -23,7 +23,10 @@ import {
   Layers,
   ChevronDown,
   Calendar,
+  Search,
 } from 'lucide-react';
+
+import { SymbolSearchModal } from '../workbench/symbol-search-modal';
 
 import { HonbaClient } from '../../core/api/generated/client';
 import { useSimulatorStore } from './store/simulator-store';
@@ -267,6 +270,36 @@ export function SimulatorView() {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDateRangeOpen]);
+
+  // Symbol Search Modal State
+  const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
+
+  // Timeframe Popover State (3 Grouped Rows: Minutes, Hours, Days/Weeks/Months)
+  const [isTimeframeOpen, setIsTimeframeOpen] = useState(false);
+  const timeframeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (timeframeRef.current && !timeframeRef.current.contains(e.target as Node)) {
+        setIsTimeframeOpen(false);
+      }
+    };
+    if (isTimeframeOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isTimeframeOpen]);
+
+  const handleSymbolSelect = useCallback(
+    (newSymbol: string, newExchange?: string) => {
+      const ex = newExchange || 'NSE';
+      store.setControls({ symbol: newSymbol, exchange: ex });
+      engine.reset();
+      engine.clearPortfolio();
+      setIsSymbolModalOpen(false);
+    },
+    [store, engine],
+  );
 
   // Sandboxed Portfolio Table Setup
   interface SandboxPositionRow {
@@ -686,30 +719,93 @@ export function SimulatorView() {
             </select>
           </div>
 
-          <div className="sim-symbol-badge">
+          {/* Symbol Selector Button */}
+          <button
+            type="button"
+            className="sim-symbol-badge-btn"
+            onClick={() => setIsSymbolModalOpen(true)}
+            title="Search and change instrument"
+          >
+            <Search size={12} className="sim-symbol-search-icon" />
             <span className="sim-symbol-text">
               {store.controls.symbol}.{store.controls.exchange}
             </span>
-            <select
-              className="sim-timeframe-tag"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-              value={store.controls.timeframe}
-              onChange={(e) => store.setControls({ timeframe: e.target.value })}
-              title="Change Timeframe"
+            <ChevronDown size={11} className="sim-symbol-caret" />
+          </button>
+
+          {/* Timeframe 3-Row Grouped Selector */}
+          <div className="sim-timeframe-wrap" ref={timeframeRef}>
+            <button
+              type="button"
+              className="sim-timeframe-btn"
+              onClick={() => setIsTimeframeOpen(!isTimeframeOpen)}
+              title="Select Timeframe"
             >
-              {['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '1d', '1w'].map(
-                (tf) => (
-                  <option key={tf} value={tf}>
-                    {tf}
-                  </option>
-                )
-              )}
-            </select>
+              <Clock size={12} style={{ color: 'var(--text-secondary)' }} />
+              <span className="sim-tf-val">{store.controls.timeframe}</span>
+              <ChevronDown size={11} className="sim-tf-caret" />
+            </button>
+
+            {isTimeframeOpen && (
+              <div className="sim-timeframe-popover">
+                <div className="sim-tf-group">
+                  <span className="sim-tf-group-lbl">MINUTES</span>
+                  <div className="sim-tf-chips-row">
+                    {['1m', '2m', '3m', '5m', '10m', '15m', '30m', '45m'].map((tf) => (
+                      <button
+                        key={tf}
+                        type="button"
+                        className={`sim-tf-chip ${store.controls.timeframe === tf ? 'active' : ''}`}
+                        onClick={() => {
+                          store.setControls({ timeframe: tf });
+                          setIsTimeframeOpen(false);
+                        }}
+                      >
+                        {tf}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="sim-tf-group">
+                  <span className="sim-tf-group-lbl">HOURS</span>
+                  <div className="sim-tf-chips-row">
+                    {['1h', '2h', '3h', '4h'].map((tf) => (
+                      <button
+                        key={tf}
+                        type="button"
+                        className={`sim-tf-chip ${store.controls.timeframe === tf ? 'active' : ''}`}
+                        onClick={() => {
+                          store.setControls({ timeframe: tf });
+                          setIsTimeframeOpen(false);
+                        }}
+                      >
+                        {tf}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="sim-tf-group">
+                  <span className="sim-tf-group-lbl">DAYS, WEEKS & MONTHS</span>
+                  <div className="sim-tf-chips-row">
+                    {['1d', '1w', '1mo'].map((tf) => (
+                      <button
+                        key={tf}
+                        type="button"
+                        className={`sim-tf-chip ${store.controls.timeframe === tf ? 'active' : ''}`}
+                        onClick={() => {
+                          store.setControls({ timeframe: tf });
+                          setIsTimeframeOpen(false);
+                        }}
+                      >
+                        {tf}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Date Range Selector Popover */}
@@ -799,8 +895,11 @@ export function SimulatorView() {
           <button
             type="button"
             className="sim-ctrl-btn"
-            onClick={engine.reset}
-            title="Reset to Start"
+            onClick={() => {
+              engine.reset();
+              engine.clearPortfolio();
+            }}
+            title="Reset Simulation & Tables"
           >
             <RotateCcw size={14} />
           </button>
@@ -1353,6 +1452,14 @@ export function SimulatorView() {
           )}
         </div>
       </footer>
+
+      {/* Symbol Search Modal */}
+      <SymbolSearchModal
+        open={isSymbolModalOpen}
+        onClose={() => setIsSymbolModalOpen(false)}
+        currentSymbol={store.controls.symbol}
+        onSelectSymbol={handleSymbolSelect}
+      />
     </div>
   );
 }

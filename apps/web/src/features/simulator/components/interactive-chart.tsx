@@ -28,6 +28,7 @@ import {
 import { resolveRange, universeFor } from '../../../core/simulator/controls';
 import { markersFromPairing, pairTrades, type RoundTrip, type TradeMarker } from '../../../core/simulator/trade-pairing';
 import { Plus } from 'lucide-react';
+import { dataLayer } from '../../../core/data-layer';
 import { SimulatorDrawingRail, type DrawingToolType } from './simulator-drawing-rail';
 import { SimulatorDrawingCanvas, type ChartDrawing } from './simulator-drawing-canvas';
 import { MultiChartView, type SecondaryChartConfig } from './multi-chart-view';
@@ -597,6 +598,21 @@ export const SimulatorChart: React.FC<SimulatorChartProps> = ({
   const onBarsLoadedRef = useRef(onBarsLoaded);
   onBarsLoadedRef.current = onBarsLoaded;
 
+  const anchorPrice = useMemo(() => {
+    const sym = (controls.symbol || '').toUpperCase().trim();
+    if (!sym) return 2500;
+    const inst = dataLayer.getInstrument(sym);
+    if (inst && inst.price > 0) return inst.price;
+    if (sym.includes('TCS')) return 3850;
+    if (sym.includes('RELIANCE')) return 2950;
+    if (sym.includes('INFY')) return 1490;
+    if (sym.includes('HDFCBANK')) return 1680;
+    if (sym.includes('ICICIBANK')) return 1260;
+    if (sym.includes('NIFTY') && sym.includes('BANK')) return 51840;
+    if (sym.includes('NIFTY')) return 24850;
+    return 2500;
+  }, [controls.symbol]);
+
   // Bar loading is keyed to the selection, not the run: the chart is useful
   // before anything has been simulated. A cancelled load (selection changed)
   // must not overwrite the newer result.
@@ -608,19 +624,21 @@ export const SimulatorChart: React.FC<SimulatorChartProps> = ({
     const controller = new AbortController();
     let active = true;
     setBarsState((prev) => ({ ...prev, status: 'loading' }));
-    void loadRunBars(client, { instrumentId, from: start, to: end, barSpec: timeframe }, { signal: controller.signal }).then(
-      (state) => {
-        if (active) {
-          setBarsState(state);
-          onBarsLoadedRef.current?.(state.bars);
-        }
-      },
-    );
+    void loadRunBars(
+      client,
+      { instrumentId, from: start, to: end, barSpec: timeframe, anchor: anchorPrice },
+      { signal: controller.signal }
+    ).then((state) => {
+      if (active) {
+        setBarsState(state);
+        onBarsLoadedRef.current?.(state.bars);
+      }
+    });
     return () => {
       active = false;
       controller.abort();
     };
-  }, [client, instrumentId, start, end, timeframe]);
+  }, [client, instrumentId, start, end, timeframe, anchorPrice]);
 
   // Indicator specs are resolved against the loaded registry (the tier import is
   // async), so the chart and the strategy agree on parameters.
@@ -651,59 +669,57 @@ export const SimulatorChart: React.FC<SimulatorChartProps> = ({
     [pairing, activeBars, timeframe],
   );
 
-  const badge = SOURCE_BADGE[barsState.source];
   const seriesKey = `${instrumentId}|${timeframe}`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      {/* Chart Inline Sub-toolbar */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 10,
-          padding: '6px 12px',
+          padding: '6px 14px',
           borderBottom: '1px solid var(--border-subtle)',
           fontSize: 11,
           color: 'var(--text-secondary)',
-          flexWrap: 'wrap',
+          background: 'var(--bg-app)',
         }}
       >
-        <strong style={{ color: 'var(--text-primary)', fontSize: 12 }}>{instrumentId || 'No instrument'}</strong>
+        <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 12 }}>
+          {instrumentId || 'No instrument'}
+        </span>
         <span style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>{timeframe}</span>
         <span>{start && end ? `${start} → ${end}` : ''}</span>
-        {badge ? (
-          <span
+
+        {secondaryCharts.length === 0 && onAddChart && (
+          <button
+            type="button"
+            className="btn btn-outline btn-xs"
+            onClick={() => onAddChart('1h')}
             style={{
-              padding: '1px 6px',
-              borderRadius: 999,
-              border: `1px solid ${badge.color}`,
-              color: badge.color,
-              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              height: 22,
+              fontSize: 10.5,
+              padding: '0 8px',
+              borderRadius: 4,
             }}
+            title="Add secondary timeframe chart"
           >
-            {badge.label}
-          </span>
-        ) : null}
-        {pairing.trips.length > 0 ? (
-          <span>
-            {pairing.trips.length} round trip{pairing.trips.length === 1 ? '' : 's'}
-          </span>
-        ) : null}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-          {secondaryCharts.length === 0 && onAddChart && (
-            <button
-              type="button"
-              className="shortlist-btn"
-              onClick={() => onAddChart('1h')}
-              style={{ fontSize: 11, padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4 }}
-              title="Add another chart with higher timeframe"
-            >
-              <Plus size={11} />
-              <span>Add Chart</span>
-            </button>
-          )}
-          <span style={{ color: 'var(--text-muted)' }}>
-            {engineTrips && engineTrips.length > 0 ? 'Client Animated Simulation' : run.status === 'completed' ? `Run ${run.runId ?? ''}` : 'Ready for simulation'}
+            <Plus size={11} />
+            <span>Add Chart</span>
+          </button>
+        )}
+
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>
+            {engineTrips && engineTrips.length > 0
+              ? 'Simulation Replay Engine Active'
+              : run.status === 'completed'
+              ? `Run ${run.runId ?? ''}`
+              : 'Ready for simulation'}
           </span>
         </div>
       </div>
@@ -727,24 +743,11 @@ export const SimulatorChart: React.FC<SimulatorChartProps> = ({
         />
       </div>
 
-      <div
-        style={{
-          padding: '4px 12px',
-          borderTop: '1px solid var(--border-subtle)',
-          fontSize: 10,
-          color: 'var(--text-muted)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-        }}
-      >
-        {barsState.note ? <span>{barsState.note}</span> : null}
-        {skipped.length > 0 ? (
-          <span>Not drawn — no chart indicator registered for {skipped.map((spec) => spec.kind).join(', ')}.</span>
-        ) : null}
-        {journal.status === 'error' ? <span>Journal unavailable: {journal.error}</span> : null}
-        <span>{PENDING_NOTE}</span>
-      </div>
+      {skipped.length > 0 ? (
+        <div style={{ padding: '3px 12px', borderTop: '1px solid var(--border-subtle)', fontSize: 10, color: 'var(--text-muted)' }}>
+          Not drawn — no chart indicator registered for {skipped.map((spec) => spec.kind).join(', ')}.
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -61,30 +61,140 @@
   border-color: var(--border-strong);
 }
 
-.sim-symbol-badge {
-  display: flex;
+/* Symbol selector button in command bar */
+.sim-symbol-badge-btn {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: var(--bg-input);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  background-color: var(--bg-surface, #1e222d);
+  border: 1px solid var(--border-subtle, #2a2e39);
+  border-radius: var(--radius-md, 6px);
   padding: 4px 10px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.sim-symbol-badge-btn:hover {
+  background-color: var(--bg-hover, #2a2e39);
+  border-color: var(--accent-primary, #2962ff);
+}
+
+.sim-symbol-search-icon {
+  color: var(--accent-primary, #2962ff);
+  flex-shrink: 0;
 }
 
 .sim-symbol-text {
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
+  font-family: var(--font-family-mono, var(--font-mono, monospace));
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--fg-primary);
+  color: var(--text-primary, #ffffff);
 }
 
-.sim-timeframe-tag {
-  font-size: 10px;
+.sim-symbol-caret {
+  color: var(--text-muted, #787b86);
+  flex-shrink: 0;
+}
+
+/* Timeframe 3-Row Grouped Selector */
+.sim-timeframe-wrap {
+  position: relative;
+}
+
+.sim-timeframe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  background-color: var(--bg-surface, #1e222d);
+  border: 1px solid var(--border-subtle, #2a2e39);
+  border-radius: var(--radius-md, 6px);
+  color: var(--text-primary, #ffffff);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.sim-timeframe-btn:hover {
+  background-color: var(--bg-hover, #2a2e39);
+  border-color: var(--accent-primary, #2962ff);
+}
+
+.sim-tf-val {
+  font-family: var(--font-family-mono, var(--font-mono, monospace));
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--primary);
-  background-color: rgba(0, 192, 118, 0.12);
-  padding: 1px 5px;
-  border-radius: var(--radius-xs);
+  color: var(--text-primary, #ffffff);
+}
+
+.sim-tf-caret {
+  color: var(--text-muted, #787b86);
+}
+
+.sim-timeframe-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  width: 290px;
+  background-color: var(--bg-surface-elevated, #1e222d);
+  border: 1px solid var(--border-subtle, #2a2e39);
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: simFadeIn 0.12s ease-out;
+}
+
+.sim-tf-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sim-tf-group-lbl {
+  font-family: var(--font-family-sans, sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted, #787b86);
+}
+
+.sim-tf-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.sim-tf-chip {
+  padding: 3px 8px;
+  font-family: var(--font-family-mono, var(--font-mono, monospace));
+  font-size: 11px;
+  font-weight: 600;
+  background-color: var(--bg-surface, #141722);
+  border: 1px solid var(--border-subtle, #2a2e39);
+  border-radius: var(--radius-xs, 4px);
+  color: var(--text-secondary, #787b86);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.sim-tf-chip:hover {
+  background-color: var(--bg-hover, #2a2e39);
+  color: var(--text-primary, #ffffff);
+  border-color: var(--border-strong, #434651);
+}
+
+.sim-tf-chip.active {
+  background-color: var(--accent-primary, #2962ff);
+  color: #ffffff;
+  border-color: var(--accent-primary, #2962ff);
+  font-weight: 700;
 }
 
 /* Center Replay Cluster */
@@ -378,15 +488,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
-  background-color: var(--bg-page);
-  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  background-color: var(--bg-surface, #1e222d);
+  border-bottom: 1px solid var(--border-subtle, #2a2e39);
 }
 
 .sim-dock-tabs {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   height: 100%;
 }
 
@@ -398,31 +508,33 @@
   height: 100%;
   background: transparent;
   border: none;
-  font-size: 12px;
+  font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 13px;
   font-weight: 500;
-  color: var(--fg-muted);
+  color: var(--text-secondary, #787b86);
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: all 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
 }
 
 .sim-dock-tab-btn:hover {
-  color: var(--fg-primary);
-  background-color: var(--bg-hover);
+  color: var(--text-primary, #ffffff);
+  background-color: transparent;
 }
 
 .sim-dock-tab-btn.active {
-  color: var(--primary);
+  color: var(--text-primary, #ffffff);
   font-weight: 600;
-  border-bottom-color: var(--primary);
-  background-color: var(--bg-card);
+  border-bottom-color: var(--accent-primary, #2962ff);
+  background-color: transparent;
 }
 
 .sim-badge-ready {
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--bullish, #00c076);
   background-color: rgba(0, 192, 118, 0.15);
   padding: 1px 5px;
   border-radius: var(--radius-xs);
@@ -440,6 +552,7 @@
   min-height: 0;
   overflow-y: auto;
   padding: 14px 18px;
+  background-color: var(--bg-app, #131722);
 }
 
 /* OVERVIEW PANE */
@@ -457,30 +570,36 @@
 
 .sim-kpi-card {
   padding: 14px 16px;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface, #1e222d);
+  border: 1px solid var(--border-subtle, #2a2e39);
+  border-radius: var(--radius-md, 6px);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .sim-kpi-lbl {
+  font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   font-size: 11px;
-  color: var(--fg-muted);
-  font-weight: 500;
+  color: var(--text-secondary, #787b86);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .sim-kpi-val {
+  font-family: var(--font-family-mono, var(--font-mono, monospace));
+  font-variant-numeric: tabular-nums;
   font-size: 20px;
   font-weight: 700;
-  color: var(--fg-primary);
+  color: var(--text-primary, #ffffff);
   line-height: 1.2;
 }
 
 .sim-kpi-sub {
+  font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   font-size: 11px;
-  color: var(--fg-secondary);
+  color: var(--text-muted, #787b86);
 }
 
 /* Split Grid for Equity Curve + Monthly Heatmap */
@@ -493,9 +612,9 @@
 .sim-chart-card,
 .sim-heatmap-card {
   padding: 14px 16px;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface, #1e222d);
+  border: 1px solid var(--border-subtle, #2a2e39);
+  border-radius: var(--radius-md, 6px);
 }
 
 .sim-card-header {
@@ -506,15 +625,17 @@
 }
 
 .sim-card-title {
+  font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   font-size: 13px;
   font-weight: 700;
-  color: var(--fg-primary);
+  color: var(--text-primary, #ffffff);
   margin: 0;
 }
 
 .sim-card-subtitle {
+  font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   font-size: 11px;
-  color: var(--fg-muted);
+  color: var(--text-muted, #787b86);
   margin-top: 1px;
 }
 
@@ -543,52 +664,55 @@
 .sim-heatmap-table td {
   padding: 6px 4px;
   text-align: center;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle, #2a2e39);
 }
 
 .sim-heatmap-table th {
-  color: var(--fg-muted);
-  font-weight: 500;
+  font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  color: var(--text-secondary, #787b86);
+  font-weight: 600;
 }
 
 .heatmap-cell {
+  font-family: var(--font-family-mono, monospace);
   font-weight: 600;
   font-size: 10px;
 }
 
 .heatmap-pos {
   background-color: rgba(0, 192, 118, 0.12);
-  color: var(--bullish);
+  color: var(--bullish, #00c076);
   border-radius: 3px;
 }
 
 .heatmap-neg {
   background-color: rgba(239, 68, 68, 0.12);
-  color: var(--bearish);
+  color: var(--bearish, #ef4444);
   border-radius: 3px;
 }
 
 .heatmap-na {
-  color: var(--fg-muted);
+  color: var(--text-muted, #787b86);
 }
 
 .sim-reason-badge {
   font-size: 10px;
-  background-color: var(--bg-input);
-  color: var(--fg-secondary);
+  background-color: var(--bg-surface, #1e222d);
+  color: var(--text-secondary, #787b86);
   padding: 2px 6px;
   border-radius: 4px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-subtle, #2a2e39);
 }
 
 /* Empty State */
 .sim-empty-state {
   padding: 40px;
   text-align: center;
-  color: var(--fg-muted);
+  color: var(--text-muted, #787b86);
+  font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   font-size: 13px;
-  border: 1px dashed var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-subtle, #2a2e39);
+  border-radius: var(--radius-md, 6px);
 }
 
 /* Portfolio Pane */
@@ -600,15 +724,17 @@
 
 .sim-portfolio-stat {
   padding: 12px 14px;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background-color: var(--bg-surface, #1e222d);
+  border: 1px solid var(--border-subtle, #2a2e39);
+  border-radius: var(--radius-md, 6px);
 }
 
 .sim-portfolio-val {
+  font-family: var(--font-family-mono, var(--font-mono, monospace));
+  font-variant-numeric: tabular-nums;
   font-size: 16px;
   font-weight: 700;
-  color: var(--fg-primary);
+  color: var(--text-primary, #ffffff);
   margin: 3px 0;
 }
 
@@ -622,10 +748,10 @@
 /* Logs Pane */
 .sim-log-terminal {
   background-color: #0b0d11;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle, #2a2e39);
+  border-radius: var(--radius-md, 6px);
   padding: 12px;
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-family-mono, var(--font-mono, monospace));
   font-size: 11px;
   max-height: 220px;
   overflow-y: auto;
@@ -642,21 +768,21 @@
 }
 
 .sim-log-ts {
-  color: var(--fg-muted);
+  color: var(--text-muted, #787b86);
 }
 
 .sim-log-action.buy {
-  color: var(--bullish);
+  color: var(--bullish, #00c076);
   font-weight: 700;
 }
 
 .sim-log-action.sell {
-  color: var(--bearish);
+  color: var(--bearish, #ef4444);
   font-weight: 700;
 }
 
 .sim-log-detail {
-  color: var(--fg-secondary);
+  color: var(--text-secondary, #787b86);
 }
 
 /* Report Pane */

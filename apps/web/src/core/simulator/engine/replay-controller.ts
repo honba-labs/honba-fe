@@ -2,7 +2,7 @@ import type { ChartBar } from '../chart-data';
 import type { StrategyGraphShape } from '../../../features/algodesigner/model';
 import type { RoundTrip } from '../trade-pairing';
 import { computeGraphIndicators, evaluateBarSignals, type EvaluatedIndicators } from './strategy-evaluator';
-import { executeSimulatedTrade, updatePortfolioMarkPrice, calculatePositionPnL } from './portfolio-adapter';
+import { executeSimulatedTrade, updatePortfolioMarkPrice, calculatePositionPnL, clearSandboxPortfolio } from './portfolio-adapter';
 import type {
   ActivePosition,
   ConfluenceSnapshot,
@@ -157,6 +157,7 @@ export class ReplayController {
     this.lastConfluence = null;
     this.activeSignals = [];
     this.status = 'idle';
+    clearSandboxPortfolio(this.selectedAccountId);
     this.callbacks.onBarChange?.(this.bars.length - 1, [...this.bars]);
     this.notifyState();
   }
