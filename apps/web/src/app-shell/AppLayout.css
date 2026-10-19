@@ -111,6 +111,12 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wunder-user-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.55);
 }
 
 /* 2. Secondary Contextual Sub-Sidebar (230px) */
@@ -365,6 +371,62 @@
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+/* Mode Switcher (Mutually Exclusive) */
+.wunder-mode-group {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 2px;
+}
+
+.wunder-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.wunder-mode-btn:hover {
+  color: var(--fg-primary);
+  background-color: var(--bg-hover);
+}
+
+.wunder-mode-btn.active-paper {
+  background-color: var(--warning-bg);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: var(--warning);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.15);
+}
+
+.wunder-mode-btn.active-live {
+  background-color: var(--bullish-bg);
+  border-color: var(--bullish-border);
+  color: var(--bullish);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 192, 118, 0.15);
+}
+
+.wunder-mode-dot-inactive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--fg-muted);
+  opacity: 0.45;
 }
 
 .wunder-pill-env {

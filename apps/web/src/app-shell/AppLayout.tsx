@@ -15,7 +15,6 @@ import {
   AlertCircle,
   X,
   Plus,
-  ShieldAlert,
 } from 'lucide-react';
 import { useEquityStore } from '../core/store/equityStore';
 import { useNotifications } from '../core/store/notifications';
@@ -30,7 +29,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<'dark' | 'light'>(themeEngine.current);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const { instruments, setSearchModalOpen, setFundsModalOpen, simulateTick } = useEquityStore();
+  const { setSearchModalOpen, setFundsModalOpen, simulateTick, tradingMode, setTradingMode } = useEquityStore();
   const { rows, remove, clearAll } = useNotifications();
 
   // Subtle real-time tick updates
@@ -46,82 +45,6 @@ export function AppLayout() {
     themeEngine.toggle();
     setTheme(themeEngine.current);
   };
-
-  // Contextual information based on current route
-  const getContextInfo = () => {
-    const path = location.pathname;
-    if (path === '/' || path === '/portfolio') {
-      return {
-        title: 'Overview',
-        subtitle: 'Equity portfolio & holdings',
-        links: [
-          { name: 'Holdings', path: '/' },
-          { name: 'Watchlist', path: '/markets', badge: '6' },
-          { name: 'Price alerts', path: '/', badge: '2' },
-        ],
-      };
-    }
-    if (path.startsWith('/markets') || path.startsWith('/screener')) {
-      return {
-        title: 'Markets',
-        subtitle: 'NSE & Global Equities Screener',
-        links: [
-          { name: 'Indices overview', path: '/markets' },
-          { name: 'NIFTY 50', path: '/markets' },
-          { name: 'Top gainers', path: '/markets' },
-          { name: '52W High / Low', path: '/markets' },
-          { name: 'Advance / Decline', path: '/markets' },
-        ],
-      };
-    }
-    if (path.startsWith('/trade')) {
-      return {
-        title: 'Trade',
-        subtitle: 'NSE / BSE Trading Terminal',
-        links: [
-          { name: 'NSE:RELIANCE', path: '/trade' },
-          { name: 'NSE:TCS', path: '/trade' },
-          { name: 'NSE:INFY', path: '/trade' },
-          { name: 'Order book', path: '/trade' },
-        ],
-      };
-    }
-    if (path.startsWith('/wallet')) {
-      return {
-        title: 'Funds & Margin',
-        subtitle: 'Trading limits and Demat holdings',
-        links: [
-          { name: 'Funds overview', path: '/wallet' },
-          { name: 'Add funds', path: '/wallet' },
-          { name: 'Withdraw payout', path: '/wallet' },
-          { name: 'Demat ledger', path: '/wallet' },
-        ],
-      };
-    }
-    if (path.startsWith('/workbench') || path.startsWith('/algodesigner')) {
-      return {
-        title: 'Workbench',
-        subtitle: 'Multi-Chart & Algo Terminal',
-        links: [
-          { name: 'Multi-Chart Grid', path: '/workbench' },
-          { name: 'Algo Designer', path: '/algodesigner' },
-          { name: 'Trading Terminal', path: '/trade' },
-          { name: 'Markets Screener', path: '/markets' },
-        ],
-      };
-    }
-    return {
-      title: 'Honba',
-      subtitle: 'Algorithmic Equities Engine',
-      links: [
-        { name: 'Workbench', path: '/workbench' },
-        { name: 'Settings', path: '/settings' },
-      ],
-    };
-  };
-
-  const contextInfo = getContextInfo();
-  const watchlist = Object.values(instruments).filter((a) => a.isWatchlist);
 
   return (
     <div className="wunder-app">
@@ -202,88 +125,17 @@ export function AppLayout() {
           >
             <Settings size={19} />
           </NavLink>
-          <div className="wunder-user-avatar" title="Honba Trader (Demat)">
-            HB
+          <div
+            className="wunder-user-avatar"
+            onClick={() => navigate('/settings')}
+            title="Honba Trader (AM) · Demat Account"
+          >
+            AM
           </div>
         </div>
       </aside>
 
-      {/* 2. Secondary Contextual Sub-Sidebar (230px) */}
-      <aside className="wunder-nav-sub">
-        <div className="wunder-sub-header">
-          <h2 className="wunder-sub-title">{contextInfo.title}</h2>
-          <p className="wunder-sub-subtitle">{contextInfo.subtitle}</p>
-        </div>
-
-        <div className="wunder-sub-menu">
-          {contextInfo.links.map((link) => (
-            <div
-              key={link.name}
-              className={`wunder-sub-link ${location.pathname === link.path ? 'active' : ''}`}
-              onClick={() => navigate(link.path)}
-            >
-              <span className="wunder-sub-link-label">{link.name}</span>
-              {link.badge && <span className="wunder-sub-link-badge">{link.badge}</span>}
-            </div>
-          ))}
-        </div>
-
-        {/* Live Equities Watchlist */}
-        <div className="wunder-sub-watchlist">
-          <div className="wunder-watchlist-title">Equities Watchlist</div>
-          <div className="wunder-watchlist-list">
-            {watchlist.slice(0, 5).map((inst) => (
-              <div
-                key={inst.symbol}
-                className="wunder-watchlist-row"
-                onClick={() => {
-                  useEquityStore.getState().setActiveTicker(inst.ticker);
-                  navigate('/trade');
-                }}
-              >
-                <div className="wunder-watchlist-coin">
-                  <div className="wunder-coin-badge" style={{ backgroundColor: inst.color }}>
-                    {inst.symbol.slice(0, 3)}
-                  </div>
-                  <div>
-                    <span className="wunder-coin-sym">{inst.symbol}</span>
-                    <span style={{ fontSize: '10px', color: 'var(--fg-muted)', display: 'block' }}>
-                      {inst.exchange}
-                    </span>
-                  </div>
-                </div>
-                <div className="wunder-watchlist-prices">
-                  <span className="num wunder-watchlist-price">
-                    {inst.currency === 'INR' ? '₹' : '$'}
-                    {inst.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </span>
-                  <span
-                    className={`num wunder-watchlist-change ${
-                      inst.change24h >= 0 ? 'color-bullish' : 'color-bearish'
-                    }`}
-                  >
-                    {inst.change24h >= 0 ? '+' : ''}
-                    {inst.change24h}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Paper Trading Environment Card */}
-        <div className="wunder-env-card">
-          <div className="wunder-env-icon">
-            <ShieldAlert size={14} color="var(--warning)" />
-            <span className="wunder-env-title">Paper Trading Mode</span>
-          </div>
-          <p className="wunder-env-text">
-            Simulated equities market. Orders execute against the local matching engine without real cash.
-          </p>
-        </div>
-      </aside>
-
-      {/* 3. Main Wrapper */}
+      {/* 2. Main Wrapper */}
       <div className="wunder-main-wrapper">
         {/* Top Header Bar */}
         <header className="wunder-header">
@@ -310,14 +162,45 @@ export function AppLayout() {
           </div>
 
           <div className="wunder-header-right">
-            <div className="wunder-pill-env">
-              <span className="wunder-pill-dot-warning" />
-              <span>Simulated · Paper trading</span>
-            </div>
+            {/* Mutually exclusive Trading Environment Selector */}
+            <div className="wunder-mode-group" role="tablist" aria-label="Trading Mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tradingMode === 'paper'}
+                className={`wunder-mode-btn ${tradingMode === 'paper' ? 'active-paper' : ''}`}
+                onClick={() => {
+                  setTradingMode('paper');
+                  useNotifications.getState().push({
+                    severity: 'info',
+                    title: 'Trading Mode',
+                    message: 'Active: Simulated · Paper trading',
+                  });
+                }}
+                title="Switch to Simulated · Paper trading"
+              >
+                <span className={tradingMode === 'paper' ? 'wunder-pill-dot-warning' : 'wunder-mode-dot-inactive'} />
+                <span>Simulated · Paper trading</span>
+              </button>
 
-            <div className="wunder-pill-feed">
-              <span className="pulse-indicator" />
-              <span>NSE feed · live</span>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tradingMode === 'live'}
+                className={`wunder-mode-btn ${tradingMode === 'live' ? 'active-live' : ''}`}
+                onClick={() => {
+                  setTradingMode('live');
+                  useNotifications.getState().push({
+                    severity: 'info',
+                    title: 'Trading Mode',
+                    message: 'Active: NSE feed · Live',
+                  });
+                }}
+                title="Switch to NSE feed · Live"
+              >
+                <span className={tradingMode === 'live' ? 'pulse-indicator' : 'wunder-mode-dot-inactive'} />
+                <span>NSE feed · Live</span>
+              </button>
             </div>
 
             <button
@@ -381,10 +264,6 @@ export function AppLayout() {
                   </div>
                 </div>
               )}
-            </div>
-
-            <div className="wunder-header-user" onClick={() => navigate('/settings')}>
-              <div className="wunder-user-circle">AM</div>
             </div>
           </div>
         </header>

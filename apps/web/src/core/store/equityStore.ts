@@ -105,8 +105,10 @@ interface EquityStoreState {
   isFundsModalOpen: boolean;
   isWithdrawModalOpen: boolean;
   isSearchModalOpen: boolean;
+  tradingMode: 'paper' | 'live';
   
   // Actions
+  setTradingMode: (mode: 'paper' | 'live') => void;
   setCurrency: (ccy: 'INR' | 'USD') => void;
   setActiveTicker: (ticker: string) => void;
   setActiveSide: (side: 'buy' | 'sell') => void;
@@ -599,7 +601,9 @@ export const useEquityStore = create<EquityStoreState>((set, get) => ({
   isFundsModalOpen: false,
   isWithdrawModalOpen: false,
   isSearchModalOpen: false,
+  tradingMode: 'paper',
 
+  setTradingMode: (mode) => set({ tradingMode: mode }),
   setCurrency: (ccy) => set({ currency: ccy }),
   setActiveTicker: (ticker) => {
     const symbol = ticker.includes(':') ? ticker.split(':')[1] : ticker;

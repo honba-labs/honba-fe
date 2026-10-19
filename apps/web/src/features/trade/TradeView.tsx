@@ -60,6 +60,7 @@ export function TradeView() {
     setShowMa20,
     placeOrder,
     cancelOrder,
+    tradingMode,
   } = useEquityStore();
 
   const holding = holdings[selectedInstrument.symbol] || { quantity: 0, available: 0 };
@@ -174,9 +175,15 @@ export function TradeView() {
         </div>
 
         <div className="trade-sub-right">
-          <span className="wunder-pill-env">
-            <span className="wunder-pill-dot-warning" /> Paper Trading · NSE
-          </span>
+          {tradingMode === 'paper' ? (
+            <span className="wunder-pill-env">
+              <span className="wunder-pill-dot-warning" /> Simulated · Paper Trading
+            </span>
+          ) : (
+            <span className="wunder-pill-feed">
+              <span className="pulse-indicator" /> NSE Feed · Live
+            </span>
+          )}
           <button type="button" className="trade-star-btn">
             <Star size={16} color="#f59e0b" fill="#f59e0b" />
           </button>
