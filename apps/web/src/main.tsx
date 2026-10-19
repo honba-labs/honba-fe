@@ -5,10 +5,14 @@ import { QueryClientProvider } from '@tanstack/react-query';
 
 import { AppLayout } from './app-shell/AppLayout';
 import { PortfolioView } from './features/portfolio/PortfolioView';
+import { ScreenerPage } from './features/screener/ScreenerPage';
+import { WorkbenchView } from './features/workbench/WorkbenchView';
+import { AlgoDesignerPage } from './features/algodesigner/AlgoDesignerPage';
+import { SimulatorView } from './features/simulator/SimulatorView';
+import { TradebookView } from './features/tradebook/TradebookView';
 import { MarketsView } from './features/markets/MarketsView';
 import { TradeView } from './features/trade/TradeView';
 import { WalletView } from './features/wallet/WalletView';
-import { WorkbenchView } from './features/workbench/WorkbenchView';
 import { SettingsView } from './features/settings/SettingsView';
 import { createQueryClient } from './core/api/query';
 import './styles/theme.css';
@@ -23,12 +27,15 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <PortfolioView /> },
       { path: 'portfolio', element: <PortfolioView /> },
+      { path: 'screener', element: <ScreenerPage /> },
+      { path: 'workbench', element: <WorkbenchView /> },
+      { path: 'strategy-studio', element: <AlgoDesignerPage /> },
+      { path: 'algodesigner', element: <AlgoDesignerPage /> },
+      { path: 'simulator', element: <SimulatorView /> },
+      { path: 'tradebook', element: <TradebookView /> },
       { path: 'markets', element: <MarketsView /> },
-      { path: 'screener', element: <MarketsView /> },
       { path: 'trade', element: <TradeView /> },
       { path: 'wallet', element: <WalletView /> },
-      { path: 'workbench', element: <WorkbenchView /> },
-      { path: 'algodesigner', element: <WorkbenchView /> },
       { path: 'settings', element: <SettingsView /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],

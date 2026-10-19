@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutGrid,
-  TrendingUp,
+  SlidersHorizontal,
   BarChart2,
-  Wallet,
-  Cpu,
+  BrainCircuit,
+  PlayCircle,
+  BookOpen,
   Settings,
   Bell,
   Sun,
@@ -46,6 +47,21 @@ export function AppLayout() {
     setTheme(themeEngine.current);
   };
 
+  const getHeaderTitle = () => {
+    const p = location.pathname;
+    if (p === '/' || p === '/portfolio') return 'Portfolio & Accounts';
+    if (p === '/screener') return 'Stock Screener';
+    if (p === '/workbench') return 'Trading Workbench';
+    if (p === '/strategy-studio' || p === '/algodesigner') return 'Strategy Studio';
+    if (p === '/simulator') return 'Simulation & Backtest Replay';
+    if (p === '/tradebook') return 'Tradebook & Session Journal';
+    if (p === '/markets') return 'Markets Overview';
+    if (p === '/trade') return `Terminal · ${useEquityStore.getState().activeTicker}`;
+    if (p === '/wallet') return 'Funds & Margin';
+    if (p === '/settings') return 'Settings & Preferences';
+    return 'Honba';
+  };
+
   return (
     <div className="wunder-app">
       {/* 1. Primary Slim Left Icon Navigation (68px) */}
@@ -71,44 +87,68 @@ export function AppLayout() {
           </div>
         </div>
 
+        {/* Primary nav links in exact user-specified order:
+            1. Portfolio (Landing)
+            2. Screener
+            3. Workbench
+            4. Strategy Studio
+            5. Simulator
+            6. Tradebook */}
         <nav className="wunder-nav-links">
           <NavLink
-            to="/"
-            className={({ isActive }) => `wunder-nav-item ${isActive && location.pathname === '/' ? 'active' : ''}`}
-            title="Equity Portfolio"
+            to="/portfolio"
+            className={({ isActive }) =>
+              `wunder-nav-item ${isActive || location.pathname === '/' ? 'active' : ''}`
+            }
+            title="Portfolio & Accounts"
           >
             <LayoutGrid size={20} />
           </NavLink>
+
           <NavLink
-            to="/markets"
+            to="/screener"
             className={({ isActive }) => `wunder-nav-item ${isActive ? 'active' : ''}`}
-            title="Markets & Indices"
+            title="Stock Screener"
           >
-            <TrendingUp size={20} />
+            <SlidersHorizontal size={20} />
           </NavLink>
-          <NavLink
-            to="/trade"
-            className={({ isActive }) => `wunder-nav-item ${isActive ? 'active' : ''}`}
-            title="Trading Terminal"
-          >
-            <BarChart2 size={20} />
-          </NavLink>
-          <NavLink
-            to="/wallet"
-            className={({ isActive }) => `wunder-nav-item ${isActive ? 'active' : ''}`}
-            title="Funds & Margins"
-          >
-            <Wallet size={20} />
-          </NavLink>
+
           <NavLink
             to="/workbench"
             className={({ isActive }) => `wunder-nav-item ${isActive ? 'active' : ''}`}
-            title="Algo Workbench"
+            title="Trading Workbench"
           >
-            <Cpu size={20} />
+            <BarChart2 size={20} />
+          </NavLink>
+
+          <NavLink
+            to="/strategy-studio"
+            className={({ isActive }) =>
+              `wunder-nav-item ${isActive || location.pathname.startsWith('/algodesigner') ? 'active' : ''}`
+            }
+            title="Strategy Studio"
+          >
+            <BrainCircuit size={20} />
+          </NavLink>
+
+          <NavLink
+            to="/simulator"
+            className={({ isActive }) => `wunder-nav-item ${isActive ? 'active' : ''}`}
+            title="Simulator & Backtest Replay"
+          >
+            <PlayCircle size={20} />
+          </NavLink>
+
+          <NavLink
+            to="/tradebook"
+            className={({ isActive }) => `wunder-nav-item ${isActive ? 'active' : ''}`}
+            title="Tradebook & Session Journal"
+          >
+            <BookOpen size={20} />
           </NavLink>
         </nav>
 
+        {/* Bottom Navigation */}
         <div className="wunder-nav-bottom">
           <button
             type="button"
@@ -140,17 +180,7 @@ export function AppLayout() {
         {/* Top Header Bar */}
         <header className="wunder-header">
           <div className="wunder-header-left">
-            <h1 className="wunder-header-title">
-              {location.pathname === '/' || location.pathname === '/portfolio'
-                ? 'Portfolio'
-                : location.pathname === '/markets' || location.pathname === '/screener'
-                ? 'Markets overview'
-                : location.pathname === '/trade'
-                ? `Terminal · ${useEquityStore.getState().activeTicker}`
-                : location.pathname === '/wallet'
-                ? 'Funds & Margin'
-                : 'Workbench'}
-            </h1>
+            <h1 className="wunder-header-title">{getHeaderTitle()}</h1>
           </div>
 
           <div className="wunder-header-center">
