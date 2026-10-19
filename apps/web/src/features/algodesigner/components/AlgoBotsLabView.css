@@ -1,0 +1,267 @@
+/* ============================================================================
+   Algo Bots & Strategy Lab View Styles (Strategy Studio)
+   ============================================================================ */
+
+.studio-mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background-color: var(--bg-surface, var(--bg-card, #11151f));
+  border-bottom: 1px solid var(--border-subtle, #1e2638);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.studio-mode-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.studio-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-muted, #8492a6);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.studio-mode-btn:hover {
+  background-color: var(--bg-hover, #1c2333);
+  color: var(--fg-primary, #f8fafc);
+}
+
+.studio-mode-btn.active {
+  background-color: var(--bg-elevated, #161c28);
+  border-color: var(--border, #2c3850);
+  color: var(--fg-primary, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.studio-tagline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--fg-muted, #8492a6);
+}
+
+.badge-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg-hover, #1c2333);
+  color: var(--fg-secondary, #cbd5e1);
+}
+
+.text-accent {
+  color: var(--accent, #2962ff);
+}
+
+.algo-bots-lab-root {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.algo-bots-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.algo-bots-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--fg-primary);
+  margin: 0;
+}
+
+.algo-bots-subtitle {
+  font-size: 13px;
+  color: var(--fg-muted);
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.algo-bots-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+}
+
+.algo-bots-list-card,
+.algo-bots-detail-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-surface, var(--bg-card, #11151f));
+  border: 1px solid var(--border-subtle, #1e2638);
+  border-radius: var(--radius-lg, 10px);
+}
+
+.algo-bots-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.algo-bots-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.algo-bots-strat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.algo-bots-strat-item {
+  background-color: var(--bg-input, #0b0e14);
+  border: 1px solid var(--border-subtle, #1e2638);
+  border-radius: var(--radius-md, 8px);
+  padding: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.15s ease;
+}
+
+.algo-bots-strat-item:hover {
+  border-color: var(--border-strong, #3b465e);
+  background-color: var(--bg-hover, #161c28);
+}
+
+.algo-bots-strat-item.active {
+  border-color: var(--primary, #2962ff);
+  box-shadow: 0 0 0 1px var(--primary-glow, rgba(41, 98, 255, 0.35));
+}
+
+.algo-bots-strat-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.algo-bots-strat-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.algo-bots-strat-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  font-size: 11px;
+}
+
+.algo-bots-metric-lbl {
+  color: var(--fg-muted, #8492a6);
+}
+
+.algo-bots-metric-val {
+  font-weight: 600;
+  color: var(--fg-secondary, #cbd5e1);
+}
+
+.algo-bots-strat-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Detail Card */
+.algo-bots-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border, #2a2e39);
+}
+
+.algo-bots-strat-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.algo-bots-strat-type {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+
+.algo-bots-code-editor-wrapper {
+  flex: 1;
+  min-height: 280px;
+  margin-bottom: 16px;
+}
+
+.algo-bots-code-textarea {
+  width: 100%;
+  height: 280px;
+  background-color: var(--bg-input, #0b0e14);
+  border: 1px solid var(--border, #2a2e39);
+  border-radius: var(--radius-md, 8px);
+  color: var(--fg-primary);
+  font-size: 13px;
+  padding: 14px;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+  font-family: var(--font-mono, monospace);
+  box-sizing: border-box;
+}
+
+.algo-bots-code-textarea:focus {
+  border-color: var(--primary, #2962ff);
+}
+
+.algo-bots-logs-box {
+  background-color: var(--bg-input, #0b0e14);
+  border: 1px solid var(--border-subtle, #1e2638);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px;
+}
+
+.algo-bots-logs-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.algo-bots-logs-content {
+  font-size: 12px;
+  color: var(--fg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 1024px) {
+  .algo-bots-grid {
+    grid-template-columns: 1fr;
+  }
+}

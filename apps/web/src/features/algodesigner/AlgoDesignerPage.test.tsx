@@ -195,9 +195,24 @@ describe('AlgoDesignerPage — route renders without crashing', () => {
     expect(screen.getByRole('button', { name: 'SMA Cross' })).toBeInTheDocument();
     // Toolbar buttons present - use text content for library button (accessible name is "Library")
     expect(screen.getByRole('button', { name: 'Library' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /save to library/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /export .py/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /co-pilot/i })).toBeInTheDocument();
+    // Strategy Studio Mode Switcher buttons present
+    expect(screen.getByRole('button', { name: /visual flow & code designer/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /algo bots & strategy lab/i })).toBeInTheDocument();
+  });
+
+  it('switches to Algo Bots & Strategy Lab view when tab is clicked', async () => {
+    const client = stubbedApiClient();
+    setApiClient(client);
+    resetDesignerStore();
+
+    renderPage(<AlgoDesignerPage />);
+
+    const botsTab = screen.getByRole('button', { name: /algo bots & strategy lab/i });
+    fireEvent.click(botsTab);
+
+    expect(screen.getByText('Equities Algo Bots')).toBeInTheDocument();
+    expect(screen.getByText(/Simulated quantitative execution engines/i)).toBeInTheDocument();
+    expect(screen.getAllByText('NIFTY Intraday Momentum').length).toBeGreaterThanOrEqual(1);
   });
 });
 
