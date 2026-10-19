@@ -1,22 +1,24 @@
 /* ============================================================================
    Algo Bots & Strategy Lab View Styles (Strategy Studio)
+   Composed cleanly with @honba/ui-core components
    ============================================================================ */
 
 .studio-mode-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 14px;
+  padding: 8px 16px;
   background-color: var(--bg-surface, var(--bg-card, #11151f));
   border-bottom: 1px solid var(--border-subtle, #1e2638);
   gap: 12px;
   flex-shrink: 0;
+  font-family: var(--font-sans, 'Inter', sans-serif);
 }
 
 .studio-mode-nav {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .studio-mode-btn {
@@ -24,7 +26,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm, 4px);
   border: 1px solid transparent;
   background: transparent;
   color: var(--fg-muted, #8492a6);
@@ -32,6 +34,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  font-family: inherit;
 }
 
 .studio-mode-btn:hover {
@@ -68,22 +71,24 @@
 }
 
 .algo-bots-lab-root {
-  padding: 24px;
+  padding: 18px 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-width: 1440px;
+  gap: 16px;
+  max-width: 1560px;
   width: 100%;
   margin: 0 auto;
   overflow-y: auto;
   flex: 1;
+  font-family: var(--font-sans, 'Inter', sans-serif);
 }
 
 .algo-bots-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .algo-bots-title {
@@ -91,10 +96,11 @@
   font-weight: 700;
   color: var(--fg-primary);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .algo-bots-subtitle {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--fg-muted);
   margin-top: 4px;
   margin-bottom: 0;
@@ -102,166 +108,150 @@
 
 .algo-bots-grid {
   display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: 20px;
+  grid-template-columns: 440px 1fr;
+  gap: 16px;
+  align-items: start;
 }
 
-.algo-bots-list-card,
-.algo-bots-detail-card {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
+/* @honba/ui-core Panels Integration */
+.algo-bots-left-panel,
+.algo-bots-right-panel {
+  border-radius: var(--radius-md, 6px);
   background-color: var(--bg-surface, var(--bg-card, #11151f));
   border: 1px solid var(--border-subtle, #1e2638);
-  border-radius: var(--radius-lg, 10px);
 }
 
-.algo-bots-card-head {
+.algo-bots-badge-total {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: var(--bg-hover, #1a2233);
+  color: var(--fg-muted, #94a3b8);
+}
+
+.algo-bots-table-wrapper {
+  padding: 8px 12px 14px 12px;
+}
+
+.algo-bots-ticker-pill {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--bg-hover, #182030);
+  color: var(--accent, #38bdf8);
+  border: 1px solid var(--border-subtle, #25334d);
+}
+
+.algo-bots-type-pill {
+  font-size: 11px;
+  color: var(--fg-muted);
+  font-weight: 500;
+}
+
+.algo-bots-panel-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.algo-bots-metrics-box {
+  background: var(--bg-elevated, #141924);
+  border: 1px solid var(--border-subtle, #1f2738);
+  border-radius: var(--radius-sm, 4px);
+  padding: 12px 14px;
+}
+
+.algo-bots-tabs-row {
+  border-bottom: 1px solid var(--border-subtle, #1e2638);
+  padding-bottom: 2px;
+}
+
+.algo-bots-tab-content {
+  min-height: 380px;
+}
+
+.algo-bots-monaco-wrapper {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle, #1e2638);
+  border-radius: var(--radius-sm, 4px);
+  overflow: hidden;
+}
+
+.algo-bots-editor-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  padding: 6px 12px;
+  background: var(--bg-elevated, #161c28);
+  border-bottom: 1px solid var(--border-subtle, #232d40);
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono, monospace);
 }
 
-.algo-bots-card-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--fg-primary);
+.algo-bots-env-tag {
+  color: var(--bullish, #00c076);
+  font-size: 11px;
 }
 
-.algo-bots-strat-list {
+.algo-bots-backtest-wrapper {
+  background: var(--bg-elevated, #141924);
+  border: 1px solid var(--border-subtle, #1f2738);
+  border-radius: var(--radius-sm, 4px);
+  padding: 16px;
+}
+
+.algo-bots-trades-wrapper {
+  background: var(--bg-elevated, #141924);
+  border: 1px solid var(--border-subtle, #1f2738);
+  border-radius: var(--radius-sm, 4px);
+  padding: 8px;
+}
+
+.algo-bots-telemetry-wrapper {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.algo-bots-strat-item {
-  background-color: var(--bg-input, #0b0e14);
-  border: 1px solid var(--border-subtle, #1e2638);
-  border-radius: var(--radius-md, 8px);
-  padding: 14px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  transition: all 0.15s ease;
-}
-
-.algo-bots-strat-item:hover {
-  border-color: var(--border-strong, #3b465e);
-  background-color: var(--bg-hover, #161c28);
-}
-
-.algo-bots-strat-item.active {
-  border-color: var(--primary, #2962ff);
-  box-shadow: 0 0 0 1px var(--primary-glow, rgba(41, 98, 255, 0.35));
-}
-
-.algo-bots-strat-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.algo-bots-strat-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--fg-primary);
-}
-
-.algo-bots-strat-metrics {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  font-size: 11px;
-}
-
-.algo-bots-metric-lbl {
-  color: var(--fg-muted, #8492a6);
-}
-
-.algo-bots-metric-val {
-  font-weight: 600;
-  color: var(--fg-secondary, #cbd5e1);
-}
-
-.algo-bots-strat-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* Detail Card */
-.algo-bots-detail-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border, #2a2e39);
-}
-
-.algo-bots-strat-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--fg-primary);
-}
-
-.algo-bots-strat-type {
-  font-size: 12px;
-  color: var(--fg-muted);
-  margin-top: 2px;
-}
-
-.algo-bots-code-editor-wrapper {
-  flex: 1;
-  min-height: 280px;
-  margin-bottom: 16px;
-}
-
-.algo-bots-code-textarea {
-  width: 100%;
-  height: 280px;
-  background-color: var(--bg-input, #0b0e14);
-  border: 1px solid var(--border, #2a2e39);
-  border-radius: var(--radius-md, 8px);
-  color: var(--fg-primary);
-  font-size: 13px;
-  padding: 14px;
-  resize: vertical;
-  outline: none;
-  line-height: 1.5;
-  font-family: var(--font-mono, monospace);
-  box-sizing: border-box;
-}
-
-.algo-bots-code-textarea:focus {
-  border-color: var(--primary, #2962ff);
-}
-
 .algo-bots-logs-box {
-  background-color: var(--bg-input, #0b0e14);
+  background-color: var(--bg-elevated, #121622);
   border: 1px solid var(--border-subtle, #1e2638);
-  border-radius: var(--radius-md, 8px);
-  padding: 12px;
+  border-radius: var(--radius-sm, 4px);
+  padding: 14px;
 }
 
 .algo-bots-logs-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--fg-muted);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .algo-bots-logs-content {
-  font-size: 12px;
-  color: var(--fg-secondary);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--fg-secondary);
 }
 
-@media (max-width: 1024px) {
+.algo-bots-log-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 1120px) {
   .algo-bots-grid {
     grid-template-columns: 1fr;
   }
 }
+

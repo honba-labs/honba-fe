@@ -1,8 +1,18 @@
-// Library Drawer - saved strategies browser
-// Mirrors honba-frontend apps/algodesigner/library-drawer.tsx
-
-import React, { useMemo } from 'react';
-import { Plus, FolderOpen, Copy, Trash2, ExternalLink, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import {
+  Plus,
+  FolderOpen,
+  Copy,
+  Trash2,
+  ExternalLink,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  Globe,
+  User,
+  Layers,
+  Play,
+} from 'lucide-react';
 
 import { useDesignerStore } from '../store';
 import type { SavedStrategyManifest } from '../library-store';
@@ -31,22 +41,43 @@ export const LibraryDrawer: React.FC<LibraryDrawerProps> = ({
   onFork,
   onDelete,
 }) => {
-  const [activeCategory, setActiveCategory] = React.useState('All');
-  const [expandedTemplates, setExpandedTemplates] = React.useState<Record<string, boolean>>({});
+  const [libraryMode, setLibraryMode] = useState<'all' | 'global' | 'user'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [expandedTemplates, setExpandedTemplates] = useState<Record<string, boolean>>({});
 
   const filteredSaved = useMemo(() => {
-    if (activeCategory === 'All') return saved;
-    return saved.filter((s) => s.category === activeCategory);
-  }, [saved, activeCategory]);
+    return saved.filter((s) => {
+      const matchesCategory = activeCategory === 'All' || s.category === activeCategory;
+      const matchesSearch =
+        !searchQuery ||
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.tags?.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesCategory && matchesSearch;
+    });
+  }, [saved, activeCategory, searchQuery]);
+
+  const filteredTemplates = useMemo(() => {
+    return templates.filter((t) => {
+      const matchesCategory = activeCategory === 'All' || t.category === activeCategory;
+      const matchesSearch =
+        !searchQuery ||
+        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [templates, activeCategory, searchQuery]);
 
   const templateGroups = useMemo(() => {
     const groups: Record<string, typeof templates> = {};
-    templates.forEach((t) => {
+    filteredTemplates.forEach((t) => {
       if (!groups[t.category]) groups[t.category] = [];
       groups[t.category].push(t);
     });
     return groups;
-  }, [templates]);
+  }, [filteredTemplates]);
 
   const handleToggleTemplateCategory = (category: string) => {
     setExpandedTemplates((prev) => ({ ...prev, [category]: !prev[category] }));
@@ -96,7 +127,7 @@ export const LibraryDrawer: React.FC<LibraryDrawerProps> = ({
               fontWeight: 600,
             }}
           >
-            {saved.length} saved
+            {templates.length} Global • {saved.length} User
           </span>
         </div>
         <button
@@ -110,12 +141,113 @@ export const LibraryDrawer: React.FC<LibraryDrawerProps> = ({
         </button>
       </div>
 
+      {/* Global Library vs User Library Segmented Control */}
+      <div
+        style={{
+          display: 'flex',
+          padding: '6px 10px',
+          gap: 4,
+          background: 'var(--bg-card, #141722)',
+          borderBottom: '1px solid var(--border-subtle, #2a2e39)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setLibraryMode('all')}
+          style={{
+            flex: 1,
+            padding: '4px 6px',
+            fontSize: 10.5,
+            fontWeight: 600,
+            borderRadius: 4,
+            border: 'none',
+            background: libraryMode === 'all' ? 'var(--accent-primary, #2962ff)' : 'transparent',
+            color: libraryMode === 'all' ? '#ffffff' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          All
+        </button>
+        <button
+          type="button"
+          onClick={() => setLibraryMode('global')}
+          style={{
+            flex: 1.5,
+            padding: '4px 6px',
+            fontSize: 10.5,
+            fontWeight: 600,
+            borderRadius: 4,
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            background: libraryMode === 'global' ? 'var(--accent-primary, #2962ff)' : 'transparent',
+            color: libraryMode === 'global' ? '#ffffff' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+          title="Global Library: Pre-built institutional & OpenAlgo strategies"
+        >
+          <Globe size={11} />
+          <span>Global ({templates.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setLibraryMode('user')}
+          style={{
+            flex: 1.5,
+            padding: '4px 6px',
+            fontSize: 10.5,
+            fontWeight: 600,
+            borderRadius: 4,
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            background: libraryMode === 'user' ? 'var(--accent-primary, #2962ff)' : 'transparent',
+            color: libraryMode === 'user' ? '#ffffff' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+          title="User Library: My custom created and saved strategies"
+        >
+          <User size={11} />
+          <span>User ({saved.length})</span>
+        </button>
+      </div>
+
+      {/* Search Input */}
+      <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--border-subtle, #2a2e39)' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search size={12} style={{ position: 'absolute', left: 8, color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search strategies & indicators…"
+            style={{
+              width: '100%',
+              padding: '4px 8px 4px 26px',
+              fontSize: 11,
+              background: 'var(--bg-input, #0e121b)',
+              border: '1px solid var(--border-subtle, #2a2e39)',
+              borderRadius: 4,
+              color: 'var(--text-primary)',
+              outline: 'none',
+            }}
+          />
+        </div>
+      </div>
+
       {/* Category Tabs */}
       <div
         style={{
           display: 'flex',
           gap: 4,
-          padding: '8px 12px',
+          padding: '6px 10px',
           borderBottom: '1px solid var(--border-subtle, #2a2e39)',
           overflowX: 'auto',
         }}
@@ -126,7 +258,7 @@ export const LibraryDrawer: React.FC<LibraryDrawerProps> = ({
             type="button"
             onClick={() => setActiveCategory(cat as typeof activeCategory)}
             className={activeCategory === cat ? 'shortlist-btn shortlist-btn-primary' : 'shortlist-btn'}
-            style={{ padding: '3px 10px', fontSize: 11, whiteSpace: 'nowrap' }}
+            style={{ padding: '3px 8px', fontSize: 10.5, whiteSpace: 'nowrap' }}
           >
             {cat}
           </button>
@@ -135,92 +267,175 @@ export const LibraryDrawer: React.FC<LibraryDrawerProps> = ({
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* Strategy Templates */}
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Strategy Templates
-          </div>
-          {Object.entries(templateGroups).map(([category, tmpls]) => {
-            const isExpanded = expandedTemplates[category] ?? true;
-            return (
-              <div key={category} style={{ marginBottom: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => handleToggleTemplateCategory(category)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    padding: '6px 8px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-secondary)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    borderRadius: 'var(--radius-sm, 4px)',
-                  }}
-                >
-                  <span>{category}</span>
-                  {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                </button>
-                {isExpanded && (
-                  <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {tmpls.map((tmpl) => (
-                      <button
-                        key={tmpl.name}
-                        type="button"
-                        onClick={() => {
-                          onOpen(tmpl.graph);
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          padding: '6px 8px',
-                          background: 'var(--bg-secondary, #131722)',
-                          border: '1px solid var(--border-subtle, #2a2e39)',
-                          borderRadius: 'var(--radius-sm, 4px)',
-                          color: 'var(--text-primary)',
-                          fontSize: 11,
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          transition: 'all var(--transition-fast, 120ms)',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'var(--bg-surface-elevated, #2a2e39)';
-                          e.currentTarget.style.borderColor = 'var(--accent-primary, #2962ff)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'var(--bg-secondary, #131722)';
-                          e.currentTarget.style.borderColor = 'var(--border-subtle, #2a2e39)';
-                        }}
-                      >
-                        <FolderOpen size={12} style={{ color: 'var(--accent-primary, #2962ff)' }} />
-                        <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {tmpl.label}
-                        </span>
-                        <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{tmpl.graph.nodes.length} nodes</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Saved Strategies */}
-        {saved.length > 0 && (
+        {/* Strategy Templates (Global Library) */}
+        {libraryMode !== 'user' && (
           <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              My Strategies ({filteredSaved.length})
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--text-secondary)',
+                marginBottom: 8,
+                letterSpacing: '0.5px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Globe size={11} color="var(--accent-primary)" />
+                <span>Strategy Templates</span>
+              </div>
+              <span style={{ fontSize: 9.5, color: 'var(--text-muted)' }}>
+                GLOBAL LIBRARY ({filteredTemplates.length})
+              </span>
             </div>
+
+            {filteredTemplates.length === 0 ? (
+              <div style={{ padding: 12, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11 }}>
+                No templates match filter.
+              </div>
+            ) : (
+              Object.entries(templateGroups).map(([category, tmpls]) => {
+                const isExpanded = expandedTemplates[category] ?? true;
+                return (
+                  <div key={category} style={{ marginBottom: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleTemplateCategory(category)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        padding: '4px 8px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        borderRadius: 'var(--radius-sm, 4px)',
+                      }}
+                    >
+                      <span style={{ textTransform: 'capitalize' }}>{category.replace('_', ' ')}</span>
+                      {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    </button>
+                    {isExpanded && (
+                      <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {tmpls.map((tmpl) => (
+                          <div
+                            key={tmpl.name}
+                            style={{
+                              padding: '8px 10px',
+                              background: 'var(--bg-secondary, #131722)',
+                              border: '1px solid var(--border-subtle, #2a2e39)',
+                              borderRadius: 'var(--radius-sm, 4px)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 6,
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                              <span style={{ fontWeight: 600, fontSize: 11.5, color: 'var(--text-primary)' }}>
+                                {tmpl.label}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: 9,
+                                  padding: '1px 5px',
+                                  borderRadius: 3,
+                                  background: 'var(--accent-primary, #2962ff)22',
+                                  color: 'var(--accent-primary, #2962ff)',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {tmpl.graph.universe.explicit?.[0]?.symbol ?? 'NSE'}
+                              </span>
+                            </div>
+
+                            {tmpl.description && (
+                              <div style={{ fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.35 }}>
+                                {tmpl.description}
+                              </div>
+                            )}
+
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginTop: 2 }}>
+                              <span style={{ fontSize: 9.5, color: 'var(--text-muted)' }}>
+                                {tmpl.graph.nodes.length} nodes • {tmpl.graph.driving_timeframe.interval}
+                                {tmpl.graph.driving_timeframe.aggregation[0]}
+                              </span>
+                              <div style={{ display: 'flex', gap: 4 }}>
+                                <button
+                                  type="button"
+                                  onClick={() => onOpen(tmpl.graph)}
+                                  className="shortlist-btn"
+                                  style={{ padding: '2px 6px', fontSize: 10, display: 'flex', alignItems: 'center', gap: 3 }}
+                                  title="Load into Visual Flow & Code Editor"
+                                >
+                                  <FolderOpen size={10} />
+                                  <span>Open</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onSimulate(tmpl.graph)}
+                                  className="shortlist-btn"
+                                  style={{
+                                    padding: '2px 6px',
+                                    fontSize: 10,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 3,
+                                    color: 'var(--bullish, #089981)',
+                                  }}
+                                  title="Simulate this template"
+                                >
+                                  <Play size={10} fill="currentColor" />
+                                  <span>Simulate</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* Saved Strategies (User Library) */}
+        {libraryMode !== 'global' && (
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--text-secondary)',
+                marginBottom: 8,
+                letterSpacing: '0.5px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <User size={11} color="var(--bullish, #089981)" />
+                <span>My Strategies ({filteredSaved.length})</span>
+              </div>
+              <span style={{ fontSize: 9.5, color: 'var(--text-muted)' }}>
+                USER LIBRARY
+              </span>
+            </div>
+
             {filteredSaved.length === 0 ? (
               <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11 }}>
-                No strategies in this category.
+                {saved.length === 0
+                  ? 'No custom strategies saved yet. Save your current strategy to see it here.'
+                  : 'No strategies in this category.'}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

@@ -52,7 +52,7 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif);
+  font-family: var(--font-family-sans, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
   font-size: 13px;
 }
 

@@ -26,6 +26,7 @@ export interface MultiChartViewProps {
   syncEnabled?: boolean;
   onToggleSync?: (enabled: boolean) => void;
   isReplaying?: boolean;
+  showDrawingRail?: boolean;
 }
 
 const TIMEFRAMES_OPTIONS = [
@@ -57,6 +58,7 @@ export const MultiChartView: React.FC<MultiChartViewProps> = ({
   syncEnabled = true,
   onToggleSync,
   isReplaying = false,
+  showDrawingRail = false,
 }) => {
   const hasMultiple = secondaryCharts.length > 0;
 
@@ -71,6 +73,7 @@ export const MultiChartView: React.FC<MultiChartViewProps> = ({
           trips={trips}
           seriesKey={seriesKey}
           isReplaying={isReplaying}
+          showDrawingRail={showDrawingRail}
         />
       </div>
     );
@@ -150,18 +153,6 @@ export const MultiChartView: React.FC<MultiChartViewProps> = ({
                 <span>Sync</span>
               </label>
             )}
-            {secondaryCharts.length < 3 && onAddChart && (
-              <button
-                type="button"
-                className="shortlist-btn"
-                onClick={() => onAddChart()}
-                style={{ fontSize: 10, padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 3 }}
-                title="Add another timeframe chart"
-              >
-                <Plus size={10} />
-                <span>Add Chart</span>
-              </button>
-            )}
           </div>
         </div>
         <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
@@ -172,6 +163,7 @@ export const MultiChartView: React.FC<MultiChartViewProps> = ({
             trips={trips}
             seriesKey={`${seriesKey}|primary`}
             isReplaying={isReplaying}
+            showDrawingRail={showDrawingRail}
           />
         </div>
       </div>

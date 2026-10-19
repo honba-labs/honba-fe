@@ -50,6 +50,8 @@ export interface SimulatorDrawingRailProps {
   onRedo?: () => void;
   onClear?: () => void;
   drawingCount?: number;
+  layoutMode?: 'dock' | 'float';
+  style?: React.CSSProperties;
 }
 
 interface ToolButtonDef {
@@ -88,27 +90,51 @@ export const SimulatorDrawingRail: React.FC<SimulatorDrawingRailProps> = ({
   onRedo,
   onClear,
   drawingCount = 0,
+  layoutMode = 'dock',
+  style,
 }) => {
+  const isDock = layoutMode === 'dock';
+
   return (
     <div
-      style={{
-        position: 'absolute',
-        left: 8,
-        top: 54,
-        zIndex: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        background: 'var(--bg-surface-elevated)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 6,
-        padding: 3,
-        boxShadow: 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.4))',
-        gap: 2,
-        userSelect: 'none',
-        maxHeight: 'calc(100% - 64px)',
-        overflowY: 'auto',
-      }}
+      style={
+        isDock
+          ? {
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'var(--bg-surface-elevated, #1e222d)',
+              borderRight: '1px solid var(--border-subtle, #2a2e39)',
+              width: 38,
+              height: '100%',
+              padding: '6px 2px',
+              gap: 2,
+              userSelect: 'none',
+              overflowY: 'auto',
+              flexShrink: 0,
+              zIndex: 10,
+              ...style,
+            }
+          : {
+              position: 'absolute',
+              left: 8,
+              top: 54,
+              zIndex: 10,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'var(--bg-surface-elevated)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 6,
+              padding: 3,
+              boxShadow: 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.4))',
+              gap: 2,
+              userSelect: 'none',
+              maxHeight: 'calc(100% - 64px)',
+              overflowY: 'auto',
+              ...style,
+            }
+      }
       title={disabled ? 'Drawing tools disabled during live playback. Pause simulation to draw.' : 'Drawing Tools'}
     >
       {/* Simulation Replay Lock Badge - Icon only */}

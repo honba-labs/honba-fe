@@ -27,7 +27,7 @@ import {
 } from '../../../core/simulator/chart-series';
 import { resolveRange, universeFor } from '../../../core/simulator/controls';
 import { markersFromPairing, pairTrades, type RoundTrip, type TradeMarker } from '../../../core/simulator/trade-pairing';
-import { Plus } from 'lucide-react';
+import { Plus, PenTool } from 'lucide-react';
 import { dataLayer } from '../../../core/data-layer';
 import { SimulatorDrawingRail, type DrawingToolType } from './simulator-drawing-rail';
 import { SimulatorDrawingCanvas, type ChartDrawing } from './simulator-drawing-canvas';
@@ -147,6 +147,7 @@ export interface InteractiveChartProps {
   showVolume?: boolean;
   showVwap?: boolean;
   isReplaying?: boolean;
+  showDrawingRail?: boolean;
 }
 
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({
@@ -158,6 +159,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   showVolume = true,
   showVwap = true,
   isReplaying = false,
+  showDrawingRail = false,
 }) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
@@ -424,53 +426,55 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const empty = bars.length === 0;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0 }}>
-      <div ref={hostRef} style={{ position: 'absolute', inset: 0 }} />
+    <div style={{ display: 'flex', width: '100%', height: '100%', minHeight: 0, position: 'relative' }}>
+      {showDrawingRail && (
+        <SimulatorDrawingRail
+          layoutMode="dock"
+          activeTool={activeDrawingTool}
+          onSelectTool={setActiveDrawingTool}
+          disabled={!!isReplaying}
+          canUndo={drawings.length > 0}
+          canRedo={undoneDrawings.length > 0}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onClear={handleClearDrawings}
+          drawingCount={drawings.length}
+        />
+      )}
 
-      {/* Interactive Drawing Canvas Overlay */}
-      <SimulatorDrawingCanvas
-        activeTool={activeDrawingTool}
-        disabled={!!isReplaying}
-        drawings={drawings}
-        onAddDrawing={handleAddDrawing}
-        onDeleteDrawing={handleDeleteDrawing}
-        onSelectTool={setActiveDrawingTool}
-        color="var(--accent-primary, #38bdf8)"
-      />
+      <div style={{ flex: 1, minWidth: 0, height: '100%', position: 'relative' }}>
+        <div ref={hostRef} style={{ position: 'absolute', inset: 0 }} />
 
-      {/* Consistent OpenAlgo Drawing Rail on Left */}
-      <SimulatorDrawingRail
-        activeTool={activeDrawingTool}
-        onSelectTool={setActiveDrawingTool}
-        disabled={!!isReplaying}
-        canUndo={drawings.length > 0}
-        canRedo={undoneDrawings.length > 0}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onClear={handleClearDrawings}
-        drawingCount={drawings.length}
-      />
+        {/* Interactive Drawing Canvas Overlay */}
+        <SimulatorDrawingCanvas
+          activeTool={activeDrawingTool}
+          disabled={!!isReplaying}
+          drawings={drawings}
+          onAddDrawing={handleAddDrawing}
+          onDeleteDrawing={handleDeleteDrawing}
+          onSelectTool={setActiveDrawingTool}
+          color="var(--accent-primary, #38bdf8)"
+        />
 
-      {empty ? (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 12,
-            color: 'var(--text-muted)',
-            pointerEvents: 'none',
-          }}
-        >
-          No bars to draw yet.
-        </div>
-      ) : null}
+        {empty ? (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 12,
+              color: 'var(--text-muted)',
+              pointerEvents: 'none',
+            }}
+          >
+            No bars to draw yet.
+          </div>
+        ) : null}
 
-      {tip ? (
-        <TradeTooltip tip={tip} onClose={() => setTip(null)} />
-      ) : null}
+        {tip ? <TradeTooltip tip={tip} onClose={() => setTip(null)} /> : null}
+      </div>
     </div>
   );
 };
@@ -590,6 +594,7 @@ export const SimulatorChart: React.FC<SimulatorChartProps> = ({
 
   const [barsState, setBarsState] = useState<BarsState>(() => initialBarsState());
   const [specs, setSpecs] = useState<ChartIndicatorSpec[]>([]);
+  const [showDrawingRail, setShowDrawingRail] = useState(false);
 
   const instrumentId = universeFor(controls);
   const { start, end } = useMemo(() => resolveRange(controls), [controls]);
@@ -692,11 +697,12 @@ export const SimulatorChart: React.FC<SimulatorChartProps> = ({
         <span style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>{timeframe}</span>
         <span>{start && end ? `${start} → ${end}` : ''}</span>
 
-        {secondaryCharts.length === 0 && onAddChart && (
+        {/* Stably positioned Add Chart button (persists across 0, 1, 2 secondary charts) */}
+        {secondaryCharts.length < 3 && onAddChart && (
           <button
             type="button"
             className="btn btn-outline btn-xs"
-            onClick={() => onAddChart('1h')}
+            onClick={() => onAddChart(secondaryCharts.length === 0 ? '1h' : '15m')}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -712,6 +718,26 @@ export const SimulatorChart: React.FC<SimulatorChartProps> = ({
             <span>Add Chart</span>
           </button>
         )}
+
+        {/* Drawing Tools Toggle: docked rail on left, never covering candles or indicators */}
+        <button
+          type="button"
+          className={`btn btn-xs ${showDrawingRail ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setShowDrawingRail((prev) => !prev)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            height: 22,
+            fontSize: 10.5,
+            padding: '0 8px',
+            borderRadius: 4,
+          }}
+          title={showDrawingRail ? 'Hide Drawing Tools' : 'Show Drawing Tools (Docked rail)'}
+        >
+          <PenTool size={11} />
+          <span>{showDrawingRail ? 'Tools Active' : 'Drawing Tools'}</span>
+        </button>
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>
@@ -740,6 +766,7 @@ export const SimulatorChart: React.FC<SimulatorChartProps> = ({
           syncEnabled={syncEnabled}
           onToggleSync={onToggleSync}
           isReplaying={isReplaying}
+          showDrawingRail={showDrawingRail}
         />
       </div>
 

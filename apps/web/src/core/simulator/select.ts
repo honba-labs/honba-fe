@@ -101,9 +101,11 @@ export function controlsForGraph(
  * graph's explicit subscriptions, otherwise the control panel's symbol.
  */
 export function universeString(graph: StrategyGraphShape, controls: SimulatorControls): string {
+  const symbol = controls.symbol ? controls.symbol.trim().toUpperCase() : '';
+  const exchange = controls.exchange ? controls.exchange.trim().toUpperCase() : 'NSE';
+  if (symbol) return `${symbol}.${exchange}`;
   if (graph.universe.named) return graph.universe.named;
   const explicit = graph.universe.explicit ?? [];
   if (explicit.length > 0) return explicit.map((entry: { symbol: string; exchange: string }) => `${entry.symbol}.${entry.exchange}`).join(',');
-  const symbol = controls.symbol.trim().toUpperCase();
-  return symbol ? `${symbol}.${controls.exchange.trim().toUpperCase()}` : '';
+  return '';
 }

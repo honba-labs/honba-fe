@@ -320,6 +320,29 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ client, onNoti
               </button>
             );
           })()}
+          {/* Direct Simulator Handoff Pipeline */}
+          <button
+            type="button"
+            className="shortlist-btn"
+            onClick={() => handleSimulate()}
+            title="Simulate this strategy — opens Simulation Workbench with strategy, symbol, timeframe and parameters loaded"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '4px 12px',
+              fontWeight: 700,
+              background: 'var(--bullish, #089981)',
+              color: '#ffffff',
+              border: '1px solid var(--bullish, #089981)',
+              borderRadius: 'var(--radius-sm, 4px)',
+              cursor: 'pointer',
+              boxShadow: '0 1px 6px rgba(8, 153, 129, 0.35)',
+            }}
+          >
+            <Play size={12} fill="currentColor" />
+            <span>Simulate →</span>
+          </button>
           {focus ? (
             <button
               type="button"

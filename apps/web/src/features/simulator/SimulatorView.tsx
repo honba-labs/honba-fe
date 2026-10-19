@@ -41,6 +41,7 @@ import { roundTripStats } from '../../core/simulator/analytics';
 import { maxDrawdownPct } from '../../core/simulator/ops';
 import { usePortfolioStore } from '../../core/portfolio/store';
 import { STRATEGY_TEMPLATES } from '../algodesigner/strategy-templates';
+import { loadSaved } from '../algodesigner/library-store';
 import {
   PERIOD_PRESETS,
   presetRange,
@@ -63,6 +64,7 @@ export function SimulatorView() {
   }, []);
 
   const [loadedBars, setLoadedBars] = useState<readonly ChartBar[]>([]);
+  const userSavedStrategies = useMemo(() => loadSaved(), []);
   const [selectedAccountId, setSelectedAccountId] = useState('acc-sandbox-primary');
   const [secondaryCharts, setSecondaryCharts] = useState<SecondaryChartConfig[]>([]);
   const [syncEnabled, setSyncEnabled] = useState(true);
@@ -705,30 +707,58 @@ export function SimulatorView() {
               className="sim-header-select"
               value={store.strategyName}
               onChange={(e) => {
-                const selected = STRATEGY_TEMPLATES.find((t) => t.name === e.target.value);
-                if (selected) {
-                  store.select(selected.graph, selected.name, 'template');
+                const val = e.target.value;
+                const userMatch = userSavedStrategies.find((s) => s.id === val || s.name === val);
+                if (userMatch) {
+                  store.select(userMatch.graph, userMatch.name, 'library');
+                  return;
+                }
+                const templateMatch = STRATEGY_TEMPLATES.find((t) => t.name === val);
+                if (templateMatch) {
+                  store.select(templateMatch.graph, templateMatch.name, 'template');
+                  return;
                 }
               }}
             >
-              {STRATEGY_TEMPLATES.map((tmpl) => (
-                <option key={tmpl.name} value={tmpl.name}>
-                  {tmpl.label}
-                </option>
-              ))}
+              {store.origin === 'designer' && (
+                <optgroup label="Active Workspace (From Designer)">
+                  <option value={store.strategyName}>
+                    {store.strategyName} (Active)
+                  </option>
+                </optgroup>
+              )}
+              <optgroup label="Global Library (Institutional & OpenAlgo)">
+                {STRATEGY_TEMPLATES.map((tmpl) => (
+                  <option key={tmpl.name} value={tmpl.name}>
+                    {tmpl.label} ({tmpl.graph.universe.explicit?.[0]?.symbol ?? 'NSE'})
+                  </option>
+                ))}
+              </optgroup>
+              {userSavedStrategies.length > 0 && (
+                <optgroup label="User Library (My Saved)">
+                  {userSavedStrategies.map((saved) => (
+                    <option key={saved.id} value={saved.id}>
+                      {saved.name} ({saved.graph.universe.explicit?.[0]?.symbol ?? 'NSE'})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 
-          {/* Symbol Selector Button */}
+          {/* Symbol Selector Button — Allows testing strategy on any symbol */}
           <button
             type="button"
             className="sim-symbol-badge-btn"
             onClick={() => setIsSymbolModalOpen(true)}
-            title="Search and change instrument"
+            title="Change instrument — test this strategy against any other NSE/BSE stock or index"
           >
             <Search size={12} className="sim-symbol-search-icon" />
             <span className="sim-symbol-text">
               {store.controls.symbol}.{store.controls.exchange}
+            </span>
+            <span style={{ fontSize: 9.5, color: 'var(--text-muted)', marginLeft: 2 }}>
+              (Change Symbol)
             </span>
             <ChevronDown size={11} className="sim-symbol-caret" />
           </button>
