@@ -11,6 +11,7 @@ import { WalletView } from './features/wallet/WalletView';
 import { WorkbenchView } from './features/workbench/WorkbenchView';
 import { SettingsView } from './features/settings/SettingsView';
 import { createQueryClient } from './core/api/query';
+import './styles/theme.css';
 import './styles/base.css';
 
 const queryClient = createQueryClient();

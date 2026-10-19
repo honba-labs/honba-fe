@@ -1,15 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Play,
   Square,
   Plus,
   Cpu,
   BarChart2,
-  Sliders,
   CheckCircle2,
   Clock,
   Code2,
+  Sparkles,
 } from 'lucide-react';
+import { themeEngine } from '../../core/theme-engine';
+import { HonbaClient } from '../../core/api/generated/client';
+import { useWorkbenchStore } from '../../core/workbench/store';
+import { WorkbenchToolbar } from './workbench-toolbar';
+import { MultiChartGrid } from './multi-chart-grid';
+import { OrderTicket } from './order-ticket';
+import { OrderModal } from './order-modal';
+import { TradingDrawer } from './trading-drawer';
 import './WorkbenchView.css';
 
 interface Strategy {
@@ -72,6 +80,10 @@ const INITIAL_STRATEGIES: Strategy[] = [
 ];
 
 export function WorkbenchView() {
+  const [activeTab, setActiveTab] = useState<'terminal' | 'bots'>('terminal');
+  const client = useMemo(() => new HonbaClient({}), []);
+  const { fetchState, isOrderTicketOpen } = useWorkbenchStore();
+
   const [strategies, setStrategies] = useState<Strategy[]>(INITIAL_STRATEGIES);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy>(INITIAL_STRATEGIES[0]);
   const [code, setCode] = useState(`// Honba Equities Algo Strategy: ${selectedStrategy.name}
@@ -103,6 +115,11 @@ export default class StrategyRunner {
   }
 }`);
 
+  useEffect(() => {
+    themeEngine.applyToDOM();
+    void fetchState(client);
+  }, [client, fetchState]);
+
   const toggleStrategyStatus = (id: string) => {
     setStrategies((list) =>
       list.map((s) => {
@@ -116,167 +133,251 @@ export default class StrategyRunner {
   };
 
   return (
-    <div className="workbench-container">
-      {/* Header */}
-      <div className="workbench-header">
-        <div>
-          <h2 className="workbench-title">Algo Workbench & Strategy Lab</h2>
-          <p className="workbench-subtitle">
-            Simulated quantitative execution engines, NSE/BSE intraday algos, and backtest pipelines
-          </p>
+    <div className="workbench-view-root">
+      {/* Workbench Subheader Mode Switcher */}
+      <div className="workbench-mode-header">
+        <div className="workbench-mode-nav">
+          <button
+            type="button"
+            className={`workbench-mode-btn ${activeTab === 'terminal' ? 'active' : ''}`}
+            onClick={() => setActiveTab('terminal')}
+          >
+            <BarChart2 size={15} />
+            <span>Multi-Chart Terminal</span>
+            <span className="badge-openalgo">OpenAlgo Charts</span>
+          </button>
+          <button
+            type="button"
+            className={`workbench-mode-btn ${activeTab === 'bots' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bots')}
+          >
+            <Cpu size={15} />
+            <span>Algo Bots & Strategy Lab</span>
+            <span className="badge-count">{strategies.length}</span>
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
-          onClick={() => {
-            const newStrat: Strategy = {
-              id: `strat-${Date.now()}`,
-              name: 'Custom NSE Momentum Bot',
-              ticker: 'NSE:INFY',
-              type: 'Custom Logic (MIS)',
-              status: 'idle',
-              pnl: 0,
-              winRate: 50,
-              trades: 0,
-              sharpe: 1.0,
-            };
-            setStrategies([...strategies, newStrat]);
-            setSelectedStrategy(newStrat);
-          }}
-        >
-          <Plus size={14} /> New Strategy
-        </button>
+
+        <div className="workbench-mode-right">
+          {activeTab === 'terminal' ? (
+            <div className="workbench-tagline">
+              <Sparkles size={13} className="text-accent" />
+              <span>Multi-Pane NSE/BSE Grid • 502 Technical Indicators • Live Execution</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                const newStrat: Strategy = {
+                  id: `strat-${Date.now()}`,
+                  name: 'Custom NSE Momentum Bot',
+                  ticker: 'NSE:INFY',
+                  type: 'Custom Logic (MIS)',
+                  status: 'idle',
+                  pnl: 0,
+                  winRate: 50,
+                  trades: 0,
+                  sharpe: 1.0,
+                };
+                setStrategies([...strategies, newStrat]);
+                setSelectedStrategy(newStrat);
+              }}
+            >
+              <Plus size={14} /> New Strategy
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Strategies Grid */}
-      <div className="workbench-grid">
-        {/* Left: Strategy List */}
-        <div className="card workbench-list-card">
-          <div className="workbench-card-head">
-            <span className="workbench-card-title">Equities Algo Bots</span>
-            <span className="pill pill-neutral">{strategies.length} Total</span>
+      {/* Mode 1: Multi-Chart Terminal (OpenAlgo Charts) */}
+      {activeTab === 'terminal' ? (
+        <div className="workbench-terminal-area">
+          <WorkbenchToolbar client={client} />
+
+          <div className="workbench-charts-container">
+            <MultiChartGrid />
+            {isOrderTicketOpen && <OrderTicket client={client} />}
           </div>
 
-          <div className="workbench-strat-list">
-            {strategies.map((strat) => (
-              <div
-                key={strat.id}
-                className={`workbench-strat-item ${selectedStrategy.id === strat.id ? 'active' : ''}`}
-                onClick={() => setSelectedStrategy(strat)}
-              >
-                <div className="workbench-strat-top">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div
-                      style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: strat.status === 'running' ? 'var(--bullish)' : 'var(--fg-muted)',
-                      }}
-                    />
-                    <span className="workbench-strat-name">{strat.name}</span>
-                  </div>
-                  <span className={`pill ${strat.status === 'running' ? 'pill-bullish' : 'pill-neutral'}`}>
-                    {strat.status.toUpperCase()}
-                  </span>
-                </div>
+          <TradingDrawer client={client} />
+          <OrderModal client={client} />
+        </div>
+      ) : (
+        /* Mode 2: Strategy Lab & Algo Bots */
+        <div className="workbench-container">
+          <div className="workbench-header">
+            <div>
+              <h2 className="workbench-title">Algo Workbench & Strategy Lab</h2>
+              <p className="workbench-subtitle">
+                Simulated quantitative execution engines, NSE/BSE intraday algos, and backtest pipelines
+              </p>
+            </div>
+          </div>
 
-                <div className="workbench-strat-metrics">
-                  <div>
-                    <span className="workbench-metric-lbl">Scrip: </span>
-                    <span className="workbench-metric-val">{strat.ticker}</span>
-                  </div>
-                  <div>
-                    <span className="workbench-metric-lbl">P&L: </span>
-                    <span
-                      className={`num workbench-metric-val ${
-                        strat.pnl >= 0 ? 'color-bullish' : 'color-bearish'
-                      }`}
-                    >
-                      {strat.pnl >= 0 ? '+' : ''}₹{Math.abs(strat.pnl).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="workbench-metric-lbl">Win: </span>
-                    <span className="num workbench-metric-val">{strat.winRate}%</span>
-                  </div>
-                </div>
+          <div className="workbench-grid">
+            {/* Left: Strategy List */}
+            <div className="card workbench-list-card">
+              <div className="workbench-card-head">
+                <span className="workbench-card-title">Equities Algo Bots</span>
+                <span className="pill pill-neutral">{strategies.length} Total</span>
+              </div>
 
-                <div className="workbench-strat-actions">
+              <div className="workbench-strat-list">
+                {strategies.map((strat) => (
+                  <div
+                    key={strat.id}
+                    className={`workbench-strat-item ${selectedStrategy.id === strat.id ? 'active' : ''}`}
+                    onClick={() => setSelectedStrategy(strat)}
+                  >
+                    <div className="workbench-strat-top">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: strat.status === 'running' ? 'var(--bullish)' : 'var(--fg-muted)',
+                          }}
+                        />
+                        <span className="workbench-strat-name">{strat.name}</span>
+                      </div>
+                      <span className={`pill ${strat.status === 'running' ? 'pill-bullish' : 'pill-neutral'}`}>
+                        {strat.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="workbench-strat-metrics">
+                      <div>
+                        <span className="workbench-metric-lbl">Scrip: </span>
+                        <span className="workbench-metric-val">{strat.ticker}</span>
+                      </div>
+                      <div>
+                        <span className="workbench-metric-lbl">P&L: </span>
+                        <span
+                          className={`num workbench-metric-val ${
+                            strat.pnl >= 0 ? 'color-bullish' : 'color-bearish'
+                          }`}
+                        >
+                          {strat.pnl >= 0 ? '+' : ''}₹{Math.abs(strat.pnl).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="workbench-metric-lbl">Win: </span>
+                        <span className="workbench-metric-val">{strat.winRate}%</span>
+                      </div>
+                    </div>
+
+                    <div className="workbench-strat-actions">
+                      <button
+                        type="button"
+                        className={`btn btn-xs ${strat.status === 'running' ? 'btn-danger' : 'btn-outline'}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleStrategyStatus(strat.id);
+                        }}
+                      >
+                        {strat.status === 'running' ? <Square size={12} /> : <Play size={12} />}
+                        {strat.status === 'running' ? 'Stop Bot' : 'Run Bot'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Strategy Detail & Editor */}
+            <div className="card workbench-detail-card">
+              <div className="workbench-detail-head">
+                <div>
+                  <div className="workbench-strat-title">{selectedStrategy.name}</div>
+                  <div className="workbench-strat-type">{selectedStrategy.type}</div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     type="button"
-                    className={`btn btn-sm ${strat.status === 'running' ? 'btn-outline' : 'btn-primary'}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleStrategyStatus(strat.id);
-                    }}
+                    className={`btn ${selectedStrategy.status === 'running' ? 'btn-danger' : 'btn-primary'} btn-sm`}
+                    onClick={() => toggleStrategyStatus(selectedStrategy.id)}
                   >
-                    {strat.status === 'running' ? (
-                      <>
-                        <Square size={12} /> Pause
-                      </>
-                    ) : (
-                      <>
-                        <Play size={12} /> Deploy
-                      </>
-                    )}
+                    {selectedStrategy.status === 'running' ? <Square size={14} /> : <Play size={14} />}
+                    {selectedStrategy.status === 'running' ? 'Halt Bot' : 'Start Execution'}
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Right: Strategy Configuration & Code Canvas */}
-        <div className="card workbench-detail-card">
-          <div className="workbench-detail-head">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Code2 size={18} color="var(--primary)" />
-              <div>
-                <h3 className="workbench-strat-title">{selectedStrategy.name}</h3>
-                <span className="workbench-strat-type">{selectedStrategy.type} · {selectedStrategy.ticker}</span>
+              {/* Strategy Parameters */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '12px',
+                  marginBottom: '16px',
+                }}
+              >
+                <div className="stat-card" style={{ padding: '10px' }}>
+                  <div className="stat-label">Total Realized P&L</div>
+                  <div
+                    className={`num stat-val ${
+                      selectedStrategy.pnl >= 0 ? 'color-bullish' : 'color-bearish'
+                    }`}
+                  >
+                    {selectedStrategy.pnl >= 0 ? '+' : ''}₹
+                    {Math.abs(selectedStrategy.pnl).toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div className="stat-card" style={{ padding: '10px' }}>
+                  <div className="stat-label">Win Rate</div>
+                  <div className="num stat-val">{selectedStrategy.winRate}%</div>
+                </div>
+                <div className="stat-card" style={{ padding: '10px' }}>
+                  <div className="stat-label">Trades Executed</div>
+                  <div className="num stat-val">{selectedStrategy.trades}</div>
+                </div>
+                <div className="stat-card" style={{ padding: '10px' }}>
+                  <div className="stat-label">Sharpe Ratio</div>
+                  <div className="num stat-val">{selectedStrategy.sharpe}</div>
+                </div>
+              </div>
+
+              {/* Code Editor */}
+              <div className="workbench-code-editor-wrapper">
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    marginBottom: '8px',
+                    fontSize: '12px',
+                    color: 'var(--fg-muted)',
+                  }}
+                >
+                  <Code2 size={14} /> Algo Execution Script (TypeScript / Honba Runtime)
+                </div>
+                <textarea
+                  className="workbench-code-textarea"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  spellCheck={false}
+                />
+              </div>
+
+              {/* Runtime Logs / Backtest summary */}
+              <div className="workbench-logs-box">
+                <div className="workbench-logs-title">Engine Stream & Live Heartbeat</div>
+                <div className="workbench-logs-content">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <CheckCircle2 size={13} color="var(--bullish)" />
+                    <span>WebSocket feeds connected: NSE Colocation Multicast gateway active (0.4ms)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Clock size={13} color="var(--fg-muted)" />
+                    <span>Tick ingest rate: 1,420 ticks/sec across 20 monitored NIFTY50 instruments</span>
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                onClick={() => alert(`Running backtest for ${selectedStrategy.name} across last 180 days of NSE tick data... Return: +24.8%, Max DD: 4.2%, Sharpe: 2.3`)}
-              >
-                <BarChart2 size={13} /> Run Backtest
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => alert('Strategy logic saved and deployed to paper trading sandbox!')}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-
-          <div className="workbench-code-editor-wrapper">
-            <textarea
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="workbench-code-textarea num"
-              spellCheck={false}
-            />
-          </div>
-
-          <div className="workbench-logs-box">
-            <div className="workbench-logs-title">Execution Log (NSE Live Simulated Feed)</div>
-            <div className="workbench-logs-content num">
-              <div>[09:15:02 IST] Market opened. Strategy {selectedStrategy.id} subscribed to {selectedStrategy.ticker}</div>
-              <div>[09:15:10 IST] Available trading margin: ₹4,85,000 verified. Risk limit: ₹25,000/order</div>
-              <div>[09:22:45 IST] Signal trigger: VWAP deviation -0.48% detected on {selectedStrategy.ticker}</div>
-              <div>[09:22:46 IST] Order placed: BUY 50 shares @ ₹2,938.50 MIS Limit. Exchange ack received</div>
-              <div style={{ color: 'var(--bullish)' }}>[09:22:48 IST] Order FILLED: 50/50 @ ₹2,938.50. Position active. Unrealised P&L: +₹480.00</div>
-            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

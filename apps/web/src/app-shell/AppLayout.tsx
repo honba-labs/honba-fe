@@ -98,6 +98,18 @@ export function AppLayout() {
         ],
       };
     }
+    if (path.startsWith('/workbench') || path.startsWith('/algodesigner')) {
+      return {
+        title: 'Workbench',
+        subtitle: 'Multi-Chart & Algo Terminal',
+        links: [
+          { name: 'Multi-Chart Grid', path: '/workbench' },
+          { name: 'Algo Designer', path: '/algodesigner' },
+          { name: 'Trading Terminal', path: '/trade' },
+          { name: 'Markets Screener', path: '/markets' },
+        ],
+      };
+    }
     return {
       title: 'Honba',
       subtitle: 'Algorithmic Equities Engine',
