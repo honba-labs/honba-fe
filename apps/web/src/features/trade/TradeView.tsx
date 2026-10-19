@@ -177,11 +177,11 @@ export function TradeView() {
         <div className="trade-sub-right">
           {tradingMode === 'paper' ? (
             <span className="wunder-pill-env">
-              <span className="wunder-pill-dot-warning" /> Simulated · Paper Trading
+              <span className="wunder-pill-dot-warning" /> PaperTrading
             </span>
           ) : (
             <span className="wunder-pill-feed">
-              <span className="pulse-indicator" /> NSE Feed · Live
+              <span className="pulse-indicator" /> Live (NSE)
             </span>
           )}
           <button type="button" className="trade-star-btn">

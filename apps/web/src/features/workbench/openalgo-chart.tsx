@@ -287,6 +287,108 @@ function getDateParts(utcSec: number, tz?: string): {
   };
 }
 
+function lightenColor(color: string, amount: number): string {
+  try {
+    const c = color.trim();
+    if (c.startsWith('#')) {
+      let hex = c.slice(1);
+      if (hex.length === 3) hex = hex.split('').map((ch) => ch + ch).join('');
+      const num = parseInt(hex.slice(0, 6), 16);
+      if (!Number.isNaN(num)) {
+        let r = (num >> 16) & 255;
+        let g = (num >> 8) & 255;
+        let b = num & 255;
+        const target = amount >= 0 ? 255 : 0;
+        const factor = Math.min(1, Math.abs(amount));
+        r = Math.round(r + (target - r) * factor);
+        g = Math.round(g + (target - g) * factor);
+        b = Math.round(b + (target - b) * factor);
+        return `rgb(${r},${g},${b})`;
+      }
+    } else if (c.startsWith('rgb')) {
+      const match = c.match(/\d+(\.\d+)?/g);
+      if (match && match.length >= 3) {
+        let r = Number(match[0]);
+        let g = Number(match[1]);
+        let b = Number(match[2]);
+        const a = match[3] !== undefined ? Number(match[3]) : 1;
+        const target = amount >= 0 ? 255 : 0;
+        const factor = Math.min(1, Math.abs(amount));
+        r = Math.round(r + (target - r) * factor);
+        g = Math.round(g + (target - g) * factor);
+        b = Math.round(b + (target - b) * factor);
+        return `rgba(${r},${g},${b},${a})`;
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return color;
+}
+
+/**
+ * Removes the drop shadow / shading from the Buy/Sell bubble and eliminates
+ * the gaps between the Sell, Quantity, and Buy sections for maximum visibility and clarity.
+ */
+function fixBuySellBubbleShadow(tradeBtns: BuySellButtons): void {
+  const tb = tradeBtns as any;
+  if (tb.__honbaShadowPatched || typeof tb.draw !== 'function') return;
+  tb.__honbaShadowPatched = true;
+
+  tb.draw = function (ctx: CanvasRenderingContext2D, rc: any) {
+    this._sellRect = this._buyRect = this._qtyRect = null;
+    const dpr = rc?.dpr ?? 1;
+    const origin =
+      typeof this._origin === 'function'
+        ? this._origin(rc.plotWidth, rc.plotHeight)
+        : { x: 14, y: 44, w: 188 };
+    const sellColor = this._sellColor ?? rc.theme?.sell ?? '#f23645';
+    const buyColor = this._buyColor ?? rc.theme?.buy ?? '#089981';
+
+    const btnW = this._btnW ?? 74 * (this._scale ?? 1);
+    const qtyW = this._qtyW ?? 40 * (this._scale ?? 1);
+    const h = this._h ?? 42 * (this._scale ?? 1);
+
+    // Completely flush: zero gap between Sell, Quantity, and Buy
+    this._sellRect = { x: origin.x, y: origin.y, w: btnW, h };
+    this._qtyRect = { x: origin.x + btnW, y: origin.y, w: qtyW, h };
+    this._buyRect = { x: origin.x + btnW + qtyW, y: origin.y, w: btnW, h };
+
+    // Explicitly disable any shadow/shading down or right
+    ctx.save();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    const isHovered = (rect: any, side: string) =>
+      rect !== null && rc.hoverId === `${this._id}:${side}`;
+
+    const sellFill = isHovered(this._sellRect, 'sell') ? lightenColor(sellColor, 0.12) : sellColor;
+    const sellPrice =
+      this._showPrices && typeof this._fmt === 'function' ? this._fmt(rc, this._bid) : '';
+    if (typeof this._drawButton === 'function') {
+      this._drawButton(ctx, this._sellRect, dpr, sellFill, this._sellLabel ?? 'SELL', sellPrice, 'left');
+    }
+
+    const chipBg =
+      rc.theme?.background === 'transparent' ? '#222631' : (rc.theme?.grid || '#2a2e39');
+    const chipTextColor = rc.theme?.axisText || '#8b91a7';
+    if (typeof this._drawChip === 'function') {
+      this._drawChip(ctx, this._qtyRect, dpr, chipBg, this._qty || '-', chipTextColor);
+    }
+
+    const buyFill = isHovered(this._buyRect, 'buy') ? lightenColor(buyColor, 0.12) : buyColor;
+    const buyPrice =
+      this._showPrices && typeof this._fmt === 'function' ? this._fmt(rc, this._ask) : '';
+    if (typeof this._drawButton === 'function') {
+      this._drawButton(ctx, this._buyRect, dpr, buyFill, this._buyLabel ?? 'BUY', buyPrice, 'right');
+    }
+
+    ctx.restore();
+  };
+}
+
 /**
  * Ensures the Buy/Sell bubble renders on top of all dotted lines (crosshair & last-price line)
  * by repainting it at the end of the pane's top overlay pass.
@@ -949,6 +1051,7 @@ export const OpenAlgoChart: React.FC<OpenAlgoChartProps> = ({
             sellColor: initialTheme.sell,
           });
           widget.chart.addPrimitive(tradeBtns, 0);
+          fixBuySellBubbleShadow(tradeBtns);
           attachBuySellBubbleCursorFreeze(widget.chart, tradeBtns);
           ensureBuySellBubbleOnTop(widget.chart, tradeBtns);
           attachTradingViewTimeFormatter(widget.chart);

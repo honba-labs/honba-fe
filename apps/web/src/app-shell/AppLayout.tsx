@@ -216,13 +216,13 @@ export function AppLayout() {
                   useNotifications.getState().push({
                     severity: 'info',
                     title: 'Trading Mode',
-                    message: 'Active: Simulated · Paper trading',
+                    message: 'Active: PaperTrading',
                   });
                 }}
-                title="Switch to Simulated · Paper trading"
+                title="Switch to PaperTrading"
               >
                 <span className={tradingMode === 'paper' ? 'wunder-pill-dot-warning' : 'wunder-mode-dot-inactive'} />
-                <span>Simulated · Paper trading</span>
+                <span>PaperTrading</span>
               </button>
 
               <button
@@ -235,13 +235,13 @@ export function AppLayout() {
                   useNotifications.getState().push({
                     severity: 'info',
                     title: 'Trading Mode',
-                    message: 'Active: NSE feed · Live',
+                    message: 'Active: Live (NSE)',
                   });
                 }}
-                title="Switch to NSE feed · Live"
+                title="Switch to Live (NSE)"
               >
                 <span className={tradingMode === 'live' ? 'pulse-indicator' : 'wunder-mode-dot-inactive'} />
-                <span>NSE feed · Live</span>
+                <span>Live (NSE)</span>
               </button>
             </div>
 

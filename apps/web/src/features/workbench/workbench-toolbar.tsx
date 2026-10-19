@@ -1,9 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ShieldAlert,
-  Power,
   ChevronDown,
-  ChevronUp,
   PanelRight,
 } from 'lucide-react';
 import { useWorkbenchStore } from '../../core/workbench/store';
@@ -18,10 +15,6 @@ export const WorkbenchToolbar: React.FC<WorkbenchToolbarProps> = ({ client }) =>
   const {
     layout,
     setLayout,
-    tradingState,
-    setTradingState,
-    isDrawerOpen,
-    toggleDrawer,
     isOrderTicketOpen,
     toggleOrderTicket,
     statusMessage,
@@ -53,10 +46,6 @@ export const WorkbenchToolbar: React.FC<WorkbenchToolbarProps> = ({ client }) =>
     return () => document.removeEventListener('mousedown', onDown);
   }, [gridMenuOpen]);
 
-  const handleKillSwitch = () => {
-    const nextState = tradingState === 'halted' ? 'active' : 'halted';
-    void setTradingState(client, nextState, 'Manual toolbar kill switch toggle');
-  };
 
   return (
     <div
@@ -179,51 +168,6 @@ export const WorkbenchToolbar: React.FC<WorkbenchToolbarProps> = ({ client }) =>
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span
-            style={{
-              fontSize: 11,
-              padding: '3px 8px',
-              borderRadius: 4,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              background:
-                tradingState === 'active'
-                  ? 'var(--bullish-subtle)'
-                  : tradingState === 'reducing'
-                  ? 'var(--accent-gold-subtle)'
-                  : 'var(--bearish-subtle)',
-              color:
-                tradingState === 'active'
-                  ? 'var(--bullish)'
-                  : tradingState === 'reducing'
-                  ? 'var(--accent-gold)'
-                  : 'var(--bearish)',
-            }}
-          >
-            Engine: {tradingState}
-          </span>
-
-          <button
-            onClick={handleKillSwitch}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '4px 10px',
-              fontSize: 11,
-              fontWeight: 600,
-              borderRadius: 4,
-              border: 'none',
-              cursor: 'pointer',
-              background: tradingState === 'halted' ? 'var(--bullish)' : 'var(--bearish)',
-              color: '#ffffff',
-            }}
-          >
-            {tradingState === 'halted' ? <Power size={12} /> : <ShieldAlert size={12} />}
-            {tradingState === 'halted' ? 'Resume Trading' : 'Kill Switch'}
-          </button>
-
           <button
             onClick={toggleOrderTicket}
             title={isOrderTicketOpen ? 'Collapse Order Ticket' : 'Expand Order Ticket'}
@@ -243,23 +187,6 @@ export const WorkbenchToolbar: React.FC<WorkbenchToolbarProps> = ({ client }) =>
           >
             <PanelRight size={12} />
             <span>Ticket</span>
-          </button>
-
-          <button
-            onClick={toggleDrawer}
-            title={isDrawerOpen ? 'Collapse Bottom Drawer' : 'Expand Bottom Drawer'}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: 5,
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 4,
-              background: 'var(--bg-app)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-            }}
-          >
-            {isDrawerOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
         </div>
       </div>
