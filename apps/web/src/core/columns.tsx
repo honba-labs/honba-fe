@@ -158,7 +158,7 @@ export const ALL_COLUMNS: ColumnDef[] = [
           <div className="tv-symbol-details">
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <a
-                href={`/instrument.html?symbol=${encodeURIComponent(inst.symbol)}`}
+                href={`/instruments?symbol=${encodeURIComponent(inst.symbol)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="tv-symbol-ticker-btn"
@@ -184,7 +184,7 @@ export const ALL_COLUMNS: ColumnDef[] = [
                 {inst.exchange}
               </span>
               <a
-                href={`/instrument.html?symbol=${encodeURIComponent(inst.symbol)}`}
+                href={`/instruments?symbol=${encodeURIComponent(inst.symbol)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="tv-symbol-open-icon"

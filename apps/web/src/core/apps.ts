@@ -31,7 +31,7 @@ export const HONBA_APPS = [
     id: 'instrument',
     name: 'Instruments',
     tagline: 'Deep Asset Pages: Equities, Indices, Mutual Funds & IPOs',
-    url: '/instrument.html',
+    url: '/instruments',
     icon: 'activity',
   },
   {

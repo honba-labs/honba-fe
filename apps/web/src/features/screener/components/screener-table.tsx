@@ -288,7 +288,7 @@ export const ScreenerTable: React.FC<ScreenerTableProps> = ({ instruments }) => 
                   className={`tv-row ${isSelected ? 'row-selected' : ''}`}
                   onClick={() => handleRowClick(inst)}
                   onDoubleClick={() => {
-                    window.open(`/instrument.html?symbol=${encodeURIComponent(inst.symbol)}`, '_blank', 'noopener,noreferrer');
+                    window.open(`/instruments?symbol=${encodeURIComponent(inst.symbol)}`, '_blank', 'noopener,noreferrer');
                   }}
                   title="Click to preview drawer, double-click to open dedicated Instrument page in new window"
                 >

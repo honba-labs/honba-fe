@@ -152,7 +152,7 @@ export const SymbolDetailDrawer: React.FC = () => {
           <div className="drawer-title-box">
             <div className="drawer-ticker-row">
               <a
-                href={`/instrument.html?symbol=${encodeURIComponent(inst.symbol)}`}
+                href={`/instruments?symbol=${encodeURIComponent(inst.symbol)}`}
                 className="drawer-ticker drawer-ticker-link"
                 title={`Open ${inst.symbol} instrument page`}
               >
@@ -162,7 +162,7 @@ export const SymbolDetailDrawer: React.FC = () => {
               <span className="drawer-country-flag">{market.flag}</span>
             </div>
             <a
-              href={`/instrument.html?symbol=${encodeURIComponent(inst.symbol)}`}
+              href={`/instruments?symbol=${encodeURIComponent(inst.symbol)}`}
               className="drawer-company-name drawer-name-link"
               title={`Open ${inst.name} instrument page`}
             >

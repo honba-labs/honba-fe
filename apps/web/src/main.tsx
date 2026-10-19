@@ -6,6 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { AppLayout } from './app-shell/AppLayout';
 import { PortfolioView } from './features/portfolio/PortfolioView';
 import { ScreenerPage } from './features/screener/ScreenerPage';
+import { InstrumentPage } from './features/instrument/InstrumentPage';
 import { WorkbenchView } from './features/workbench/WorkbenchView';
 import { AlgoDesignerPage } from './features/algodesigner/AlgoDesignerPage';
 import { SimulatorView } from './features/simulator/SimulatorView';
@@ -28,6 +29,11 @@ const router = createBrowserRouter([
       { index: true, element: <PortfolioView /> },
       { path: 'portfolio', element: <PortfolioView /> },
       { path: 'screener', element: <ScreenerPage /> },
+      { path: 'instruments', element: <InstrumentPage /> },
+      { path: 'instruments/:symbol', element: <InstrumentPage /> },
+      { path: 'instrument', element: <InstrumentPage /> },
+      { path: 'instrument/:symbol', element: <InstrumentPage /> },
+      { path: 'instrument.html', element: <InstrumentPage /> },
       { path: 'workbench', element: <WorkbenchView /> },
       { path: 'strategy-studio', element: <AlgoDesignerPage /> },
       { path: 'algodesigner', element: <AlgoDesignerPage /> },

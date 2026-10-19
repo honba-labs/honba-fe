@@ -43,12 +43,12 @@ export const SymbolBreadcrumbs: React.FC<SymbolBreadcrumbsProps> = ({
   }
 
   const crumbs = [
-    { label: 'Markets', href: '/index.html' },
-    { label: countryName, href: `/index.html?market=${item.country}` },
-    { label: assetLabel, href: `/instrument.html?category=${item.assetType || 'stocks'}` },
+    { label: 'Markets', href: '/markets' },
+    { label: countryName, href: `/screener?market=${item.country}` },
+    { label: assetLabel, href: `/instruments?category=${item.assetType || 'stocks'}` },
     { label: sector, href: '#' },
     { label: industry, href: '#' },
-    { label: item.symbol, href: `/instrument.html?symbol=${encodeURIComponent(item.symbol)}`, isCurrent: true },
+    { label: item.symbol, href: `/instruments?symbol=${encodeURIComponent(item.symbol)}`, isCurrent: true },
   ];
 
   return (

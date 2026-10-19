@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, TrendingUp, BarChart2, Wallet, LayoutGrid } from 'lucide-react';
+import { Search, X, TrendingUp, BarChart2, Wallet, LayoutGrid, SlidersHorizontal, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEquityStore } from '../core/store/equityStore';
 
@@ -34,6 +34,8 @@ export function SearchModal() {
 
   const quickPages = [
     { name: 'Equity Portfolio', path: '/', icon: <LayoutGrid size={15} /> },
+    { name: 'Stock Screener', path: '/screener', icon: <SlidersHorizontal size={15} /> },
+    { name: 'Instruments Deep-Dive', path: '/instruments', icon: <Activity size={15} /> },
     { name: 'NSE Market & Indices', path: '/markets', icon: <TrendingUp size={15} /> },
     { name: 'Trading Terminal (NSE:RELIANCE)', path: '/trade', icon: <BarChart2 size={15} /> },
     { name: 'Funds & Margin Overview', path: '/wallet', icon: <Wallet size={15} /> },

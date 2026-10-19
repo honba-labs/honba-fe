@@ -16,6 +16,7 @@ import {
   AlertCircle,
   X,
   Plus,
+  Activity,
 } from 'lucide-react';
 import { useEquityStore } from '../core/store/equityStore';
 import { useNotifications } from '../core/store/notifications';
@@ -51,6 +52,7 @@ export function AppLayout() {
     const p = location.pathname;
     if (p === '/' || p === '/portfolio') return 'Portfolio & Accounts';
     if (p === '/screener') return 'Stock Screener';
+    if (p.startsWith('/instrument')) return 'Instruments · Asset Deep-Dive';
     if (p === '/workbench') return 'Trading Workbench';
     if (p === '/strategy-studio' || p === '/algodesigner') return 'Strategy Studio';
     if (p === '/simulator') return 'Simulation & Backtest Replay';
@@ -111,6 +113,16 @@ export function AppLayout() {
             title="Stock Screener"
           >
             <SlidersHorizontal size={20} />
+          </NavLink>
+
+          <NavLink
+            to="/instruments"
+            className={({ isActive }) =>
+              `wunder-nav-item ${isActive || location.pathname.startsWith('/instrument') ? 'active' : ''}`
+            }
+            title="Instruments & Assets"
+          >
+            <Activity size={20} />
           </NavLink>
 
           <NavLink
