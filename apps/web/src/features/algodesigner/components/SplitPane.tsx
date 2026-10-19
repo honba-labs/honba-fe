@@ -171,7 +171,9 @@ export const Pane: React.FC<PaneProps> = ({ id, title, icon, focused, onToggleFo
           </button>
         </div>
       </div>
-      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>{children}</div>
+      <div style={{ flex: 1, minHeight: 0, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+        {children}
+      </div>
     </div>
   );
 };

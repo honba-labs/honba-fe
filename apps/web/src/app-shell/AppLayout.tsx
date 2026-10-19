@@ -17,6 +17,7 @@ import {
   X,
   Plus,
   Activity,
+  Workflow,
 } from 'lucide-react';
 import { useEquityStore } from '../core/store/equityStore';
 import { useNotifications } from '../core/store/notifications';
@@ -54,7 +55,8 @@ export function AppLayout() {
     if (p === '/screener') return 'Stock Screener';
     if (p.startsWith('/instrument')) return 'Instruments · Asset Deep-Dive';
     if (p === '/workbench') return 'Trading Workbench';
-    if (p === '/strategy-studio' || p === '/algodesigner') return 'Strategy Studio';
+    if (p === '/strategies' || p === '/strategy-studio') return 'Strategies & Algo Bots';
+    if (p.startsWith('/algodesigner')) return 'Visual Algo Designer';
     if (p === '/simulator') return 'Simulation & Backtest Replay';
     if (p === '/tradebook') return 'Tradebook & Session Journal';
     if (p === '/markets') return 'Markets Overview';
@@ -134,13 +136,23 @@ export function AppLayout() {
           </NavLink>
 
           <NavLink
-            to="/strategy-studio"
+            to="/strategies"
+            className={({ isActive }) =>
+              `wunder-nav-item ${isActive || location.pathname === '/strategy-studio' ? 'active' : ''}`
+            }
+            title="Strategies & Algo Bots"
+          >
+            <BrainCircuit size={20} />
+          </NavLink>
+
+          <NavLink
+            to="/algodesigner"
             className={({ isActive }) =>
               `wunder-nav-item ${isActive || location.pathname.startsWith('/algodesigner') ? 'active' : ''}`
             }
-            title="Strategy Studio"
+            title="Visual Algo Designer"
           >
-            <BrainCircuit size={20} />
+            <Workflow size={20} />
           </NavLink>
 
           <NavLink

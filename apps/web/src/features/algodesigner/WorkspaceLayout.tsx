@@ -16,9 +16,12 @@ import {
   Save,
   ShieldCheck,
   Workflow,
+  Sparkles,
 } from 'lucide-react';
 
 import type { ApiClient } from '../../core/api/client';
+import { HbButton } from '../../components/ui/hb-button';
+import { HbBadge } from '../../components/ui/hb-bubble';
 import {
   DEFAULT_NODE_POSITIONS,
   useDesignerStore,
@@ -44,6 +47,8 @@ import { AiChatColumn } from './components/AiChatColumn';
 import { Pane, Splitter } from './components/SplitPane';
 import { StrategyNameEditor } from './components/StrategyNameEditor';
 import { SaveToLibraryModal } from './components/SaveToLibraryModal';
+import { AiStrategyOptimizerModal } from './components/AiStrategyOptimizerModal';
+import './AlgoDesigner.css';
 
 const DRAWER_LABELS: Record<DrawerTab, string> = {
   verify: 'Verify',
@@ -91,6 +96,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ client, onNoti
   );
   const [reveal, setReveal] = useState<EditorReveal | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [aiOptimizerOpen, setAiOptimizerOpen] = useState(false);
 
   useEffect(() => {
     const id = store.selectedNodeId;
@@ -193,23 +199,10 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ client, onNoti
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-          padding: '6px 12px',
-          background: 'var(--bg-surface, #1e222d)',
-          borderBottom: '1px solid var(--border-subtle, #2a2e39)',
-          fontSize: 12,
-          flex: '0 0 auto',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--text-primary)' }}>
-            <Workflow size={14} />
+      <header className="algo-designer-bar">
+        <div className="algo-designer-bar__left">
+          <span className="algo-designer-bar__brand">
+            <Workflow size={15} className="algo-designer-bar__icon" />
             Algo Designer
           </span>
           <StrategyNameEditor
@@ -217,57 +210,70 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ client, onNoti
             onChange={(next) => void store.setName(next)}
           />
           {store.isModified ? (
-            <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--accent-gold, #f7a600)' }}>● Unsaved</span>
+            <HbBadge variant="gold" size="xs" dot>
+              Unsaved
+            </HbBadge>
           ) : (
-            <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-muted)' }}>
-              <CheckCircle2 size={10} style={{ color: 'var(--bullish, #089981)' }} /> Saved
-            </span>
+            <HbBadge variant="bullish" size="xs" dot pulse>
+              Saved
+            </HbBadge>
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <div className="algo-designer-bar__right">
           <button
             type="button"
-            className="shortlist-btn"
+            className="btn-ai-optimizer"
+            onClick={() => setAiOptimizerOpen(true)}
+            title="Open AI Autonomous Strategy Optimizer loop"
+          >
+            <Sparkles size={13} />
+            <span>AI Optimizer</span>
+            <span className="btn-ai-optimizer__badge">Loop</span>
+          </button>
+
+          <HbButton
+            variant="secondary"
+            size="sm"
+            active={layout.libraryOpen}
             onClick={() => store.togglePane('library')}
-            aria-pressed={layout.libraryOpen}
+            icon={<Layers size={13} />}
             title="Toggle the strategy & indicator library"
-            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px' }}
           >
-            <Layers size={12} />
-            <span>Library</span>
-          </button>
-          <button
-            type="button"
-            className="shortlist-btn"
+            Library
+          </HbButton>
+
+          <HbButton
+            variant="secondary"
+            size="sm"
             onClick={() => setSaveModalOpen(true)}
+            icon={<Save size={13} />}
             title="Save strategy to library with details, category, tags, or clone as copy"
-            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px' }}
           >
-            <Save size={12} />
-            <span>Save to Library</span>
-          </button>
-          <button
-            type="button"
-            className="shortlist-btn"
+            Save to Library
+          </HbButton>
+
+          <HbButton
+            variant="secondary"
+            size="sm"
             onClick={handleExportPython}
+            icon={<Download size={13} />}
             title="Export the generated strategy as a Python .py file"
-            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px' }}
           >
-            <Download size={12} />
-            <span>Export .py</span>
-          </button>
-          <button
-            type="button"
-            className={layout.assistantOpen ? 'shortlist-btn shortlist-btn-primary' : 'shortlist-btn'}
+            Export .py
+          </HbButton>
+
+          <HbButton
+            variant={layout.assistantOpen ? 'primary' : 'secondary'}
+            size="sm"
+            active={layout.assistantOpen}
             onClick={() => store.togglePane('assistant')}
-            aria-pressed={layout.assistantOpen}
+            icon={<Bot size={13} />}
             title="Toggle the AI Co-Pilot column"
-            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px' }}
           >
-            <Bot size={12} />
-            <span>Co-Pilot</span>
-          </button>
+            Co-Pilot
+          </HbButton>
+
           {(() => {
             const structuralIssues = graphIssues(store.graph);
             const verifyIssues = store.verify?.issues ?? [];
@@ -275,85 +281,60 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ client, onNoti
             const isClean = errorCount === 0;
 
             return (
-              <button
-                type="button"
-                className={layout.drawerOpen ? 'shortlist-btn shortlist-btn-primary' : 'shortlist-btn'}
+              <HbButton
+                variant={layout.drawerOpen ? 'primary' : 'ghost'}
+                size="sm"
+                active={layout.drawerOpen}
                 onClick={() => {
                   void store.verifyNow(client);
                   store.setDrawer(!layout.drawerOpen, isClean ? layout.drawerTab : 'verify');
                 }}
-                aria-pressed={layout.drawerOpen}
+                icon={
+                  isClean ? (
+                    <ShieldCheck size={13} style={{ color: 'var(--bullish, #089981)' }} />
+                  ) : (
+                    <AlertTriangle size={13} style={{ color: 'var(--bearish, #f23645)' }} />
+                  )
+                }
+                badge={
+                  !isClean ? (
+                    <HbBadge variant="bearish" size="xs">
+                      {errorCount}
+                    </HbBadge>
+                  ) : undefined
+                }
                 title={
                   isClean
                     ? 'Strategy verified clean (0 defects) — Click to inspect verification drawer'
                     : `${errorCount} defect(s) detected — Click to inspect diagnostics`
                 }
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  padding: '4px 8px',
-                  color: isClean ? 'var(--bullish, #089981)' : 'var(--bearish, #f23645)',
-                }}
               >
-                {isClean ? (
-                  <ShieldCheck size={12} style={{ color: 'var(--bullish, #089981)' }} />
-                ) : (
-                  <AlertTriangle size={12} style={{ color: 'var(--bearish, #f23645)' }} />
-                )}
-                <span>{isClean ? 'Verified' : 'Diagnostics'}</span>
-                {!isClean ? (
-                  <span
-                    style={{
-                      background: 'var(--bearish, #f23645)',
-                      color: '#ffffff',
-                      borderRadius: 10,
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: '1px 5px',
-                      lineHeight: '12px',
-                    }}
-                  >
-                    {errorCount}
-                  </span>
-                ) : null}
-              </button>
+                {isClean ? 'Verified' : 'Diagnostics'}
+              </HbButton>
             );
           })()}
+
           {/* Direct Simulator Handoff Pipeline */}
-          <button
-            type="button"
-            className="shortlist-btn"
+          <HbButton
+            variant="bullish"
+            size="sm"
             onClick={() => handleSimulate()}
+            icon={<Play size={13} fill="currentColor" />}
             title="Simulate this strategy — opens Simulation Workbench with strategy, symbol, timeframe and parameters loaded"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '4px 12px',
-              fontWeight: 700,
-              background: 'var(--bullish, #089981)',
-              color: '#ffffff',
-              border: '1px solid var(--bullish, #089981)',
-              borderRadius: 'var(--radius-sm, 4px)',
-              cursor: 'pointer',
-              boxShadow: '0 1px 6px rgba(8, 153, 129, 0.35)',
-            }}
           >
-            <Play size={12} fill="currentColor" />
-            <span>Simulate →</span>
-          </button>
+            Simulate →
+          </HbButton>
+
           {focus ? (
-            <button
-              type="button"
-              className="shortlist-btn"
+            <HbButton
+              variant="ghost"
+              size="sm"
               onClick={() => store.toggleFocus(focus)}
+              icon={<Maximize2 size={13} />}
               title="Exit focus mode"
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px' }}
             >
-              <Maximize2 size={12} />
-              <span>Exit focus</span>
-            </button>
+              Exit focus
+            </HbButton>
           ) : null}
         </div>
       </header>
@@ -487,6 +468,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ client, onNoti
                   onApply={(idx) => void store.applyProposal(idx)}
                   onDiscard={store.discardProposal}
                   onClear={store.resetAssistant}
+                  onOpenOptimizer={() => setAiOptimizerOpen(true)}
                 />
               </Pane>
             </div>
@@ -581,6 +563,17 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ client, onNoti
           onClose={() => setSaveModalOpen(false)}
         />
       ) : null}
+
+      <AiStrategyOptimizerModal
+        isOpen={aiOptimizerOpen}
+        onClose={() => setAiOptimizerOpen(false)}
+        onApplyStrategy={(graph, code) => {
+          void store.setGraph(graph);
+          store.setCode(code);
+          setNotice(`Applied AI optimized strategy: ${graph.name}`);
+        }}
+        currentGraphName={store.graph.name}
+      />
     </div>
   );
 };

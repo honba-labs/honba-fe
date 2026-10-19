@@ -9,6 +9,7 @@ import { ScreenerPage } from './features/screener/ScreenerPage';
 import { InstrumentPage } from './features/instrument/InstrumentPage';
 import { WorkbenchView } from './features/workbench/WorkbenchView';
 import { AlgoDesignerPage } from './features/algodesigner/AlgoDesignerPage';
+import { StrategiesPage } from './features/strategies/StrategiesPage';
 import { SimulatorView } from './features/simulator/SimulatorView';
 import { TradebookView } from './features/tradebook/TradebookView';
 import { MarketsView } from './features/markets/MarketsView';
@@ -35,7 +36,8 @@ const router = createBrowserRouter([
       { path: 'instrument/:symbol', element: <InstrumentPage /> },
       { path: 'instrument.html', element: <InstrumentPage /> },
       { path: 'workbench', element: <WorkbenchView /> },
-      { path: 'strategy-studio', element: <AlgoDesignerPage /> },
+      { path: 'strategies', element: <StrategiesPage /> },
+      { path: 'strategy-studio', element: <StrategiesPage /> },
       { path: 'algodesigner', element: <AlgoDesignerPage /> },
       { path: 'simulator', element: <SimulatorView /> },
       { path: 'tradebook', element: <TradebookView /> },

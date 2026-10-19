@@ -43,6 +43,9 @@ import { honbaNodeTypes } from '../nodes/HonbaNodes';
 import { honbaEdgeTypes } from '../edges/HonbaInsertableEdge';
 import { NodePalette, type NodeTemplate } from './NodePalette';
 import { NodeInspector } from './NodeInspector';
+import { HbButton } from '../../../components/ui/hb-button';
+import { HbBadge } from '../../../components/ui/hb-bubble';
+import { stashHandoff, simulatorHandoffUrl } from '../handoff';
 
 interface CanvasProps {
   graph: StrategyGraphShape;
@@ -358,111 +361,74 @@ function DesignerCanvasInner({ graph, onError, client }: CanvasProps) {
         >
           <Background gap={16} size={1} color="var(--border-subtle)" />
           <MiniMap
-            nodeStrokeWidth={3}
+            nodeStrokeWidth={2}
+            nodeColor={(node) => {
+              if (node.type === 'universe') return '#06b6d4';
+              if (node.type === 'indicator') return '#10b981';
+              if (node.type === 'condition') return '#f59e0b';
+              if (node.type === 'sizing') return '#ef4444';
+              return '#8b5cf6';
+            }}
             pannable
             zoomable
             style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
+              background: 'rgba(26, 30, 42, 0.85)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid var(--border-subtle, #2a2e39)',
+              borderRadius: 8,
+              width: 140,
+              height: 90,
             }}
           />
           <Controls />
 
           <Panel position="top-left" style={{ margin: 12 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '4px 8px',
-                background: 'var(--bg-surface, #1e222d)',
-                border: '1px solid var(--border-subtle, #2a2e39)',
-                borderRadius: 20,
-                boxShadow: 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.25))',
-                fontSize: 12,
-              }}
-            >
-              <button
-                type="button"
-                className={paletteOpen ? 'shortlist-btn shortlist-btn-primary' : 'shortlist-btn'}
+            <div className="canvas-float-bar">
+              <HbButton
+                variant={paletteOpen ? 'primary' : 'secondary'}
+                size="xs"
                 onClick={() => setPaletteOpen(!paletteOpen)}
+                icon={<Layers size={12} />}
                 title={paletteOpen ? 'Close Node Palette' : 'Open Node Palette to add nodes'}
-                style={{
-                  padding: '4px 10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  borderRadius: 14,
-                  fontWeight: 600,
-                }}
               >
-                <Layers size={13} />
-                <span>+ Add Nodes</span>
-              </button>
+                + Add Nodes
+              </HbButton>
 
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              <span className="canvas-float-bar__stats">
                 {graph.nodes.length} nodes · {(graph.edges ?? []).length} edges
               </span>
 
               {store.isModified ? (
-                <span style={{ fontSize: 10, color: 'var(--accent-gold, #f7a600)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                  ● Unsaved
-                </span>
+                <HbBadge variant="gold" size="xs" dot>
+                  Unsaved
+                </HbBadge>
               ) : (
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <CheckCircle2 size={11} style={{ color: 'var(--bullish, #089981)' }} /> Saved
-                </span>
+                <HbBadge variant="bullish" size="xs" dot pulse>
+                  Saved
+                </HbBadge>
               )}
 
               {(store.selectedNodeId || store.selectedEdgeId) && (
-                <span
-                  style={{
-                    padding: '2px 8px',
-                    fontSize: 11,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    borderRadius: 12,
-                    background: 'rgba(41, 98, 255, 0.1)',
-                    color: 'var(--accent-primary, #2962ff)',
-                    border: '1px solid rgba(41, 98, 255, 0.25)',
-                  }}
-                  title="Property Editor active for selected element"
-                >
-                  <Sliders size={11} />
-                  <span>Property Editor</span>
-                </span>
+                <HbBadge variant="accent" size="xs">
+                  <Sliders size={10} style={{ marginRight: 4 }} />
+                  Property Editor
+                </HbBadge>
               )}
             </div>
           </Panel>
 
           <Panel position="top-right" style={{ margin: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="canvas-float-bar">
               <div style={{ position: 'relative' }} ref={moreMenuRef}>
-                <button
-                  type="button"
-                  className="shortlist-btn"
+                <HbButton
+                  variant="secondary"
+                  size="xs"
                   onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                  icon={<MoreHorizontal size={13} />}
                   title="Graph actions (Import, Export, Versions, Delete)"
-                  style={{
-                    height: 32,
-                    padding: '0 10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    background: moreMenuOpen ? 'var(--bg-surface-hover, #2a2e39)' : 'var(--bg-surface, #1e222d)',
-                    border: '1px solid var(--border-subtle, #2a2e39)',
-                    borderRadius: 16,
-                    boxShadow: 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.25))',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    fontWeight: 500,
-                  }}
                 >
-                  <MoreHorizontal size={14} />
-                  <span>Actions</span>
-                </button>
+                  Actions
+                </HbButton>
 
                 {moreMenuOpen && (
                   <div
@@ -595,8 +561,9 @@ function DesignerCanvasInner({ graph, onError, client }: CanvasProps) {
                 const canSimulate = errorCount === 0;
 
                 return (
-                  <button
-                    type="button"
+                  <HbButton
+                    variant="bullish"
+                    size="xs"
                     disabled={!canSimulate}
                     onClick={() => {
                       if (!canSimulate) {
@@ -610,43 +577,17 @@ function DesignerCanvasInner({ graph, onError, client }: CanvasProps) {
                         ? `Launch quantitative simulation for ${graph.name} (strategy is verified clean)`
                         : `Cannot simulate: ${errorCount} error(s) detected. Click to inspect diagnostics.`
                     }
-                    style={{
-                      height: 32,
-                      padding: '0 16px',
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      borderRadius: 16,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      cursor: canSimulate ? 'pointer' : 'not-allowed',
-                      background: canSimulate ? 'var(--bullish, #089981)' : 'var(--bg-surface-elevated, #2a2e39)',
-                      color: canSimulate ? '#ffffff' : 'var(--text-disabled, #787b86)',
-                      border: canSimulate ? '1px solid var(--bullish-hover, #07836f)' : '1px solid var(--border-subtle, #363a45)',
-                      boxShadow: canSimulate ? '0 2px 10px rgba(8, 153, 129, 0.4)' : 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.25))',
-                      opacity: canSimulate ? 1 : 0.6,
-                      transition: 'all var(--transition-fast, 120ms ease)',
-                      userSelect: 'none',
-                    }}
+                    icon={<Play size={12} fill={canSimulate ? 'currentColor' : 'none'} />}
+                    badge={
+                      !canSimulate ? (
+                        <HbBadge variant="bearish" size="xs">
+                          {errorCount}
+                        </HbBadge>
+                      ) : undefined
+                    }
                   >
-                    <Play size={14} fill={canSimulate ? 'currentColor' : 'none'} />
-                    <span>Simulate</span>
-                    {!canSimulate ? (
-                      <span
-                        style={{
-                          background: 'var(--bearish, #f23645)',
-                          color: '#ffffff',
-                          borderRadius: 10,
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: '1px 6px',
-                          marginLeft: 2,
-                        }}
-                      >
-                        {errorCount}
-                      </span>
-                    ) : null}
-                  </button>
+                    Simulate
+                  </HbButton>
                 );
               })()}
             </div>

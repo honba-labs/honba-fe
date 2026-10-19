@@ -79,9 +79,19 @@ export interface AiChatColumnProps {
   onApply: (index: number) => void;
   onDiscard: (index: number) => void;
   onClear: () => void;
+  onOpenOptimizer?: () => void;
 }
 
-export const AiChatColumn: React.FC<AiChatColumnProps> = ({ messages, currentCode, status = 'idle', onPropose, onApply, onDiscard, onClear }) => {
+export const AiChatColumn: React.FC<AiChatColumnProps> = ({
+  messages,
+  currentCode,
+  status = 'idle',
+  onPropose,
+  onApply,
+  onDiscard,
+  onClear,
+  onOpenOptimizer,
+}) => {
   const [draft, setDraft] = useState('');
   const [applied, setApplied] = useState<number[]>([]);
   const [discarded, setDiscarded] = useState<number[]>([]);
@@ -119,6 +129,19 @@ export const AiChatColumn: React.FC<AiChatColumnProps> = ({ messages, currentCod
           Clear
         </button>
       </div>
+
+      {onOpenOptimizer && (
+        <button
+          type="button"
+          onClick={onOpenOptimizer}
+          className="btn-ai-optimizer"
+          style={{ width: '100%', justifyContent: 'center', height: 32 }}
+        >
+          <Sparkles size={13} />
+          <span>Launch AI Optimization Loop</span>
+          <span className="btn-ai-optimizer__badge">Auto-Refine</span>
+        </button>
+      )}
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {ASSISTANT_PROMPTS.map((prompt) => (

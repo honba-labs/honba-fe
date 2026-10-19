@@ -564,10 +564,13 @@
 }
 
 .wunder-content:has(.workbench-view-root),
-.wunder-content:has(.simulator-view-root) {
+.wunder-content:has(.simulator-view-root),
+.wunder-content:has(.algodesigner-view-root),
+.wunder-content:has(.strategy-studio-root) {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 @media (max-width: 1024px) {

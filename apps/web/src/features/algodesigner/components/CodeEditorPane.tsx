@@ -1,9 +1,7 @@
-// Monaco Python Editor Component
-// Mirrors honba-frontend apps/algodesigner/monaco-python-editor.tsx
-
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
+import { Copy, Check, Wand2 } from 'lucide-react';
 
 import { setupMonaco, type EditorMarker, type EditorReveal } from './monaco-setup';
 
@@ -28,6 +26,7 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
   reveal,
   onLineClick,
 }) => {
+  const [copied, setCopied] = useState(false);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const mountedRef = useRef(false);
   const markersRef = useRef(markers);
@@ -113,22 +112,28 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
     invalid: 'Last valid graph held',
   };
 
+  const handleCopy = () => {
+    if (!value) return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleFormat = () => {
+    if (!editorRef.current) return;
+    editorRef.current.getAction('editor.action.formatDocument')?.run();
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       {/* Editor Toolbar */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '4px 8px',
-          background: 'var(--bg-surface-elevated, #2a2e39)',
-          borderBottom: '1px solid var(--border-subtle, #2a2e39)',
-          fontSize: 11,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: 'var(--text-secondary)' }}>Python</span>
+      <div className="code-editor-topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="code-editor-tab">
+            <span className="code-editor-tab__lang">Python 3.12</span>
+            <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>strategy.py</span>
+          </div>
           <span
             style={{
               fontFamily: 'var(--font-family-mono)',
@@ -136,30 +141,70 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
               fontSize: 10,
             }}
           >
-            {hashRef.current.slice(0, 12)}…
+            {hashRef.current.slice(0, 10)}…
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            onClick={handleFormat}
+            title="Auto-format Python code"
             style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
+              padding: '2px 6px',
               fontSize: 10,
+              background: 'transparent',
+              border: '1px solid var(--border-subtle, #2a2e39)',
+              borderRadius: 4,
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+            }}
+          >
+            <Wand2 size={11} />
+            <span>Format</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            title="Copy Python code to clipboard"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '2px 6px',
+              fontSize: 10,
+              background: 'transparent',
+              border: '1px solid var(--border-subtle, #2a2e39)',
+              borderRadius: 4,
+              color: copied ? 'var(--bullish, #089981)' : 'var(--text-secondary)',
+              cursor: 'pointer',
+            }}
+          >
+            {copied ? <Check size={11} /> : <Copy size={11} />}
+            <span>{copied ? 'Copied!' : 'Copy'}</span>
+          </button>
+
+          <div
+            className="code-editor-status"
+            style={{
               color: statusColors[syncStatusRef.current],
+              paddingLeft: 6,
+              borderLeft: '1px solid var(--border-subtle, #2a2e39)',
             }}
           >
             <span
+              className="code-editor-status__dot"
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
                 background: statusColors[syncStatusRef.current],
                 animation: syncStatusRef.current === 'pending' ? 'pulse 1s infinite' : 'none',
               }}
             />
             <span>{statusText[syncStatusRef.current]}</span>
-          </span>
+          </div>
         </div>
       </div>
 

@@ -53,11 +53,12 @@ export const BaseHonbaNode: React.FC<BaseHonbaNodeProps> = ({
     position,
     style: {
       background: categoryColor,
-      border: '2px solid var(--bg-surface, #1e222d)',
+      border: '2px solid rgba(255, 255, 255, 0.85)',
       borderRadius: '50%',
       width: 10,
       height: 10,
       zIndex: 10,
+      boxShadow: `0 0 6px ${categoryColor}`,
     },
     isConnectable: true,
   });
@@ -66,20 +67,25 @@ export const BaseHonbaNode: React.FC<BaseHonbaNodeProps> = ({
     <div
       className="nodrag nopan"
       style={{
-        minWidth: 180,
-        maxWidth: 280,
-        background: selected ? 'var(--bg-surface-hover, #2a2e39)' : 'var(--bg-surface, #1e222d)',
+        minWidth: 200,
+        maxWidth: 300,
+        background: selected ? 'var(--bg-surface-hover, #2a2e39)' : 'rgba(26, 30, 42, 0.95)',
+        backdropFilter: 'blur(10px)',
         border: hasIssues
           ? '1.5px solid var(--bearish, #f23645)'
           : selected
           ? `1.5px solid ${categoryColor}`
           : '1px solid var(--border-medium, #434651)',
-        borderRadius: 'var(--radius-md, 6px)',
-        boxShadow: selected ? 'var(--shadow-lg, 0 10px 24px rgba(0,0,0,0.4))' : 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.25))',
-        padding: '8px 10px',
+        borderTop: `3px solid ${categoryColor}`,
+        borderRadius: '8px',
+        boxShadow: selected
+          ? `0 0 0 2px ${categoryColor}44, 0 12px 32px rgba(0,0,0,0.5)`
+          : '0 6px 20px rgba(0,0,0,0.35)',
+        padding: '10px 12px',
         display: 'flex',
         flexDirection: 'column',
-        gap: 6,
+        gap: 8,
+        transition: 'all 0.15s ease-out',
       }}
     >
       {/* Header: icon, title, actions */}
@@ -90,11 +96,12 @@ export const BaseHonbaNode: React.FC<BaseHonbaNodeProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 22,
-              height: 22,
-              borderRadius: 4,
-              background: `${categoryColor}22`,
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              background: `${categoryColor}25`,
               color: categoryColor,
+              boxShadow: `0 2px 6px ${categoryColor}25`,
             }}
           >
             {icon}

@@ -46,7 +46,7 @@ export const AlgoDesignerPage: React.FC = () => {
   }, []);
 
   return (
-    <>
+    <div className="algodesigner-view-root" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       {notice ? (
         <div
           role="status"
@@ -131,6 +131,6 @@ export const AlgoDesignerPage: React.FC = () => {
       >
         <AlgoBotsLabView />
       </section>
-    </>
+    </div>
   );
 };
