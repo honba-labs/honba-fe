@@ -181,40 +181,45 @@ function renderPage(ui: ReactNode) {
   );
 }
 
-describe('AlgoDesignerPage — route renders without crashing', () => {
-  it('mounts the AlgoDesignerPage with a stubbed client', () => {
+describe('AlgoDesignerPage — AI-First Quant Studio route', () => {
+  it('mounts the AlgoDesignerPage with the brand-new AI Quant Studio', () => {
     const client = stubbedApiClient();
     setApiClient(client);
     resetDesignerStore();
 
     renderPage(<AlgoDesignerPage />);
 
-    // Header title present
-    expect(screen.getByText('Algo Designer')).toBeInTheDocument();
-    // Strategy name editor present (button with name "SMA Cross")
-    expect(screen.getByRole('button', { name: 'SMA Cross' })).toBeInTheDocument();
-    // Toolbar buttons present - use text content for library button (accessible name is "Library")
-    expect(screen.getByRole('button', { name: 'Library' })).toBeInTheDocument();
-    // Strategy Studio Mode Switcher buttons present
-    expect(screen.getByRole('button', { name: /visual flow & code designer/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /algo bots & strategy lab/i })).toBeInTheDocument();
+    // Header title and brand present
+    expect(screen.getByText('Honba AI Quant Studio')).toBeInTheDocument();
+    expect(screen.getByText(/Autonomous Strategy Engine/i)).toBeInTheDocument();
+    // Mode Switcher buttons present
+    expect(screen.getByRole('button', { name: /frontier \(strategy lab\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /autopilot \(live\/paper arena\)/i })).toBeInTheDocument();
+    // Risk Envelope present
+    expect(screen.getByText(/Inviolable Execution Envelope:/i)).toBeInTheDocument();
   });
 
-  it('switches to Algo Bots & Strategy Lab view when tab is clicked', async () => {
+  it('switches between Frontier Lab and Autopilot Arena views', async () => {
     const client = stubbedApiClient();
     setApiClient(client);
     resetDesignerStore();
 
     renderPage(<AlgoDesignerPage />);
 
-    const botsTab = screen.getByRole('button', { name: /algo bots & strategy lab/i });
-    fireEvent.click(botsTab);
+    const autopilotBtn = screen.getByRole('button', { name: /autopilot \(live\/paper arena\)/i });
+    fireEvent.click(autopilotBtn);
 
-    expect(screen.getByText('Equities Algo Bots')).toBeInTheDocument();
-    expect(screen.getByText(/Simulated quantitative execution engines/i)).toBeInTheDocument();
-    expect(screen.getAllByText('NIFTY Intraday Momentum').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/ACTIVE \(Go\/Rust Runtime Monitoring\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Deterministic Risk Execution & Audit Log/i)).toBeInTheDocument();
+
+    const frontierBtn = screen.getByRole('button', { name: /frontier \(strategy lab\)/i });
+    fireEvent.click(frontierBtn);
+
+    expect(screen.getByText(/AI Strategy Builder/i)).toBeInTheDocument();
   });
 });
+
+
 
 describe('VerifyPanel — graph structural verification UI', () => {
   it('shows "not verified yet" state when verify has no issues and ok=false', () => {

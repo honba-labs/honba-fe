@@ -29,6 +29,32 @@ export interface GoalCheck {
   allMet: boolean;
 }
 
+export interface MonteCarloResult {
+  simulationsCount: number;
+  ruinProbabilityPct: number;
+  worstCaseDrawdownPct: number;
+  medianDrawdownPct: number;
+  valueAtRisk95Pct: number;
+  confidenceInterval: { p5: number; p50: number; p95: number };
+}
+
+export interface RuleSignificanceResult {
+  pValue: number;
+  alphaScore: number;
+  isSignificant: boolean;
+  overfittingRisk: 'low' | 'moderate' | 'high';
+  randomBaselineSharpe: number;
+}
+
+export interface RuntimeRiskEnvelope {
+  maxRiskPerTradePct: number;
+  maxDrawdownKillswitchPct: number;
+  maxLeverageClamp: number;
+  mandatoryBracketOrders: boolean;
+  cooldownPeriodMinutes: number;
+  safeModeStatus: 'active' | 'tripped' | 'idle';
+}
+
 export interface OptimizationIteration {
   iterationNumber: number;
   timestamp: number;
@@ -45,6 +71,9 @@ export interface OptimizationIteration {
     removed: string[];
     keyChanges: string;
   };
+  monteCarlo?: MonteCarloResult;
+  ruleSignificance?: RuleSignificanceResult;
+  runtimeEnvelope?: RuntimeRiskEnvelope;
 }
 
 export type LoopPhase =
