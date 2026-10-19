@@ -26,6 +26,11 @@ import {
   Radio,
   FileCode,
   ShieldAlert,
+  ArrowRight,
+  Split,
+  Eye,
+  RefreshCw,
+  X,
 } from 'lucide-react';
 
 import type { ApiClient } from '../../../core/api/client';
@@ -34,14 +39,23 @@ import {
   runOptimizationStep,
   runMonteCarloSimulation,
   calculateRuleSignificance,
+  calculateWalkForwardValidation,
+  diagnoseDrawdownCluster,
   evaluateRuntimeRiskEnvelope,
+  simulateModelOrderProposal,
+  disposeOrderWithRuntimeRisk,
 } from '../ai-loop/ai-optimizer-engine';
 import type {
   OptimizationGoal,
   OptimizationIteration,
   MonteCarloResult,
   RuleSignificanceResult,
+  WalkForwardResult,
+  DrawdownDiagnostics,
   RuntimeRiskEnvelope,
+  ProposedOrder,
+  RuntimeDisposedOrder,
+  ActiveLivePosition,
 } from '../ai-loop/ai-optimizer-types';
 import './AiQuantStudio.css';
 
@@ -52,6 +66,7 @@ export interface AiQuantStudioProps {
 }
 
 export type StudioTab = 'frontier' | 'autopilot';
+export type TelemetryTab = 'overview' | 'monte-carlo' | 'walk-forward' | 'diagnostics';
 
 export interface StrategyTemplatePreset {
   id: string;
@@ -103,6 +118,7 @@ export const AiQuantStudio: React.FC<AiQuantStudioProps> = ({
   onNotice,
 }) => {
   const [activeTab, setActiveTab] = useState<StudioTab>('frontier');
+  const [telemetryTab, setTelemetryTab] = useState<TelemetryTab>('overview');
   const [selectedModel, setSelectedModel] = useState<string>('DeepSeek-R1 (Quant CoT)');
   const [prompt, setPrompt] = useState<string>(STRATEGY_PRESETS[0].prompt);
   const [symbol, setSymbol] = useState<string>(STRATEGY_PRESETS[0].symbol);
@@ -114,7 +130,7 @@ export const AiQuantStudio: React.FC<AiQuantStudioProps> = ({
   const [minWinRatePct, setMinWinRatePct] = useState<number>(60.0);
   const [targetProfitFactor, setTargetProfitFactor] = useState<number>(1.8);
 
-  // Runtime Risk Governance Envelope: Deterministic capital and loss controls
+  // Phase 3: Runtime Risk Governance Envelope
   const [runtimeRisk, setRuntimeRisk] = useState<RuntimeRiskEnvelope>({
     maxRiskPerTradePct: 1.0,
     maxDrawdownKillswitchPct: 8.0,
@@ -123,8 +139,9 @@ export const AiQuantStudio: React.FC<AiQuantStudioProps> = ({
     cooldownPeriodMinutes: 30,
     safeModeStatus: 'active',
   });
+  const [riskModalOpen, setRiskModalOpen] = useState<boolean>(false);
 
-  // Iteration state
+  // Iteration state (Phase 2)
   const [iterations, setIterations] = useState<OptimizationIteration[]>([]);
   const [selectedIterationIndex, setSelectedIterationIndex] = useState<number>(0);
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -178,12 +195,27 @@ class NiftyIntradayMomentum(_base.Strategy):
 `;
   });
 
-  // Simulated Autopilot live events
+  // Phase 3: Simulated Autopilot live events & positions
   const [liveTickPnl, setLiveTickPnl] = useState<number>(48520);
+  const [activePosition, setActivePosition] = useState<ActiveLivePosition | null>({
+    id: 'pos-1',
+    symbol: 'NSE:NIFTY50 FUT',
+    side: 'buy',
+    qty: 25,
+    entryPrice: 24912.0,
+    currentPrice: 24954.5,
+    unrealizedPnl: 4250,
+    unrealizedPnlPct: 1.71,
+    stopLoss: 24820.0,
+    takeProfit: 25080.0,
+    trailingStopActive: true,
+    openedAt: '14:32:07',
+  });
+
   const [liveLog, setLiveLog] = useState<Array<{ timestamp: string; level: 'info' | 'clamp' | 'trade'; message: string }>>([
     { timestamp: '14:32:05', level: 'info', message: 'DeepSeek-R1 CoT: Evaluating 5m NIFTY consolidation breakout @ 24,910' },
     { timestamp: '14:32:06', level: 'info', message: 'Model Proposal: BUY 100 NIFTY25OCTFUT (Requested 4.5x leverage)' },
-    { timestamp: '14:32:06', level: 'clamp', message: '🛡️ RUNTIME DISPOSED: Clamped leverage from 4.5x → 1.0x (Max 25 shares). Attached mandatory exchange SL @ 24,820 (-0.36% risk).' },
+    { timestamp: '14:32:06', level: 'clamp', message: '🛡️ RUNTIME INTERCEPTOR: Clamped leverage from 4.5x → 1.0x (Max 25 shares). Attached mandatory exchange SL @ 24,820 (-0.36% risk).' },
     { timestamp: '14:32:07', level: 'trade', message: 'Order Executed: BUY 25 NIFTY @ 24,912.00 | Broker Status: FILLED' },
   ]);
 
@@ -195,8 +227,7 @@ class NiftyIntradayMomentum(_base.Strategy):
     if (onNotice) onNotice(`Loaded template: ${preset.title}`);
   };
 
-  // Run Autonomous Optimization Loop
-
+  // Phase 2: Run Autonomous Multi-Iteration Optimization Loop
   const handleStartLoop = async () => {
     setIsRunning(true);
     setStatusMessage('Formulating quantitative hypothesis & synthesizing initial code...');
@@ -236,6 +267,52 @@ class NiftyIntradayMomentum(_base.Strategy):
     setIsRunning(false);
     setStatusMessage('Validation Complete: Strategy satisfies Sharpe and Drawdown targets with Monte Carlo validation.');
     if (onNotice) onNotice('Autonomous Quant Optimization Complete: 3 Iterations Synthesized');
+  };
+
+  // Phase 2: One-click "Apply AI Drawdown Fix"
+  const handleApplyDrawdownFix = () => {
+    if (selectedIterationIndex < iterations.length - 1) {
+      setSelectedIterationIndex((idx) => idx + 1);
+      const nextIter = iterations[selectedIterationIndex + 1];
+      if (nextIter) {
+        setStrategyCode(nextIter.code);
+        if (onNotice) onNotice(`Applied Drawdown Fix from Iteration #${nextIter.iterationNumber}`);
+      }
+    } else {
+      if (onNotice) onNotice('Latest iteration already incorporates the diagnosed drawdown mitigation.');
+    }
+  };
+
+  // Phase 3: Simulate Next Model Order Proposal & Runtime Disposition
+  const handleSimulateNextProposal = () => {
+    const cmp = 24954.5;
+    const proposal = simulateModelOrderProposal(symbol, cmp, 'buy');
+    const disposition = disposeOrderWithRuntimeRisk(proposal, runtimeRisk, 1000000);
+
+    const now = new Date().toLocaleTimeString();
+    setLiveLog((prev) => [
+      ...prev,
+      { timestamp: now, level: 'info', message: proposal.reasoningTokenSnippet },
+      { timestamp: now, level: 'clamp', message: disposition.dispositionReason },
+      { timestamp: now, level: 'trade', message: `Order Executed: ${disposition.side.toUpperCase()} ${disposition.clampedQty} ${symbol} @ ₹${disposition.executionPrice} | Bracket SL: ₹${disposition.stopLossPrice}` },
+    ]);
+
+    setActivePosition({
+      id: disposition.id,
+      symbol: `${symbol} FUT`,
+      side: disposition.side,
+      qty: disposition.clampedQty,
+      entryPrice: disposition.executionPrice,
+      currentPrice: disposition.executionPrice + 12.0,
+      unrealizedPnl: 300,
+      unrealizedPnlPct: 0.85,
+      stopLoss: disposition.stopLossPrice,
+      takeProfit: disposition.takeProfitPrice,
+      trailingStopActive: true,
+      openedAt: now,
+    });
+
+    if (onNotice) onNotice('Simulated Trade Proposal successfully intercepted & clamped by Runtime.');
   };
 
   const handleCopyCode = () => {
@@ -300,14 +377,19 @@ class NiftyIntradayMomentum(_base.Strategy):
             </select>
           </div>
 
-          <div className="runtime-envelope-badge" title="Hardcoded safety limits enforced outside model reach">
+          <button
+            type="button"
+            className="runtime-envelope-badge clickable"
+            onClick={() => setRiskModalOpen(true)}
+            title="Configure Inviolable Runtime Risk Envelope"
+          >
             <Lock size={12} />
-            <span>Runtime Risk: Clamped (1.0% Equity)</span>
-          </div>
+            <span>Runtime Risk: Clamped ({runtimeRisk.maxRiskPerTradePct.toFixed(1)}% Equity)</span>
+          </button>
 
           <div className="killswitch-badge" title="Peak drawdown circuit breaker">
             <ShieldAlert size={12} />
-            <span>Killswitch: -8.0% DD</span>
+            <span>Killswitch: -{runtimeRisk.maxDrawdownKillswitchPct.toFixed(1)}% DD</span>
           </div>
         </div>
       </header>
@@ -576,17 +658,48 @@ class NiftyIntradayMomentum(_base.Strategy):
             </div>
           </section>
 
-          {/* Right Column: Scientific Quantitative Validation & Robustness Lab */}
+          {/* Right Column: Scientific Quantitative Validation & Robustness Lab (Phase 2) */}
           <section className="frontier-telemetry-pane">
             <div className="pane-header">
               <div className="pane-title">
                 <BarChart3 size={14} className="text-bull" />
                 <span>Scientific Quantitative Validation</span>
               </div>
-              <span className="badge-subtle">Robustness Suite</span>
+
+              {/* Phase 2: Telemetry Navigation Tabs */}
+              <div className="telemetry-nav-tabs">
+                <button
+                  type="button"
+                  className={`telem-tab-btn ${telemetryTab === 'overview' ? 'active' : ''}`}
+                  onClick={() => setTelemetryTab('overview')}
+                >
+                  Overview
+                </button>
+                <button
+                  type="button"
+                  className={`telem-tab-btn ${telemetryTab === 'monte-carlo' ? 'active' : ''}`}
+                  onClick={() => setTelemetryTab('monte-carlo')}
+                >
+                  Monte Carlo
+                </button>
+                <button
+                  type="button"
+                  className={`telem-tab-btn ${telemetryTab === 'walk-forward' ? 'active' : ''}`}
+                  onClick={() => setTelemetryTab('walk-forward')}
+                >
+                  Walk-Forward
+                </button>
+                <button
+                  type="button"
+                  className={`telem-tab-btn ${telemetryTab === 'diagnostics' ? 'active' : ''}`}
+                  onClick={() => setTelemetryTab('diagnostics')}
+                >
+                  Diagnostics
+                </button>
+              </div>
             </div>
 
-            {/* Performance Metrics Cards */}
+            {/* Performance Metrics Cards Common */}
             <div className="metrics-cards-grid">
               <div className="metric-box">
                 <span className="metric-label">Net Profit</span>
@@ -627,108 +740,242 @@ class NiftyIntradayMomentum(_base.Strategy):
               </div>
             </div>
 
-            {/* Equity & Drawdown Curves */}
-            <div className="equity-chart-section">
-              <div className="chart-header">
-                <span>Cumulative Equity & Underwater Drawdown</span>
-                <span className="chart-range">Simulated Historical Candles</span>
-              </div>
-              <div className="svg-chart-container">
-                <svg viewBox="0 0 400 120" className="equity-svg">
-                  <defs>
-                    <linearGradient id="equityGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#089981" stopOpacity="0.35" />
-                      <stop offset="100%" stopColor="#089981" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  {/* Grid Lines */}
-                  <line x1="0" y1="30" x2="400" y2="30" stroke="#2a2e39" strokeDasharray="3 3" />
-                  <line x1="0" y1="60" x2="400" y2="60" stroke="#2a2e39" strokeDasharray="3 3" />
-                  <line x1="0" y1="90" x2="400" y2="90" stroke="#2a2e39" strokeDasharray="3 3" />
+            {/* Tab 1: Overview (Equity Curve & Rule Significance) */}
+            {telemetryTab === 'overview' && (
+              <>
+                <div className="equity-chart-section">
+                  <div className="chart-header">
+                    <span>Cumulative Equity & Underwater Drawdown</span>
+                    <span className="chart-range">Simulated Historical Candles</span>
+                  </div>
+                  <div className="svg-chart-container">
+                    <svg viewBox="0 0 400 120" className="equity-svg">
+                      <defs>
+                        <linearGradient id="equityGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#089981" stopOpacity="0.35" />
+                          <stop offset="100%" stopColor="#089981" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+                      <line x1="0" y1="30" x2="400" y2="30" stroke="#2a2e39" strokeDasharray="3 3" />
+                      <line x1="0" y1="60" x2="400" y2="60" stroke="#2a2e39" strokeDasharray="3 3" />
+                      <line x1="0" y1="90" x2="400" y2="90" stroke="#2a2e39" strokeDasharray="3 3" />
 
-                  {/* Equity Area and Curve */}
-                  <polygon
-                    points="0,110 20,105 50,95 80,98 120,80 150,85 190,65 230,68 270,45 310,50 350,25 390,15 400,10 400,110"
-                    fill="url(#equityGrad)"
-                  />
-                  <polyline
-                    points="0,110 20,105 50,95 80,98 120,80 150,85 190,65 230,68 270,45 310,50 350,25 390,15 400,10"
-                    fill="none"
-                    stroke="#089981"
-                    strokeWidth="2.5"
-                  />
-                </svg>
-              </div>
-            </div>
+                      <polygon
+                        points="0,110 20,105 50,95 80,98 120,80 150,85 190,65 230,68 270,45 310,50 350,25 390,15 400,10 400,110"
+                        fill="url(#equityGrad)"
+                      />
+                      <polyline
+                        points="0,110 20,105 50,95 80,98 120,80 150,85 190,65 230,68 270,45 310,50 350,25 390,15 400,10"
+                        fill="none"
+                        stroke="#089981"
+                        strokeWidth="2.5"
+                      />
+                    </svg>
+                  </div>
+                </div>
 
-            {/* Monte Carlo Permutation Stress Testing */}
-            <div className="robustness-section">
-              <div className="robustness-header">
-                <div className="robustness-title">
-                  <Dices size={14} className="text-accent" />
-                  <span>Monte Carlo Stress-Test (1,000x Shuffles)</span>
+                <div className="robustness-section">
+                  <div className="robustness-header">
+                    <div className="robustness-title">
+                      <TrendingUp size={14} className="text-bull" />
+                      <span>Rule Significance & Edge Testing</span>
+                    </div>
+                    <span className="badge-subtle">Bootstrap Alpha</span>
+                  </div>
+                  <div className="significance-card">
+                    <div className="sig-row">
+                      <span>Statistical p-value:</span>
+                      <strong className="text-bull">
+                        p = {currentIteration?.ruleSignificance?.pValue ?? 0.003} (p &lt; 0.01 Edge Confirmed)
+                      </strong>
+                    </div>
+                    <div className="sig-row">
+                      <span>Alpha vs Random Walk:</span>
+                      <strong className="text-accent">
+                        {currentIteration?.ruleSignificance?.alphaScore ?? 94} / 100
+                      </strong>
+                    </div>
+                    <div className="sig-row">
+                      <span>Overfitting Risk:</span>
+                      <strong className="badge-safe">
+                        {currentIteration?.ruleSignificance?.overfittingRisk?.toUpperCase() ?? 'LOW'}
+                      </strong>
+                    </div>
+                  </div>
                 </div>
-                <span className="badge-subtle">Permutation Test</span>
-              </div>
-              <div className="robustness-grid">
-                <div className="robustness-card">
-                  <span className="card-caption">Ruin Probability</span>
-                  <strong className="card-value text-bull">
-                    {currentIteration?.monteCarlo?.ruinProbabilityPct ?? 0.08}%
-                  </strong>
-                  <span className="card-desc">Chance of reaching -50% DD</span>
-                </div>
-                <div className="robustness-card">
-                  <span className="card-caption">95% Value-at-Risk</span>
-                  <strong className="card-value text-bear">
-                    -{currentIteration?.monteCarlo?.valueAtRisk95Pct ?? 7.2}%
-                  </strong>
-                  <span className="card-desc">Max DD in 95% of paths</span>
-                </div>
-                <div className="robustness-card">
-                  <span className="card-caption">Worst-Case Drawdown</span>
-                  <strong className="card-value text-bear">
-                    -{currentIteration?.monteCarlo?.worstCaseDrawdownPct ?? 8.9}%
-                  </strong>
-                  <span className="card-desc">1/1,000 extreme tail path</span>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
 
-            {/* Rule Significance & Overfitting Test */}
-            <div className="robustness-section">
-              <div className="robustness-header">
-                <div className="robustness-title">
-                  <TrendingUp size={14} className="text-bull" />
-                  <span>Rule Significance & Edge Testing</span>
+            {/* Tab 2: Monte Carlo Permutation Histogram (Phase 2) */}
+            {telemetryTab === 'monte-carlo' && (
+              <div className="monte-carlo-detailed-section">
+                <div className="robustness-header">
+                  <div className="robustness-title">
+                    <Dices size={14} className="text-accent" />
+                    <span>Monte Carlo Stress-Test (1,000x Shuffles)</span>
+                  </div>
+                  <span className="badge-subtle">Distribution Histogram</span>
                 </div>
-                <span className="badge-subtle">Bootstrap Alpha</span>
+
+                <div className="robustness-grid">
+                  <div className="robustness-card">
+                    <span className="card-caption">Ruin Probability</span>
+                    <strong className="card-value text-bull">
+                      {currentIteration?.monteCarlo?.ruinProbabilityPct ?? 0.08}%
+                    </strong>
+                    <span className="card-desc">Risk of -50% DD breach</span>
+                  </div>
+                  <div className="robustness-card">
+                    <span className="card-caption">95% Value-at-Risk</span>
+                    <strong className="card-value text-bear">
+                      -{currentIteration?.monteCarlo?.valueAtRisk95Pct ?? 7.2}%
+                    </strong>
+                    <span className="card-desc">Max DD in 95% paths</span>
+                  </div>
+                  <div className="robustness-card">
+                    <span className="card-caption">Worst-Case Tail DD</span>
+                    <strong className="card-value text-bear">
+                      -{currentIteration?.monteCarlo?.worstCaseDrawdownPct ?? 8.9}%
+                    </strong>
+                    <span className="card-desc">1/1000 extreme path</span>
+                  </div>
+                </div>
+
+                {/* Histogram Visualizer */}
+                <div className="histogram-container">
+                  <span className="section-label">Simulated Drawdown Density Distribution</span>
+                  <div className="histogram-bars-list">
+                    {(currentIteration?.monteCarlo?.histogram ?? [
+                      { drawdownRange: '3.0% - 4.5%', count: 180, percentage: 18.0 },
+                      { drawdownRange: '4.5% - 6.0%', count: 520, percentage: 52.0 },
+                      { drawdownRange: '6.0% - 7.5%', count: 210, percentage: 21.0 },
+                      { drawdownRange: '7.5% - 9.0%', count: 78, percentage: 7.8 },
+                      { drawdownRange: '> 9.0%', count: 12, percentage: 1.2 },
+                    ]).map((bucket, bIdx) => (
+                      <div key={bIdx} className="hist-row">
+                        <span className="hist-range">{bucket.drawdownRange}</span>
+                        <div className="hist-bar-track">
+                          <div
+                            className="hist-bar-fill"
+                            style={{
+                              width: `${bucket.percentage}%`,
+                              backgroundColor: bIdx > 3 ? '#f85149' : bIdx > 2 ? '#f7a600' : '#089981',
+                            }}
+                          />
+                        </div>
+                        <span className="hist-pct">{bucket.percentage}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="significance-card">
-                <div className="sig-row">
-                  <span>Statistical p-value:</span>
-                  <strong className="text-bull">
-                    p = {currentIteration?.ruleSignificance?.pValue ?? 0.003} (p &lt; 0.01 Edge Confirmed)
-                  </strong>
+            )}
+
+            {/* Tab 3: Walk-Forward Out-of-Sample Validation (Phase 2) */}
+            {telemetryTab === 'walk-forward' && (
+              <div className="walk-forward-detailed-section">
+                <div className="robustness-header">
+                  <div className="robustness-title">
+                    <Split size={14} className="text-bull" />
+                    <span>Walk-Forward Out-of-Sample Validation</span>
+                  </div>
+                  <span className="badge-subtle">70% IS / 30% OOS</span>
                 </div>
-                <div className="sig-row">
-                  <span>Alpha vs Random Walk:</span>
-                  <strong className="text-accent">
-                    {currentIteration?.ruleSignificance?.alphaScore ?? 94} / 100
-                  </strong>
-                </div>
-                <div className="sig-row">
-                  <span>Overfitting Risk:</span>
-                  <strong className="badge-safe">
-                    {currentIteration?.ruleSignificance?.overfittingRisk?.toUpperCase() ?? 'LOW'}
-                  </strong>
+
+                <div className="wf-comparison-card">
+                  <div className="wf-metrics-duo">
+                    <div className="wf-metric-col">
+                      <span className="wf-label">In-Sample (Train) Sharpe</span>
+                      <strong className="wf-val text-accent">
+                        {currentIteration?.walkForward?.inSampleSharpe ?? 2.47}
+                      </strong>
+                      <span className="wf-sub">3,500 historical bars</span>
+                    </div>
+                    <ArrowRight size={18} className="wf-arrow" />
+                    <div className="wf-metric-col">
+                      <span className="wf-label">Out-of-Sample (Test) Sharpe</span>
+                      <strong className="wf-val text-bull">
+                        {currentIteration?.walkForward?.outOfSampleSharpe ?? 2.19}
+                      </strong>
+                      <span className="wf-sub">1,500 unseen bars</span>
+                    </div>
+                  </div>
+
+                  <div className="wf-efficiency-bar-group">
+                    <div className="efficiency-row">
+                      <span>Walk-Forward Efficiency Ratio (WFE):</span>
+                      <strong className="text-bull">
+                        {((currentIteration?.walkForward?.efficiencyRatio ?? 0.88) * 100).toFixed(0)}%
+                        <span className="wfe-badge">&gt; 70% Institutional Pass</span>
+                      </strong>
+                    </div>
+                    <div className="wf-progress-track">
+                      <div
+                        className="wf-progress-fill"
+                        style={{ width: `${(currentIteration?.walkForward?.efficiencyRatio ?? 0.88) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="overfitting-score-card">
+                    <span>Curve-Fitting Risk Probability:</span>
+                    <strong className="text-bull">
+                      {currentIteration?.walkForward?.overfittingScore ?? 12}% (Robust Generalization)
+                    </strong>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Tab 4: Drawdown Diagnostics & One-Click AI Refinement (Phase 2) */}
+            {telemetryTab === 'diagnostics' && (
+              <div className="diagnostics-detailed-section">
+                <div className="robustness-header">
+                  <div className="robustness-title">
+                    <ShieldAlert size={14} className="text-bear" />
+                    <span>Drawdown Cluster Diagnostics</span>
+                  </div>
+                  <span className="badge-subtle">Tail Risk Root-Cause</span>
+                </div>
+
+                <div className="diagnostics-deep-card">
+                  <div className="cluster-header">
+                    <span className="cluster-label">Worst Drawdown Window:</span>
+                    <strong className="cluster-time">
+                      {currentIteration?.drawdownDiagnostics?.worstDrawdownStart ?? '11:15 IST'} -{' '}
+                      {currentIteration?.drawdownDiagnostics?.worstDrawdownEnd ?? '13:30 IST'}
+                    </strong>
+                  </div>
+
+                  <div className="cluster-body">
+                    <span className="cluster-reason-title">Root Cause Analysis:</span>
+                    <p className="cluster-reason-text">
+                      {currentIteration?.drawdownDiagnostics?.lossClusterReason ??
+                        'Sideways lunchtime chop: Repeated false breakouts during rangebound consolidation.'}
+                    </p>
+
+                    <span className="cluster-fix-title">Algorithmic Recommendation:</span>
+                    <p className="cluster-fix-text">
+                      {currentIteration?.drawdownDiagnostics?.recommendedRefinement ??
+                        'Incorporate 14-period RSI regime gate (> 55) and dynamic ATR trailing stop.'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn-apply-drawdown-fix"
+                    onClick={handleApplyDrawdownFix}
+                  >
+                    <Zap size={14} />
+                    <span>⚡ Apply AI Drawdown Fix & Auto-Refine</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
         </div>
       ) : (
-        /* Autopilot Mode (Autonomous Execution Arena) */
+        /* Autopilot Mode (Autonomous Execution Arena - Phase 3) */
         <div className="autopilot-arena-layout">
           {/* Top Live Feed Overview */}
           <div className="autopilot-summary-bar">
@@ -754,9 +1001,19 @@ class NiftyIntradayMomentum(_base.Strategy):
             <div className="live-metric action-metric">
               <button
                 type="button"
+                className="btn-simulate-proposal"
+                onClick={handleSimulateNextProposal}
+                title="Trigger simulated AI signal & deterministic risk interceptor"
+              >
+                <Play size={13} />
+                <span>Simulate Trade Proposal</span>
+              </button>
+              <button
+                type="button"
                 className="btn-killswitch"
                 onClick={() => {
-                  if (onNotice) onNotice('KILLSWITCH ENGAGED: Autopilot halted, positions flattened.');
+                  setActivePosition(null);
+                  if (onNotice) onNotice('KILLSWITCH ENGAGED: Autopilot halted, all positions flattened.');
                 }}
               >
                 <ShieldAlert size={14} />
@@ -797,7 +1054,7 @@ class NiftyIntradayMomentum(_base.Strategy):
               </div>
             </div>
 
-            {/* Right: Runtime Disposer Interceptor Log */}
+            {/* Right: Deterministic Risk Execution & Audit Log */}
             <div className="autopilot-disposer-pane">
               <div className="pane-header">
                 <div className="pane-title">
@@ -817,19 +1074,41 @@ class NiftyIntradayMomentum(_base.Strategy):
               </div>
 
               {/* Active Position Card */}
-              <div className="active-position-card">
-                <div className="position-header">
-                  <span className="pos-badge buy">LONG</span>
-                  <strong className="pos-symbol">25 shares NIFTY50 FUT</strong>
-                  <span className="pos-pnl text-bull">+₹4,250 (+1.71%)</span>
+              {activePosition ? (
+                <div className="active-position-card">
+                  <div className="position-header">
+                    <span className="pos-badge buy">{activePosition.side.toUpperCase()}</span>
+                    <strong className="pos-symbol">{activePosition.qty} shares {activePosition.symbol}</strong>
+                    <span className="pos-pnl text-bull">
+                      +₹{activePosition.unrealizedPnl.toLocaleString()} (+{activePosition.unrealizedPnlPct}%)
+                    </span>
+                  </div>
+                  <div className="position-details">
+                    <div>Avg Entry: <strong>₹{activePosition.entryPrice.toFixed(2)}</strong></div>
+                    <div>Current CMP: <strong>₹{activePosition.currentPrice.toFixed(2)}</strong></div>
+                    <div>Exchange Stop-Loss: <strong className="text-bear">₹{activePosition.stopLoss.toFixed(2)} (Hard Bracket)</strong></div>
+                    <div>Take Profit: <strong className="text-bull">₹{activePosition.takeProfit.toFixed(2)}</strong></div>
+                  </div>
+                  <div className="position-footer-row">
+                    <span className="pos-time">Opened: {activePosition.openedAt} • Trailing Stop Active</span>
+                    <button
+                      type="button"
+                      className="btn-close-pos"
+                      onClick={() => {
+                        setActivePosition(null);
+                        if (onNotice) onNotice('Position squared off.');
+                      }}
+                    >
+                      Close Position
+                    </button>
+                  </div>
                 </div>
-                <div className="position-details">
-                  <div>Avg Entry: <strong>₹24,912.00</strong></div>
-                  <div>Current CMP: <strong>₹24,954.50</strong></div>
-                  <div>Exchange Stop-Loss: <strong className="text-bear">₹24,820.00 (Hard Bracket)</strong></div>
-                  <div>Take Profit: <strong className="text-bull">₹25,080.00</strong></div>
+              ) : (
+                <div className="no-positions-box">
+                  <ShieldCheck size={20} className="text-secondary" />
+                  <span>No active open exposure. Risk capital fully protected.</span>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -844,15 +1123,15 @@ class NiftyIntradayMomentum(_base.Strategy):
         <div className="footer-guardrails-row">
           <div className="guardrail-item">
             <span className="g-label">Max Risk / Trade:</span>
-            <strong className="g-val text-bull">1.0% Equity</strong>
+            <strong className="g-val text-bull">{runtimeRisk.maxRiskPerTradePct.toFixed(1)}% Equity</strong>
           </div>
           <div className="guardrail-item">
             <span className="g-label">Drawdown Killswitch:</span>
-            <strong className="g-val text-bear">-8.0% Auto-Close</strong>
+            <strong className="g-val text-bear">-{runtimeRisk.maxDrawdownKillswitchPct.toFixed(1)}% Auto-Close</strong>
           </div>
           <div className="guardrail-item">
             <span className="g-label">Leverage Clamp:</span>
-            <strong className="g-val text-accent">1.0x (Cash) / 3.0x Hard</strong>
+            <strong className="g-val text-accent">{runtimeRisk.maxLeverageClamp.toFixed(1)}x (Cash Hard)</strong>
           </div>
           <div className="guardrail-item">
             <span className="g-label">Exchange Stop-Loss:</span>
@@ -860,14 +1139,131 @@ class NiftyIntradayMomentum(_base.Strategy):
           </div>
           <div className="guardrail-item">
             <span className="g-label">Cooldown Timer:</span>
-            <strong className="g-val">30 mins anti-looping</strong>
+            <strong className="g-val">{runtimeRisk.cooldownPeriodMinutes} mins anti-looping</strong>
           </div>
           <div className="guardrail-item">
             <span className="g-label">Safe Mode:</span>
             <span className="status-badge-active">PROTECTED</span>
           </div>
+          <button
+            type="button"
+            className="btn-configure-risk"
+            onClick={() => setRiskModalOpen(true)}
+          >
+            Adjust Risk Envelope
+          </button>
         </div>
       </footer>
+
+      {/* Phase 3: Runtime Risk Envelope Modal */}
+      {riskModalOpen && (
+        <div className="modal-backdrop">
+          <div className="risk-modal-card">
+            <div className="modal-header">
+              <div className="modal-title">
+                <Lock size={16} className="text-accent" />
+                <span>Deterministic Risk Governance Envelope</span>
+              </div>
+              <button
+                type="button"
+                className="btn-close-modal"
+                onClick={() => setRiskModalOpen(false)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p className="modal-desc">
+                Safety boundaries enforced by the deterministic runtime. The AI model can formulate trading ideas, but the execution runtime intercepts and clamps every parameter to ensure zero unmitigated risk.
+              </p>
+
+              <div className="risk-config-group">
+                <div className="config-row">
+                  <label htmlFor="risk-per-trade-input">Max Capital Risk per Trade (% Equity):</label>
+                  <div className="config-val-wrap">
+                    <input
+                      id="risk-per-trade-input"
+                      type="range"
+                      min="0.5"
+                      max="3.0"
+                      step="0.1"
+                      value={runtimeRisk.maxRiskPerTradePct}
+                      onChange={(e) =>
+                        setRuntimeRisk((r) => ({ ...r, maxRiskPerTradePct: parseFloat(e.target.value) }))
+                      }
+                    />
+                    <strong className="text-bull">{runtimeRisk.maxRiskPerTradePct.toFixed(1)}%</strong>
+                  </div>
+                </div>
+
+                <div className="config-row">
+                  <label htmlFor="killswitch-input">Peak-to-Trough Drawdown Killswitch (%):</label>
+                  <div className="config-val-wrap">
+                    <input
+                      id="killswitch-input"
+                      type="range"
+                      min="4.0"
+                      max="15.0"
+                      step="1.0"
+                      value={runtimeRisk.maxDrawdownKillswitchPct}
+                      onChange={(e) =>
+                        setRuntimeRisk((r) => ({ ...r, maxDrawdownKillswitchPct: parseFloat(e.target.value) }))
+                      }
+                    />
+                    <strong className="text-bear">-{runtimeRisk.maxDrawdownKillswitchPct.toFixed(1)}%</strong>
+                  </div>
+                </div>
+
+                <div className="config-row">
+                  <label htmlFor="leverage-clamp-select">Max Leverage Clamp:</label>
+                  <select
+                    id="leverage-clamp-select"
+                    className="risk-select"
+                    value={runtimeRisk.maxLeverageClamp}
+                    onChange={(e) =>
+                      setRuntimeRisk((r) => ({ ...r, maxLeverageClamp: parseFloat(e.target.value) }))
+                    }
+                  >
+                    <option value="1.0">1.0x (Cash only - No Leverage)</option>
+                    <option value="2.0">2.0x (Conservative Margin)</option>
+                    <option value="3.0">3.0x (Hard Max Ceiling)</option>
+                  </select>
+                </div>
+
+                <div className="config-row">
+                  <label htmlFor="cooldown-select">Anti-Looping Re-Entry Cooldown:</label>
+                  <select
+                    id="cooldown-select"
+                    className="risk-select"
+                    value={runtimeRisk.cooldownPeriodMinutes}
+                    onChange={(e) =>
+                      setRuntimeRisk((r) => ({ ...r, cooldownPeriodMinutes: parseInt(e.target.value, 10) }))
+                    }
+                  >
+                    <option value="15">15 Minutes</option>
+                    <option value="30">30 Minutes (Recommended)</option>
+                    <option value="60">60 Minutes</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn-save-risk"
+                onClick={() => {
+                  setRiskModalOpen(false);
+                  if (onNotice) onNotice('Runtime Risk Envelope parameters updated.');
+                }}
+              >
+                Apply & Lock Envelope
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -29,6 +29,12 @@ export interface GoalCheck {
   allMet: boolean;
 }
 
+export interface MonteCarloHistogramBucket {
+  drawdownRange: string;
+  count: number;
+  percentage: number;
+}
+
 export interface MonteCarloResult {
   simulationsCount: number;
   ruinProbabilityPct: number;
@@ -36,6 +42,7 @@ export interface MonteCarloResult {
   medianDrawdownPct: number;
   valueAtRisk95Pct: number;
   confidenceInterval: { p5: number; p50: number; p95: number };
+  histogram: MonteCarloHistogramBucket[];
 }
 
 export interface RuleSignificanceResult {
@@ -46,6 +53,25 @@ export interface RuleSignificanceResult {
   randomBaselineSharpe: number;
 }
 
+export interface WalkForwardResult {
+  inSampleSharpe: number;
+  outOfSampleSharpe: number;
+  efficiencyRatio: number; // e.g. 0.84 (84%)
+  trainBarsCount: number;
+  testBarsCount: number;
+  splitRatio: string; // e.g. "70% IS / 30% OOS"
+  overfittingScore: number; // 0-100%
+  isRobust: boolean;
+}
+
+export interface DrawdownDiagnostics {
+  worstDrawdownStart: string;
+  worstDrawdownEnd: string;
+  maxDrawdownPct: number;
+  lossClusterReason: string;
+  recommendedRefinement: string;
+}
+
 export interface RuntimeRiskEnvelope {
   maxRiskPerTradePct: number;
   maxDrawdownKillswitchPct: number;
@@ -54,6 +80,49 @@ export interface RuntimeRiskEnvelope {
   cooldownPeriodMinutes: number;
   safeModeStatus: 'active' | 'tripped' | 'idle';
 }
+
+export interface ProposedOrder {
+  id: string;
+  timestamp: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  requestedQty: number;
+  requestedLeverage: number;
+  proposedPrice: number;
+  reasoningTokenSnippet: string;
+}
+
+export interface RuntimeDisposedOrder {
+  id: string;
+  originalProposalId: string;
+  timestamp: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  clampedQty: number;
+  clampedLeverage: number;
+  executionPrice: number;
+  stopLossPrice: number;
+  takeProfitPrice: number;
+  riskCapitalPct: number;
+  status: 'filled' | 'rejected_risk_breach' | 'throttled_cooldown';
+  dispositionReason: string;
+}
+
+export interface ActiveLivePosition {
+  id: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  qty: number;
+  entryPrice: number;
+  currentPrice: number;
+  unrealizedPnl: number;
+  unrealizedPnlPct: number;
+  stopLoss: number;
+  takeProfit: number;
+  trailingStopActive: boolean;
+  openedAt: string;
+}
+
 
 export interface OptimizationIteration {
   iterationNumber: number;
@@ -73,6 +142,8 @@ export interface OptimizationIteration {
   };
   monteCarlo?: MonteCarloResult;
   ruleSignificance?: RuleSignificanceResult;
+  walkForward?: WalkForwardResult;
+  drawdownDiagnostics?: DrawdownDiagnostics;
   runtimeEnvelope?: RuntimeRiskEnvelope;
 }
 
