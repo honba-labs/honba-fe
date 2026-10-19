@@ -9,19 +9,52 @@ export interface DesignerHandoff {
 }
 
 export interface SimulatorHandoff {
-  strategy: StrategyGraphShape;
+  name?: string;
+  graph: StrategyGraphShape;
+  strategy?: StrategyGraphShape;
   source: 'designer' | 'library' | 'url';
+  timestamp?: number;
 }
 
-const DESIGNER_HANDOFF_KEY = 'honba.designer.handoff';
-const SIMULATOR_HANDOFF_KEY = 'honba.simulator.handoff';
+export const DESIGNER_HANDOFF_KEY = 'honba.designer.handoff';
+export const SIMULATOR_HANDOFF_KEY = 'honba.simulator.handoff';
 
 export function stashHandoff(graph: StrategyGraphShape): void {
   try {
     sessionStorage.setItem(DESIGNER_HANDOFF_KEY, JSON.stringify({ graph, drawer: 'sweeps' }));
+    const simHandoff: SimulatorHandoff = {
+      name: graph.name,
+      graph,
+      strategy: graph,
+      source: 'designer',
+      timestamp: Date.now(),
+    };
+    sessionStorage.setItem(SIMULATOR_HANDOFF_KEY, JSON.stringify(simHandoff));
   } catch {
     // ignore
   }
+}
+
+export function takeHandoff(): SimulatorHandoff | null {
+  try {
+    const raw = sessionStorage.getItem(SIMULATOR_HANDOFF_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const graph = parsed.graph || parsed.strategy;
+      if (graph && Array.isArray(graph.nodes)) {
+        return {
+          name: parsed.name || graph.name,
+          graph,
+          strategy: graph,
+          source: parsed.source ?? 'designer',
+          timestamp: parsed.timestamp ?? Date.now(),
+        };
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 export function takeDesignerHandoff(): DesignerHandoff | null {

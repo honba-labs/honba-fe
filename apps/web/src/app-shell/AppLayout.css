@@ -563,7 +563,8 @@
   background-color: var(--bg-page);
 }
 
-.wunder-content:has(.workbench-view-root) {
+.wunder-content:has(.workbench-view-root),
+.wunder-content:has(.simulator-view-root) {
   overflow: hidden;
   display: flex;
   flex-direction: column;
