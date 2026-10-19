@@ -1,0 +1,21 @@
+.hb-position-audit__side--buy {
+  color: var(--bullish);
+}
+
+.hb-position-audit__side--sell {
+  color: var(--bearish);
+}
+
+.hb-position-audit__qty {
+  color: var(--bullish);
+  font-variant-numeric: tabular-nums;
+}
+
+.hb-position-audit__qty--reduce {
+  color: var(--bearish);
+}
+
+.hb-position-audit__order {
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}

@@ -199,16 +199,7 @@ export function PortfolioPage() {
             )}
             {closeError && <p className="portfolio__error">Close failed: {closeError}</p>}
             <PositionsTablePanel
-              rows={(positions.data?.positions ?? [])
-                .filter(
-                  // Wire `no_position_side` rows are bookkeeping-only (no intraday side to
-                  // close); the table's flat semantics are `quantity === 0`, so they are
-                  // filtered out here at the feature layer rather than mislabeled.
-                  (position) => position.side !== 'no_position_side',
-                )
-                // The filter above proves `side` is a live position side; ui-core's row type
-                // doesn't carry the `no_position_side` arm, so say it once here.
-                .map((position) => ({ ...position, side: position.side as 'long' | 'short' }))}
+              rows={positions.data?.positions ?? []}
               onClose={(instrumentId) => {
                 const row = positions.data?.positions.find(
                   (position) =>
@@ -226,7 +217,16 @@ export function PortfolioPage() {
             {trades.error && (
               <p className="portfolio__error">Trades failed: {(trades.error as Error).message}</p>
             )}
-            <TradesTablePanel rows={trades.data?.trades ?? []} />
+            {/* A wire trade is a completed fill, so `side` is `buy`/`sell` in practice; the
+                enum technically also carries `no_order_side` (resting orders), which ui-core's
+                row type doesn't. Fold it defensively to `sell`'s bearish side rather than let
+                the row shape lie. */}
+            <TradesTablePanel
+              rows={(trades.data?.trades ?? []).map((trade) => ({
+                ...trade,
+                side: trade.side === 'buy' ? ('buy' as const) : ('sell' as const),
+              }))}
+            />
           </>
         )}
 
@@ -235,7 +235,7 @@ export function PortfolioPage() {
             {ledger.error && (
               <p className="portfolio__error">Ledger failed: {(ledger.error as Error).message}</p>
             )}
-            <LedgerHistory />
+            <LedgerHistory rows={ledger.data?.entries ?? []} isLoading={ledger.isLoading} />
           </>
         )}
 
@@ -244,7 +244,11 @@ export function PortfolioPage() {
             {taxReport.error && (
               <p className="portfolio__error">Tax report failed: {(taxReport.error as Error).message}</p>
             )}
-            <TaxReport />
+            <TaxReport
+              rows={taxReport.data?.transactions ?? []}
+              summary={taxReport.data?.summary}
+              isLoading={taxReport.isLoading}
+            />
           </>
         )}
 
@@ -253,7 +257,7 @@ export function PortfolioPage() {
             {snapshots.error && (
               <p className="portfolio__error">Snapshots failed: {(snapshots.error as Error).message}</p>
             )}
-            <PortfolioSnapshots />
+            <PortfolioSnapshots rows={snapshots.data?.snapshots ?? []} isLoading={snapshots.isLoading} />
           </>
         )}
 
@@ -262,7 +266,7 @@ export function PortfolioPage() {
             {audit.error && (
               <p className="portfolio__error">Audit failed: {(audit.error as Error).message}</p>
             )}
-            <PositionAuditTrail />
+            <PositionAuditTrail rows={audit.data?.entries ?? []} isLoading={audit.isLoading} />
           </>
         )}
 
@@ -271,7 +275,18 @@ export function PortfolioPage() {
             {concentration.error && (
               <p className="portfolio__error">Concentration failed: {(concentration.error as Error).message}</p>
             )}
-            <ConcentrationRisk />
+            <ConcentrationRisk
+              rows={concentration.data?.entries ?? []}
+              summary={
+                concentration.data && {
+                  total_portfolio_value: concentration.data.total_portfolio_value,
+                  hhi: concentration.data.hhi,
+                  top5_concentration: concentration.data.top5_concentration,
+                  top10_concentration: concentration.data.top10_concentration,
+                }
+              }
+              isLoading={concentration.isLoading}
+            />
           </>
         )}
 
@@ -280,7 +295,7 @@ export function PortfolioPage() {
             {wac.error && (
               <p className="portfolio__error">WAC failed: {(wac.error as Error).message}</p>
             )}
-            <WeightedAverageCost />
+            <WeightedAverageCost rows={wac.data?.entries ?? []} isLoading={wac.isLoading} />
           </>
         )}
 
@@ -289,7 +304,7 @@ export function PortfolioPage() {
             {fees.error && (
               <p className="portfolio__error">Fees failed: {(fees.error as Error).message}</p>
             )}
-            <FeesReport />
+            <FeesReport rows={fees.data?.entries ?? []} byType={fees.data?.by_type} isLoading={fees.isLoading} />
           </>
         )}
 
@@ -298,7 +313,11 @@ export function PortfolioPage() {
             {equityCurve.error && (
               <p className="portfolio__error">Equity curve failed: {(equityCurve.error as Error).message}</p>
             )}
-            <PortfolioValueChart />
+            <PortfolioValueChart
+              points={equityCurve.data?.points ?? []}
+              summary={equityCurve.data?.summary}
+              height={420}
+            />
           </>
         )}
       </div>

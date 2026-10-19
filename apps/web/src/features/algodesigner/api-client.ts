@@ -2,6 +2,7 @@
 // This avoids modifying the core client while providing the methods AlgoDesigner needs
 
 import { createApiClient, type ApiClient } from '../../core/api/client';
+import type { BacktestResponse } from '../../core/types/messages';
 import type { StrategyManifest } from './manifest';
 
 export interface AlgoDesignerApiClient extends ApiClient {
@@ -13,7 +14,7 @@ export interface AlgoDesignerApiClient extends ApiClient {
     strategy: string;
     universe: string;
     seed: number;
-  }): Promise<{ data?: { run_id?: string; status?: string; metrics?: unknown; error?: unknown }; error?: unknown }>;
+  }): Promise<{ data?: BacktestResponse; error?: unknown }>;
   
   /** `PUT /profile/layouts/{name}` — save a layout preset (used for strategy library) */
   putProfileLayoutsByName(name: string, manifest: unknown): Promise<unknown>;

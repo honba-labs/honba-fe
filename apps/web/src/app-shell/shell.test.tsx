@@ -29,8 +29,9 @@ describe('AppShell (Batch F)', () => {
     const switcher = document.querySelector('.app-shell__app-switcher')!;
     expect(switcher).not.toBeNull();
     // Hover-dropdown: options exist in the DOM, revealed by the user agent via :hover CSS.
+    // (Nine routes since the nav restructure: Portfolio landing/workbench/screener/etc.)
     const items = switcher.querySelectorAll('.app-shell__app-switcher-item');
-    expect(items.length).toBe(8);
+    expect(items.length).toBe(9);
     expect(Array.from(items).map((item) => item.textContent)).toContain('Workbench');
     expect(Array.from(items).map((item) => item.textContent)).toContain(
       'Components (ui-core dashboard)',

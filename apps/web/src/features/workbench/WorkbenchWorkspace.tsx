@@ -146,8 +146,9 @@ function OrderBookSlice(_props: IDockviewPanelProps) {
       )}
       <OrderBookPanel
         label={selected ? `Order Book — ${selected.exchange}:${selected.symbol}` : 'Order Book'}
-        bids={book?.bids ?? []}
-        asks={book?.asks ?? []}
+        // `GET /depth/{id}` levels are `{price, qty}`; `OrderBook` renders `{price, size}`.
+        bids={(book?.bids ?? []).map((level) => ({ price: level.price, size: level.qty }))}
+        asks={(book?.asks ?? []).map((level) => ({ price: level.price, size: level.qty }))}
         priceDecimals={2}
         sizeDecimals={0}
         headerComponents={

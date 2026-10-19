@@ -156,42 +156,61 @@ export function SettingsPage() {
           <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
             <h4 style={{ marginBottom: 8 }}>Ledger History</h4>
             {ledger.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(ledger.error as Error).message}</p>}
-            <LedgerHistory />
+            <LedgerHistory rows={ledger.data?.entries ?? []} isLoading={ledger.isLoading} />
           </div>
           <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
             <h4 style={{ marginBottom: 8 }}>Tax Report (STCG/LTCG)</h4>
             {taxReport.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(taxReport.error as Error).message}</p>}
-            <TaxReport />
+            <TaxReport
+              rows={taxReport.data?.transactions ?? []}
+              summary={taxReport.data?.summary}
+              isLoading={taxReport.isLoading}
+            />
           </div>
           <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
             <h4 style={{ marginBottom: 8 }}>Portfolio Snapshots</h4>
             {snapshots.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(snapshots.error as Error).message}</p>}
-            <PortfolioSnapshots />
+            <PortfolioSnapshots rows={snapshots.data?.snapshots ?? []} isLoading={snapshots.isLoading} />
           </div>
           <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
             <h4 style={{ marginBottom: 8 }}>Position Audit Trail</h4>
             {audit.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(audit.error as Error).message}</p>}
-            <PositionAuditTrail />
+            <PositionAuditTrail rows={audit.data?.entries ?? []} isLoading={audit.isLoading} />
           </div>
           <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
             <h4 style={{ marginBottom: 8 }}>Concentration Risk</h4>
             {concentration.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(concentration.error as Error).message}</p>}
-            <ConcentrationRisk />
+            <ConcentrationRisk
+              rows={concentration.data?.entries ?? []}
+              summary={
+                concentration.data && {
+                  total_portfolio_value: concentration.data.total_portfolio_value,
+                  hhi: concentration.data.hhi,
+                  top5_concentration: concentration.data.top5_concentration,
+                  top10_concentration: concentration.data.top10_concentration,
+                }
+              }
+              isLoading={concentration.isLoading}
+            />
           </div>
           <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
             <h4 style={{ marginBottom: 8 }}>Weighted Average Cost</h4>
             {wac.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(wac.error as Error).message}</p>}
-            <WeightedAverageCost />
+            <WeightedAverageCost rows={wac.data?.entries ?? []} isLoading={wac.isLoading} />
           </div>
           <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
             <h4 style={{ marginBottom: 8 }}>Fees Report</h4>
             {fees.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(fees.error as Error).message}</p>}
-            <FeesReport />
+            <FeesReport rows={fees.data?.entries ?? []} byType={fees.data?.by_type} isLoading={fees.isLoading} />
           </div>
           <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 }}>
             <h4 style={{ marginBottom: 8 }}>Equity Curve</h4>
             {equityCurve.error && <p style={{ color: 'var(--bearish)', fontSize: 12 }}>Failed: {(equityCurve.error as Error).message}</p>}
-            <PortfolioValueChart />
+            <PortfolioValueChart
+              points={equityCurve.data?.points ?? []}
+              summary={equityCurve.data?.summary}
+              height={340}
+            />
           </div>
         </div>
       </section>

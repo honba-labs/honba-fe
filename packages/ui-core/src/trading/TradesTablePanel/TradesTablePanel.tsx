@@ -22,15 +22,18 @@
 // shape (`honba`'s `Money`: integer minor units + currency code), and redefining them here would
 // create a duplicate exported name once both land in `ui-core/src/index.ts`.
 import { useMemo, useRef } from 'react';
-import { useTable, tableFeatures, flexRender, type ColumnDef } from '@tanstack/react-table';
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+} from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import clsx from 'clsx';
 
-// See OrdersTable.tsx's header comment: @tanstack/react-table 9.x needs an explicit (possibly
-// empty) `features` registry even when no optional feature (sorting, filtering, sizing, ...) is
-// used -- column widths are fixed in CSS/inline styles here rather than the sizing feature.
-const tableFeatureSet = tableFeatures({});
-type TradesTableFeatures = typeof tableFeatureSet;
+// See OrdersTable.tsx's header comment: @tanstack/react-table 9.x keeps the core row model
+// opt-in via `getCoreRowModel()`; no add-on features (sorting/filtering/sizing) are used here --
+// column widths are fixed in CSS/inline styles rather than the `columnSizing` feature state.
 
 import type { ReactNode } from 'react';
 import type { InstrumentId } from '../OrderForm';
@@ -104,7 +107,7 @@ export function TradesTablePanel({
   panelClassName,
   className,
 }: TradesTablePanelProps) {
-  const columns = useMemo<ColumnDef<TradesTableFeatures, Trade>[]>(
+  const columns = useMemo<ColumnDef<Trade>[]>(
     () => [
       {
         id: 'instrument',
@@ -150,10 +153,10 @@ export function TradesTablePanel({
     [],
   );
 
-  const table = useTable({
-    features: tableFeatureSet,
+  const table = useReactTable({
     data: rows,
     columns,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   const tableRows = table.getRowModel().rows;

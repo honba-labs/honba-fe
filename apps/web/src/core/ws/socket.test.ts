@@ -17,8 +17,8 @@ const tick: QuoteTick = {
 };
 
 const depth: DepthResponse = {
-  bids: [{ price: 2980, size: 50 }],
-  asks: [{ price: 2980.5, size: 75 }],
+  bids: [{ price: 2980, qty: 50 }],
+  asks: [{ price: 2980.5, qty: 75 }],
 };
 
 function fakeClient(overrides: Partial<Record<'getQuotes' | 'getDepth', ReturnType<typeof vi.fn>>> = {}) {

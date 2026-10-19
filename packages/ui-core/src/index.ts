@@ -191,6 +191,41 @@ export type {
   StrategyListKind,
 } from './strategy/StrategiesListTable';
 
+// Batch J (docs/tasks.md): reporting & history widgets ported/modernized from bfx-report-ui's
+// src/components/{Ledgers,TaxReport,Snapshots,PositionsAudit,ConcentrationRisk,WeightedAverages,
+// FeesReport} plus the equity-curve view (honba has no bfx analog there). Presentational
+// `rows`-in renderers over the `GET /reports/*` responses (shapes mirror honba-ya-api's
+// responses.rs); fetching belongs to the caller (Batch H's TanStack hooks). The reference's
+// Movements and OrderTrades views are intentionally left for when honba grows matching
+// `GET /reports/movements`-style endpoints.
+export { LedgerHistory } from './reports/LedgerHistory';
+export type { LedgerHistoryProps, LedgerEntry } from './reports/LedgerHistory';
+
+export { TaxReport } from './reports/TaxReport';
+export type { TaxReportProps, TaxTransaction, TaxReportSummary } from './reports/TaxReport';
+
+export { PortfolioSnapshots } from './reports/PortfolioSnapshots';
+export type { PortfolioSnapshotsProps, SnapshotEntry } from './reports/PortfolioSnapshots';
+
+export { PositionAuditTrail } from './reports/PositionAuditTrail';
+export type { PositionAuditTrailProps, AuditEntry } from './reports/PositionAuditTrail';
+
+export { ConcentrationRisk } from './reports/ConcentrationRisk';
+export type {
+  ConcentrationRiskProps,
+  ConcentrationEntry,
+  ConcentrationRiskSummary,
+} from './reports/ConcentrationRisk';
+
+export { WeightedAverageCost } from './reports/WeightedAverageCost';
+export type { WeightedAverageCostProps, WACEntry } from './reports/WeightedAverageCost';
+
+export { FeesReport } from './reports/FeesReport';
+export type { FeesReportProps, FeeEntry, FeeTypeSummary } from './reports/FeesReport';
+
+export { PortfolioValueChart } from './reports/PortfolioValueChart';
+export type { PortfolioValueChartProps, EquityPoint, EquityCurveSummary } from './reports/PortfolioValueChart';
+
 export { BacktestProgressBar } from './strategy/BacktestProgressBar';
 export type { BacktestProgressBarProps } from './strategy/BacktestProgressBar';
 

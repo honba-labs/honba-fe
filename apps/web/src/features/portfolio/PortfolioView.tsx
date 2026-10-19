@@ -129,7 +129,7 @@ export function PortfolioView() {
 
   // Paper session summary
   const paperSessionSummary = useMemo(() => {
-    if (!currentSession) return { totalEquity: 0, openPnl: 0, openInvested: 0, closedPnl: 0 };
+    if (!currentSession) return { totalEquity: 0, openPnl: 0, openInvested: 0, closedPnl: 0, returnPct: 0 };
     let openInvested = 0;
     let openValue = 0;
     let openPnl = 0;

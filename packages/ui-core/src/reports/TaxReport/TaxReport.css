@@ -1,0 +1,25 @@
+/* TaxReport — per-component chrome on top of the shared `.hb-report-table` base. */
+.hb-tax-report__side--buy {
+  color: var(--bullish);
+}
+
+.hb-tax-report__side--sell {
+  color: var(--bearish);
+}
+
+.hb-tax-report__badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.hb-tax-report__badge--STCG {
+  color: var(--bearish);
+}
+
+.hb-tax-report__badge--LTCG {
+  color: var(--bullish);
+}

@@ -26,7 +26,7 @@ const tick: QuoteTick = {
   ts_init: { iso: '2026-10-18T09:15:00Z', unix_nanos: '1' },
 };
 
-const depth: DepthResponse = { bids: [{ price: 2980, size: 1 }], asks: [{ price: 2980.5, size: 1 }] };
+const depth: DepthResponse = { bids: [{ price: 2980, qty: 1 }], asks: [{ price: 2980.5, qty: 1 }] };
 
 const mockClient = {
   getInstruments: vi.fn().mockResolvedValue({ instruments: [] }),

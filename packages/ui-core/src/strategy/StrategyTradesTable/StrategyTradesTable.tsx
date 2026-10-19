@@ -17,13 +17,18 @@
 // Presentational + backend-agnostic: rows in, expansion state owned locally, callbacks (row
 // selection) out.
 import { useMemo, useRef, useState } from 'react';
-import { useTable, tableFeatures, flexRender, type ColumnDef } from '@tanstack/react-table';
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+} from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import clsx from 'clsx';
 import { Minus, Plus } from 'lucide-react';
 
-const tableFeatureSet = tableFeatures({});
-type StrategyTradesTableFeatures = typeof tableFeatureSet;
+// See OrdersTable.tsx's header comment: @tanstack/react-table 9.x keeps the core row model
+// opt-in via `getCoreRowModel()`; no add-on features (sorting/filtering/sizing) are used here.
 
 export type TradeRowSide = 'long' | 'short';
 
@@ -91,7 +96,7 @@ export function StrategyTradesTable({
 }: StrategyTradesTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const columns = useMemo<ColumnDef<StrategyTradesTableFeatures, StrategyTradeRow>[]>(() => [
+  const columns = useMemo<ColumnDef<StrategyTradeRow>[]>(() => [
     {
       id: 'select',
       header: '',
@@ -161,10 +166,10 @@ export function StrategyTradesTable({
     },
   ], [expandedId]);
 
-  const table = useTable({
-    features: tableFeatureSet,
+  const table = useReactTable({
     data: rows,
     columns,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   const tableRows = table.getRowModel().rows;

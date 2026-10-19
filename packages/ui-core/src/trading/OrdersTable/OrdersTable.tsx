@@ -18,18 +18,20 @@
 // package does no fetching/Redux/WS (see Shared conventions); wiring `onCancel` to
 // `DELETE /orders/{id}` is Batch H/I's job, not this one.
 import { useMemo, useRef } from 'react';
-import { useTable, tableFeatures, flexRender, type ColumnDef } from '@tanstack/react-table';
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+} from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import clsx from 'clsx';
 
-// @tanstack/react-table 9.x replaced the v8 `useReactTable({ getCoreRowModel: getCoreRowModel() })`
-// API with a feature-registry model: the core row model is always on, and every other behavior
-// (sorting, filtering, sizing, ...) is an opt-in entry in a `features` object. This table needs
-// none of those — status filtering happens in plain JS below, and column widths are fixed in CSS
-// rather than driven by the `columnSizingFeature` state slice — so `features` is empty and
+// @tanstack/react-table 9.x keeps the core row model opt-in via `getCoreRowModel()` in
+// `useReactTable(options)`. This table needs no add-on features (sorting/filtering/sizing) —
+// status filtering happens in plain JS below, and column widths are fixed in CSS rather than
+// driven by the `columnSizing` feature state — so only the core row model is wired up and
 // `table.getRowModel()` is used as-is.
-const tableFeatureSet = tableFeatures({});
-type OrdersTableFeatures = typeof tableFeatureSet;
 
 import type { InstrumentId, OrderType, TimeInForce } from '../OrderForm';
 import './OrdersTable.css';
@@ -180,8 +182,8 @@ export function OrdersTable({
 }: OrdersTableProps) {
   const data = useMemo(() => filterRows(rows, statusFilter), [rows, statusFilter]);
 
-  const columns = useMemo<ColumnDef<OrdersTableFeatures, Order>[]>(() => {
-    const cols: ColumnDef<OrdersTableFeatures, Order>[] = [
+  const columns = useMemo<ColumnDef<Order>[]>(() => {
+    const cols: ColumnDef<Order>[] = [
       {
         id: 'order_id',
         header: 'Order ID',
@@ -274,10 +276,10 @@ export function OrdersTable({
     return cols;
   }, [onCancel]);
 
-  const table = useTable({
-    features: tableFeatureSet,
+  const table = useReactTable({
     data,
     columns,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   const tableRows = table.getRowModel().rows;

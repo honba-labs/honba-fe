@@ -1,0 +1,8 @@
+/* FeesReport — per-component chrome on top of the shared `.hb-report-table` base. */
+.hb-fees-report__type {
+  text-transform: capitalize;
+}
+
+.hb-fees-report__amount {
+  font-variant-numeric: tabular-nums;
+}

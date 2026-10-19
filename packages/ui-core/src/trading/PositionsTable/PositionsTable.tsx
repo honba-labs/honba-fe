@@ -19,15 +19,18 @@
 // (`onClose`) -- this package does no fetching/Redux/WS (see Shared conventions); wiring
 // `onClose` to `POST /positions/close` is Batch H/I's job, not this one.
 import { useMemo, useRef } from 'react';
-import { useTable, tableFeatures, flexRender, type ColumnDef } from '@tanstack/react-table';
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+} from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import clsx from 'clsx';
 
-// See OrdersTable.tsx's header comment: @tanstack/react-table 9.x needs an explicit (possibly
-// empty) `features` registry even when no optional feature (sorting, filtering, sizing, ...) is
-// used -- column widths are fixed in CSS/inline styles here rather than the sizing feature.
-const tableFeatureSet = tableFeatures({});
-type PositionsTableFeatures = typeof tableFeatureSet;
+// See OrdersTable.tsx's header comment: @tanstack/react-table 9.x keeps the core row model
+// opt-in via `getCoreRowModel()`; no add-on features (sorting/filtering/sizing) are used here --
+// column widths are fixed in CSS/inline styles rather than the `columnSizing` feature state.
 
 import type { InstrumentId } from '../OrderForm';
 import { PLNumber } from '../../ui/PLNumber';
@@ -117,8 +120,8 @@ export function PositionsTable({
   height = 320,
   className,
 }: PositionsTableProps) {
-  const columns = useMemo<ColumnDef<PositionsTableFeatures, PositionRow>[]>(() => {
-    const cols: ColumnDef<PositionsTableFeatures, PositionRow>[] = [
+  const columns = useMemo<ColumnDef<PositionRow>[]>(() => {
+    const cols: ColumnDef<PositionRow>[] = [
       {
         id: 'instrument',
         header: 'Instrument',
@@ -205,10 +208,10 @@ export function PositionsTable({
     return cols;
   }, [onClose]);
 
-  const table = useTable({
-    features: tableFeatureSet,
+  const table = useReactTable({
     data: rows,
     columns,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   const tableRows = table.getRowModel().rows;

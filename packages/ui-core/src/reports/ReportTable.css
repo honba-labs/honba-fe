@@ -1,0 +1,127 @@
+// Shared chrome for the Batch J report views (see ReportTable.tsx for the port provenance).
+.hb-report-table {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+
+.hb-report-table__scroll {
+  overflow: auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.hb-report-table__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.hb-report-table__table th {
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 11px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+
+.hb-report-table__table td {
+  padding: 6px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  height: 28px;
+}
+
+.hb-report-table__table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hb-report-table__table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.hb-report-table__empty {
+  margin: 0;
+  padding: 24px 16px;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+/* P&L cells: same bull/bear tones as the trading tables. */
+.hb-report-table__pnl--bullish {
+  color: var(--bullish);
+}
+
+.hb-report-table__pnl--bearish {
+  color: var(--bearish);
+}
+
+.hb-report-table__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+
+.hb-report-table__summary-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.hb-report-table__summary-item dt {
+  color: var(--fg-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.hb-report-table__summary-item dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.hb-report-table__summary-bull {
+  color: var(--bullish);
+}
+
+.hb-report-table__summary-bear {
+  color: var(--bearish);
+}
+
+/* Concentration share column. */
+.hb-report-table__share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hb-report-table__share-track {
+  flex: 1 0 60px;
+  max-width: 140px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.hb-report-table__share-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+}
+
+.hb-report-table__share-value {
+  min-width: 48px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

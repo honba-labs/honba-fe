@@ -15,7 +15,12 @@
 // against honba's GET /-strategies (graph strategies in AlgoDesigner) by the feature layer.
 import { useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useTable, tableFeatures, flexRender, type ColumnDef } from '@tanstack/react-table';
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+} from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import clsx from 'clsx';
 import { Trash2, Upload } from 'lucide-react';
@@ -24,8 +29,8 @@ import { Tabs } from '../../ui/Tabs';
 import type { TabItem } from '../../ui/Tabs';
 import './StrategiesListTable.css';
 
-const tableFeatureSet = tableFeatures({});
-type StrategiesListTableFeatures = typeof tableFeatureSet;
+// See OrdersTable.tsx's header comment: @tanstack/react-table 9.x keeps the core row model
+// opt-in via `getCoreRowModel()`; no add-on features (sorting/filtering/sizing) are used here.
 
 export type StrategyListKind = 'active' | 'past' | 'saved';
 
@@ -85,8 +90,8 @@ function buildColumns(
   kind: StrategyListKind,
   onLoad: StrategiesListTableProps['onLoad'],
   onRemove: StrategiesListTableProps['onRemove'],
-): ColumnDef<StrategiesListTableFeatures, StrategyListItem>[] {
-  const base: ColumnDef<StrategiesListTableFeatures, StrategyListItem>[] = [
+): ColumnDef<StrategyListItem>[] {
+  const base: ColumnDef<StrategyListItem>[] = [
     {
       id: 'name',
       header: 'Name',
@@ -226,10 +231,10 @@ export function StrategiesListTable({
     [currentKind, onLoad, onRemove],
   );
 
-  const table = useTable({
-    features: tableFeatureSet,
+  const table = useReactTable({
     data: kindRows,
     columns,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   const tableRows = table.getRowModel().rows;

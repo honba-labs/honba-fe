@@ -1,17 +1,54 @@
-// honba-fe — hand-written mirror of honba-kokoro-messages types
-// Source: honba/schema/openapi/openapi.json (API_VERSION 1.0.0, SCHEMA_VERSION 4)
-// Used by the thin typed client (core/api/client.ts) to avoid depending on generated code.
+// honba-fe — mirror of the honba wire types for the thin typed client (core/api/client.ts).
+// Source of truth: honba-kokoro/schema/openapi/openapi.json (API_VERSION 1.0.0, SCHEMA_VERSION 4),
+// generated from the Rust wire types. The domain shapes are re-exported from
+// ./generated/domain.ts (same codegen run), so this file cannot drift from the backend: only the
+// helpers, the served `Instrument` JSON shape (honba-ya-api/src/market.rs `instrument_json`, which
+// is richer than the schema's bare `InstrumentId[]`), the screener filter grammar, and the Batch J
+// report types (honba-ya-api/src/responses.rs, which the schema does not carry) live here.
+
+import type {
+  BacktestResponse as WireBacktestResponse,
+  BacktestMetrics as WireBacktestMetrics,
+  Money,
+  Order as WireOrder,
+  OrderSide,
+  OrderType,
+  OrdersRequest as WireOrdersRequest,
+  PortfolioAccount as WirePortfolioAccount,
+  PortfolioGreeks,
+  PortfolioHolding as WirePortfolioHolding,
+  PortfolioMode,
+  PortfolioPosition as WirePortfolioPosition,
+  PortfolioSnapshot as WirePortfolioSnapshot,
+  PortfolioSource,
+  PositionSide,
+  Product,
+  Profile as WireProfile,
+  QuoteTick as WireQuoteTick,
+  RunStatus as WireRunStatus,
+  TimeInForce,
+  Trade as WireTrade,
+  TradingState as WireTradingState,
+} from './generated/domain';
 
 export const API_VERSION = '1.0.0';
 export const SCHEMA_VERSION = 4;
 
+// --- Core primitives (wire) -------------------------------------------------------------------
+
 export interface UnixNanos {
   /** Nanoseconds since epoch as a decimal string (avoids JS integer overflow). */
   unix_nanos: string;
-  /** ISO-8601 fallback when string parsing fails. */
-  iso?: string;
+  /** ISO-8601 rendering; the serde representation always carries it. */
+  iso: string;
 }
 
+/**
+ * An honba failure, normalized to this shape wherever one came from (error envelope, non-JSON
+ * gateway response, network failure, envelope-shape bug). `code` is the wire
+ * `ErrorDetail.code` vocabulary or a transport pseudo-code; the retry policy keys off
+ * `retryable` (see core/api/client.ts).
+ */
 export interface ErrorDetail {
   code: string;
   message: string;
@@ -43,138 +80,73 @@ export function instrumentIdKey(id: InstrumentId): string {
   return `${id.exchange}:${id.symbol}`;
 }
 
+// --- Instruments (the served JSON shape; honba-ya-api instrument_json) -------------------------
+
+/** One instrument as `GET /instruments` and `GET /instruments/{id}` serve it. */
 export interface Instrument {
-  instrument_id: InstrumentId;
-  /** Human-readable name (e.g., "TCS Ltd"). */
-  name?: string;
-  /** `equity` | `index` | `future` | `option` | ... */
-  kind?: string;
-  lot_size?: number;
-  tick_size?: number;
-  /** `true` if the instrument is tradable in the current session. */
-  tradable?: boolean;
+  id: InstrumentId;
+  /** `equity` | `etf` | `bond` | `ipo` | `future` | `option` | `fx` | `index` | `mutual_fund` | `other`. */
+  kind: InstrumentKind;
+  currency: string;
+  lot_size: number;
+  tick_size: number;
 }
 
-export interface QuoteTick {
-  instrument_id: InstrumentId;
-  ts_event: UnixNanos;
-  bid_price?: number;
-  bid_size?: number;
-  ask_price?: number;
-  ask_size?: number;
-  last_price?: number;
-  last_size?: number;
-  open?: number;
-  high?: number;
-  low?: number;
-  close?: number;
-  volume?: number;
-  change_pct?: number;
+export type InstrumentKind =
+  | 'equity'
+  | 'etf'
+  | 'bond'
+  | 'ipo'
+  | 'future'
+  | 'option'
+  | 'fx'
+  | 'index'
+  | 'mutual_fund'
+  | 'other';
+
+export interface InstrumentsResponse {
+  instruments: Instrument[];
 }
+
+// --- Market data (wire) ------------------------------------------------------------------------
+
+export type QuoteTick = WireQuoteTick;
 
 export interface DepthLevel {
   price: number;
-  size: number;
-  order_count?: number;
+  /** Quantity resting at this level (the wire spells it `qty`). */
+  qty: number;
 }
 
+/** `GET /depth/{id}`: an order book cut to the requested levels per side. Opaque to
+ * instrument identity — the caller chose `id` in the path. */
 export interface DepthResponse {
-  instrument_id: InstrumentId;
-  ts_event: UnixNanos;
   bids: DepthLevel[];
   asks: DepthLevel[];
 }
 
-export type OrderSideValue = 'buy' | 'sell';
+// --- Orders (wire) ------------------------------------------------------------------------------
 
-export type OrderTypeValue = 'market' | 'limit' | 'stop_limit';
+export type OrderSideValue = OrderSide;
+export type OrderTypeValue = OrderType;
+export type TimeInForceValue = TimeInForce;
 
-export type TimeInForceValue = 'day' | 'ioc' | 'gtc' | 'gtd';
+export type OrdersRequest = WireOrdersRequest;
 
-export interface OrdersRequest {
-  client_order_id: string;
-  instrument_id: InstrumentId;
-  side: OrderSideValue;
-  type: OrderTypeValue;
-  quantity: number;
-  price?: number;
-  trigger_price?: number;
-  time_in_force?: TimeInForceValue;
-  /** ISO date for GTD orders. */
-  expire_date?: string;
-  /** Strategy/order algo metadata (optional). */
-  meta?: Record<string, unknown>;
-}
+export type Order = WireOrder;
 
-export interface Order {
-  order_id: string;
-  client_order_id: string;
-  instrument_id: InstrumentId;
-  side: OrderSideValue;
-  type: OrderTypeValue;
-  quantity: number;
-  price?: number;
-  trigger_price?: number;
-  filled_quantity: number;
-  avg_fill_price?: number;
-  status: 'open' | 'partial' | 'filled' | 'cancelled' | 'rejected' | 'expired';
-  time_in_force: TimeInForceValue;
-  expire_date?: string;
-  ts_init: UnixNanos;
-  ts_event: UnixNanos;
-  meta?: Record<string, unknown>;
-}
+// --- Portfolio (wire) ---------------------------------------------------------------------------
 
-export interface PortfolioAccount {
-  account_id: string;
-  name: string;
-  currency: string;
-  mode: 'live' | 'sandbox' | 'paper';
-  /** Total equity (cash + positions mark-to-market). */
-  equity: number;
-  /** Available cash for new orders. */
-  available_cash: number;
-  /** Initial deposit / capital. */
-  initial_capital?: number;
-}
+export type { Money, Currency } from './generated/domain';
+export type { PositionSide, Product, PortfolioMode, PortfolioSource, PortfolioGreeks };
+export type PortfolioAccount = WirePortfolioAccount;
+export type PortfolioHolding = WirePortfolioHolding;
+export type PortfolioPosition = WirePortfolioPosition;
+export type PortfolioPositionsResponse = { positions: PortfolioPosition[] };
+export type { PortfolioTotals } from './generated/domain';
+export type PortfolioSnapshot = WirePortfolioSnapshot;
 
-export interface PortfolioPosition {
-  instrument_id: InstrumentId;
-  quantity: number;
-  avg_price: number;
-  current_price: number;
-  unrealized_pnl: number;
-  realized_pnl: number;
-  market_value: number;
-  side: 'long' | 'short';
-  ts_open: UnixNanos;
-}
-
-export interface PortfolioPositionsResponse {
-  positions: PortfolioPosition[];
-}
-
-export interface PortfolioSnapshot {
-  accounts: PortfolioAccount[];
-  positions: PortfolioPosition[];
-  /** Totals across all accounts. */
-  total_equity: number;
-  total_unrealized_pnl: number;
-  total_realized_pnl: number;
-  total_cash: number;
-}
-
-export interface Trade {
-  trade_id: string;
-  order_id: string;
-  instrument_id: InstrumentId;
-  side: OrderSideValue;
-  price: number;
-  quantity: number;
-  costs: { amount: number; currency: string };
-  ts_event: UnixNanos;
-  ts_init: UnixNanos;
-}
+export type Trade = WireTrade;
 
 export interface ScreenerFilterItem {
   key: string;
@@ -196,73 +168,48 @@ export type TimeframeValue = Timeframe;
 
 export interface ScreenerRow {
   instrument_id: InstrumentId;
-  /** Metric key → value (e.g., "rsi": 65.2, "sma_20": 1500). */
-  metrics: Record<string, number | string | null>;
+  /** Metric key → latest value ("null" while a metric is still warming up). */
+  metrics: Record<string, number | null>;
   /** Optional sector/industry metadata for grouping/filtering. */
   sector?: string;
 }
 
 export interface ScreenerResponse {
   rows: ScreenerRow[];
-  /** Metric keys returned for this scan. */
-  metric_keys: string[];
 }
 
-export interface TradingState {
-  /** Global kill switch — when `true`, new order placement is rejected. */
-  trading_halted: boolean;
-  /** Per-account overrides (optional). */
-  accounts?: Record<string, { trading_halted: boolean }>;
-  /** Max notional per order (in account currency). */
-  max_notional_per_order?: number;
-  /** Max position size per instrument (in lots). */
-  max_position_per_instrument?: number;
-  /** Max drawdown from peak equity (fraction, e.g., 0.1 = 10%). */
-  max_drawdown_pct?: number;
-  /** Max orders per minute per account. */
-  max_order_rate_per_minute?: number;
+export interface TradesResponse {
+  trades: Trade[];
 }
 
-export interface Profile {
-  revision: number;
-  preferences: Record<string, unknown>;
-  layouts: Record<string, LayoutDocument>;
-}
+// --- Engine state (wire) -----------------------------------------------------------------------
 
-export interface LayoutDocument {
-  version: number;
-  /** Serialized dockview state. */
-  document: unknown;
-  updated_at: string;
-}
+/** `GET /trading-state` / the `state` field of `PUT /trading-state`: the operator trading
+ * state the write routes evaluate against — normal, winding down, or stopped. */
+export type TradingState = WireTradingState;
 
-export interface BacktestMetrics {
-  total_return?: number;
-  sharpe?: number;
-  max_drawdown?: number;
-  net_pnl?: number;
-  trades?: number;
-}
+export type TradingStateRequest = { state: TradingState; reason?: string | null };
+export type TradingStateResponse = { state: TradingState };
+export type TradingStateChange = { state: TradingState; previous: TradingState };
 
-export interface BacktestResponse {
-  run_id?: string;
-  status?: 'idle' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  metrics?: BacktestMetrics;
-  error?: ErrorDetail | null;
-  /** Validation badges (DSR/PBO) — server-side computed. */
-  validation?: {
-    dsr_passed?: boolean;
-    pbo_passed?: boolean;
-  };
-  /** Assumptions the backtest engine did NOT model. */
-  assumptions?: {
-    not_modelled?: string[];
-  };
-  start_date?: string;
-  end_date?: string;
-}
+// --- Profile & layouts (wire) ------------------------------------------------------------------
 
-export type RunStatus = 'idle' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+/** The caller's own profile. Layout documents are opaque JSON to the server — see
+ * `LayoutDocument`. Everything is optional: a fresh profile has no keys yet. */
+export type Profile = WireProfile;
+
+/** Profile compare-and-swap revision (the `GET /profile` body's `revision`). */
+export type ProfileRevision = { revision: number };
+
+/** `PUT /profile/layouts/{name}`: the body is the layout, any JSON (opaque to the server). */
+export type LayoutDocument = unknown;
+
+// --- Backtests (wire) --------------------------------------------------------------------------
+
+export type BacktestMetrics = WireBacktestMetrics;
+export type BacktestResponse = WireBacktestResponse;
+export type { ValidationBlock } from './generated/domain';
+export type RunStatus = WireRunStatus;
 
 export interface Event {
   type: string;
@@ -284,19 +231,17 @@ export interface StreamFrame {
 
 export interface Bar {
   ts_event: UnixNanos;
+  ts_init: UnixNanos;
   open: number;
   high: number;
   low: number;
   close: number;
-  volume?: number;
+  /** Bar volume; honba's bar evaluator always carries it. */
+  volume: number;
 }
 
 export interface BarsResponse {
   bars: Bar[];
-}
-
-export interface TradesResponse {
-  trades: Trade[];
 }
 
 // ===== Batch J: Reporting Types =====

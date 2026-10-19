@@ -45,12 +45,12 @@ const INSTRUMENTS: Instrument[] = [
 
 const DEPTH: DepthResponse = {
   bids: [
-    { price: 2979.5, size: 1200 },
-    { price: 2979, size: 800 },
+    { price: 2979.5, qty: 1200 },
+    { price: 2979, qty: 800 },
   ],
   asks: [
-    { price: 2980.5, size: 700 },
-    { price: 2981, size: 400 },
+    { price: 2980.5, qty: 700 },
+    { price: 2981, qty: 400 },
   ],
 };
 

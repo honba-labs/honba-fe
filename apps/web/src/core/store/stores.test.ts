@@ -24,12 +24,12 @@ function tick(overrides: Partial<QuoteTick> = {}): QuoteTick {
 
 const depth: DepthResponse = {
   bids: [
-    { price: 2979.5, size: 100 },
-    { price: 2979, size: 200 },
+    { price: 2979.5, qty: 100 },
+    { price: 2979, qty: 200 },
   ],
   asks: [
-    { price: 2980.5, size: 75 },
-    { price: 2981, size: 150 },
+    { price: 2980.5, qty: 75 },
+    { price: 2981, qty: 150 },
   ],
 };
 
@@ -65,9 +65,9 @@ describe('useMarketStore', () => {
 
   it('replaces the book (not merges) on each depth update', () => {
     useMarketStore.getState().applyDepth(RELIANCE, depth);
-    useMarketStore.getState().applyDepth(RELIANCE, { bids: [{ price: 2970, size: 1 }], asks: [] });
+    useMarketStore.getState().applyDepth(RELIANCE, { bids: [{ price: 2970, qty: 1 }], asks: [] });
     const book = useMarketStore.getState().depth['NSE:RELIANCE'];
-    expect(book).toEqual({ bids: [{ price: 2970, size: 1 }], asks: [] });
+    expect(book).toEqual({ bids: [{ price: 2970, qty: 1 }], asks: [] });
   });
 
   it('getQuote selector hands the exact tick object out', () => {

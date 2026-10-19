@@ -18,15 +18,19 @@
 // an expandable per-account holdings list. This package does no fetching/Redux/WS (see Shared
 // conventions).
 import { useMemo, useRef, useState } from 'react';
-import { useTable, tableFeatures, flexRender, type ColumnDef, type Row } from '@tanstack/react-table';
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+  type Row,
+} from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import clsx from 'clsx';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
-// See OrdersTable.tsx's header comment: @tanstack/react-table 9.x needs an explicit (possibly
-// empty) `features` registry even when no optional feature is used here.
-const tableFeatureSet = tableFeatures({});
-type BalancesTableFeatures = typeof tableFeatureSet;
+// See OrdersTable.tsx's header comment: @tanstack/react-table 9.x keeps the core row model
+// opt-in via `getCoreRowModel()`; no add-on features (sorting/filtering/sizing) are used here.
 
 import type { InstrumentId } from '../OrderForm';
 import { PLNumber } from '../../ui/PLNumber';
@@ -139,7 +143,7 @@ export function BalancesTable({
     });
   };
 
-  const columns = useMemo<ColumnDef<BalancesTableFeatures, PortfolioAccount>[]>(() => {
+  const columns = useMemo<ColumnDef<PortfolioAccount>[]>(() => {
     return [
       {
         id: 'expand',
@@ -222,15 +226,15 @@ export function BalancesTable({
     ];
   }, [expanded]);
 
-  const table = useTable({
-    features: tableFeatureSet,
+  const table = useReactTable({
     data: rows,
     columns,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   const tableRows = table.getRowModel().rows;
   const rowById = useMemo(() => {
-    const map = new Map<string, Row<BalancesTableFeatures, PortfolioAccount>>();
+    const map = new Map<string, Row<PortfolioAccount>>();
     for (const row of tableRows) map.set(row.original.id, row);
     return map;
   }, [tableRows]);
