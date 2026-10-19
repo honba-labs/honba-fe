@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Play,
@@ -22,6 +22,7 @@ import {
   Clock,
   Layers,
   ChevronDown,
+  Calendar,
 } from 'lucide-react';
 
 import { HonbaClient } from '../../core/api/generated/client';
@@ -37,6 +38,15 @@ import { roundTripStats } from '../../core/simulator/analytics';
 import { maxDrawdownPct } from '../../core/simulator/ops';
 import { usePortfolioStore } from '../../core/portfolio/store';
 import { STRATEGY_TEMPLATES } from '../algodesigner/strategy-templates';
+import {
+  PERIOD_PRESETS,
+  presetRange,
+  resolveRange,
+  TIMEFRAMES,
+  formatTimeframe,
+  type PeriodPreset,
+} from '../../core/simulator/controls';
+import { ConfigurableTable, type TableColumn } from '../../components/ui/data-table';
 import './SimulatorView.css';
 
 export function SimulatorView() {
@@ -220,11 +230,441 @@ export function SimulatorView() {
     });
   }, [trips, engineState.initialCapital]);
 
+  // Date Range Controls
+  const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
+  const dateRangeRef = useRef<HTMLDivElement>(null);
+
+  const effectiveRange = useMemo(() => resolveRange(store.controls), [store.controls]);
+  const activeStartDate = store.controls.start || effectiveRange.start;
+  const activeEndDate = store.controls.end || effectiveRange.end;
+
+  const handleSelectPreset = (preset: PeriodPreset) => {
+    if (preset === 'Custom') {
+      store.setControls({ period: 'Custom', start: activeStartDate, end: activeEndDate });
+    } else {
+      const range = presetRange(preset, new Date());
+      store.setControls({ period: preset, start: range.start, end: range.end });
+    }
+  };
+
+  const handleStartDateChange = (val: string) => {
+    store.setControls({ period: 'Custom', start: val || null, end: activeEndDate });
+  };
+
+  const handleEndDateChange = (val: string) => {
+    store.setControls({ period: 'Custom', start: activeStartDate, end: val || null });
+  };
+
+  // Close date range popover on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dateRangeRef.current && !dateRangeRef.current.contains(e.target as Node)) {
+        setIsDateRangeOpen(false);
+      }
+    };
+    if (isDateRangeOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDateRangeOpen]);
+
+  // Sandboxed Portfolio Table Setup
+  interface SandboxPositionRow {
+    id: string;
+    symbol: string;
+    side: 'buy' | 'sell' | 'long' | 'short';
+    quantity: number;
+    entryPrice: number;
+    currentPrice: number;
+    unrealizedPnl: number;
+    unrealizedReturnPct: number;
+    notionalValue: number;
+    account: string;
+  }
+
+  const sandboxPositions: SandboxPositionRow[] = useMemo(() => {
+    const list: SandboxPositionRow[] = [];
+    if (engineState.activePosition) {
+      list.push({
+        id: `sim-pos-${engineState.activePosition.symbol}`,
+        symbol: engineState.activePosition.symbol,
+        side: engineState.activePosition.side,
+        quantity: engineState.activePosition.quantity,
+        entryPrice: engineState.activePosition.entryPrice,
+        currentPrice: engineState.activePosition.currentPrice,
+        unrealizedPnl: engineState.activePosition.unrealizedPnl,
+        unrealizedReturnPct: engineState.activePosition.unrealizedReturnPct,
+        notionalValue: engineState.activePosition.quantity * engineState.activePosition.currentPrice,
+        account: activeAccount?.name ?? 'Sandbox Primary',
+      });
+    }
+    return list;
+  }, [engineState.activePosition, activeAccount]);
+
+  const portfolioColumns: TableColumn<SandboxPositionRow>[] = useMemo(
+    () => [
+      {
+        id: 'symbol',
+        label: 'Symbol',
+        align: 'left',
+        stickyLeft: true,
+        sortable: true,
+        width: 170,
+        render: (row) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{row.symbol}</span>
+            <span
+              style={{
+                fontSize: 10,
+                padding: '1px 5px',
+                borderRadius: 3,
+                background: 'var(--bg-surface-elevated)',
+                color: 'var(--text-muted)',
+              }}
+            >
+              EQ
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: 'side',
+        label: 'Side',
+        align: 'center',
+        sortable: true,
+        width: 90,
+        render: (row) => (
+          <span
+            className={`pill ${
+              row.side === 'buy' || row.side === 'long' ? 'pill-bullish' : 'pill-bearish'
+            }`}
+          >
+            {row.side.toUpperCase()}
+          </span>
+        ),
+      },
+      {
+        id: 'quantity',
+        label: 'Quantity',
+        align: 'right',
+        sortable: true,
+        width: 100,
+        render: (row) => row.quantity.toLocaleString('en-IN'),
+      },
+      {
+        id: 'entryPrice',
+        label: 'Avg Entry',
+        align: 'right',
+        sortable: true,
+        width: 120,
+        render: (row) =>
+          `₹${row.entryPrice.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`,
+      },
+      {
+        id: 'currentPrice',
+        label: 'Mark Price',
+        align: 'right',
+        sortable: true,
+        width: 120,
+        render: (row) =>
+          `₹${row.currentPrice.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`,
+      },
+      {
+        id: 'unrealizedPnl',
+        label: 'Unrealized P&L',
+        align: 'right',
+        sortable: true,
+        width: 140,
+        render: (row) => (
+          <span
+            className={row.unrealizedPnl >= 0 ? 'color-bullish' : 'color-bearish'}
+            style={{ fontWeight: 700 }}
+          >
+            {row.unrealizedPnl >= 0 ? '+' : ''}₹
+            {row.unrealizedPnl.toLocaleString('en-IN', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </span>
+        ),
+      },
+      {
+        id: 'unrealizedReturnPct',
+        label: 'Return %',
+        align: 'right',
+        sortable: true,
+        width: 110,
+        render: (row) => (
+          <span
+            className={row.unrealizedReturnPct >= 0 ? 'color-bullish' : 'color-bearish'}
+            style={{ fontWeight: 600 }}
+          >
+            {row.unrealizedReturnPct >= 0 ? '+' : ''}
+            {(row.unrealizedReturnPct * 100).toFixed(2)}%
+          </span>
+        ),
+      },
+      {
+        id: 'notionalValue',
+        label: 'Notional Value',
+        align: 'right',
+        sortable: true,
+        width: 130,
+        render: (row) =>
+          `₹${row.notionalValue.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`,
+      },
+      {
+        id: 'account',
+        label: 'Sandbox Account',
+        align: 'center',
+        sortable: true,
+        width: 140,
+        render: (row) => (
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{row.account}</span>
+        ),
+      },
+      {
+        id: 'actions',
+        label: 'Action',
+        align: 'center',
+        sortable: false,
+        width: 90,
+        render: () => (
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs color-bearish"
+            onClick={engine.clearPortfolio}
+            title="Flatten position"
+          >
+            Close
+          </button>
+        ),
+      },
+    ],
+    [engine]
+  );
+
+  // Trade Journal Columns
+  const tradeJournalColumns: TableColumn<any>[] = useMemo(
+    () => [
+      {
+        id: 'id',
+        label: 'Trade ID',
+        align: 'left',
+        stickyLeft: true,
+        sortable: true,
+        width: 110,
+        render: (tr) => <span style={{ fontWeight: 600 }}>{tr.id}</span>,
+      },
+      {
+        id: 'instrument',
+        label: 'Instrument',
+        align: 'left',
+        sortable: true,
+        width: 120,
+        render: (tr) => <span style={{ fontWeight: 600 }}>{tr.instrument}</span>,
+      },
+      {
+        id: 'direction',
+        label: 'Side',
+        align: 'center',
+        sortable: true,
+        width: 90,
+        render: (tr) => (
+          <span className={`pill ${tr.direction === 'long' ? 'pill-bullish' : 'pill-bearish'}`}>
+            {tr.direction.toUpperCase()}
+          </span>
+        ),
+      },
+      {
+        id: 'entry',
+        label: 'Entry Price & Time',
+        align: 'right',
+        sortable: true,
+        width: 160,
+        render: (tr) => (
+          <div>
+            <div style={{ fontWeight: 500 }}>₹{tr.avgEntry.toFixed(2)}</div>
+            <div style={{ fontSize: '11px', color: 'var(--fg-muted)' }}>
+              {new Date(tr.entryTs * 1000).toLocaleString('en-IN', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'exit',
+        label: 'Exit Price & Time',
+        align: 'right',
+        sortable: true,
+        width: 160,
+        render: (tr) =>
+          tr.exitTs ? (
+            <div>
+              <div style={{ fontWeight: 500 }}>₹{tr.avgExit?.toFixed(2) ?? '—'}</div>
+              <div style={{ fontSize: '11px', color: 'var(--fg-muted)' }}>
+                {new Date(tr.exitTs * 1000).toLocaleString('en-IN', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </div>
+            </div>
+          ) : (
+            <span style={{ color: 'var(--accent-gold)' }}>Open Position</span>
+          ),
+      },
+      {
+        id: 'quantity',
+        label: 'Qty',
+        align: 'right',
+        sortable: true,
+        width: 90,
+        render: (tr) => tr.quantity,
+      },
+      {
+        id: 'realizedPnl',
+        label: 'Realized P&L',
+        align: 'right',
+        sortable: true,
+        width: 140,
+        render: (tr) => (
+          <div
+            style={{ fontWeight: 700 }}
+            className={(tr.realizedPnl ?? 0) >= 0 ? 'color-bullish' : 'color-bearish'}
+          >
+            {tr.realizedPnl !== null ? (
+              <>
+                {tr.realizedPnl >= 0 ? '+' : ''}₹{tr.realizedPnl.toFixed(2)}
+                <div style={{ fontSize: '11px', fontWeight: 500 }}>
+                  {tr.returnPct ? `${(tr.returnPct * 100).toFixed(2)}%` : ''}
+                </div>
+              </>
+            ) : (
+              '—'
+            )}
+          </div>
+        ),
+      },
+      {
+        id: 'rrMultiple',
+        label: 'R:R',
+        align: 'center',
+        sortable: true,
+        width: 90,
+        render: (tr) => (
+          <span style={{ fontSize: 12, fontWeight: 500 }}>
+            {tr.rrMultiple !== null ? `${tr.rrMultiple.toFixed(2)}R` : '—'}
+          </span>
+        ),
+      },
+      {
+        id: 'reason',
+        label: 'Status / Reason',
+        align: 'left',
+        sortable: true,
+        width: 150,
+        render: (tr) => (
+          <span style={{ fontSize: '12px', color: 'var(--fg-secondary)' }}>
+            {tr.reason || (tr.exitTs ? 'Closed' : 'Active')}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
+
+  // Signal Confluence Columns
+  const signalColumns: TableColumn<any>[] = useMemo(
+    () => [
+      {
+        id: 'label',
+        label: 'Indicator / Rule',
+        align: 'left',
+        stickyLeft: true,
+        sortable: true,
+        width: 180,
+        render: (sig) => <span style={{ fontWeight: 600 }}>{sig.label}</span>,
+      },
+      {
+        id: 'condition',
+        label: 'Condition',
+        align: 'left',
+        sortable: true,
+        width: 180,
+        render: (sig) => <code>{sig.condition}</code>,
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        align: 'center',
+        sortable: true,
+        width: 110,
+        render: (sig) => (
+          <span className={`pill ${sig.active ? 'pill-bullish' : 'pill-neutral'}`}>
+            {sig.active ? 'TRIGGERED' : 'INACTIVE'}
+          </span>
+        ),
+      },
+      {
+        id: 'indication',
+        label: 'Indication',
+        align: 'center',
+        sortable: true,
+        width: 110,
+        render: (sig) => (
+          <span
+            className={`pill ${
+              sig.indication === 'bullish'
+                ? 'pill-bullish'
+                : sig.indication === 'bearish'
+                ? 'pill-bearish'
+                : 'pill-neutral'
+            }`}
+          >
+            {sig.indication.toUpperCase()}
+          </span>
+        ),
+      },
+      {
+        id: 'weight',
+        label: 'Weight',
+        align: 'right',
+        sortable: true,
+        width: 90,
+        render: (sig) => sig.weight,
+      },
+      {
+        id: 'details',
+        label: 'Observed Value',
+        align: 'right',
+        sortable: true,
+        width: 140,
+        render: (sig) => sig.details || '—',
+      },
+    ],
+    []
+  );
+
   return (
     <div className="simulator-view-root">
       {/* 1. Header Toolbar & Historical Replay Controls */}
       <header className="sim-command-bar">
-        {/* Left: Strategy & Symbol Selectors */}
+        {/* Left: Strategy, Symbol, Timeframe, & Date Range Selectors */}
         <div className="sim-header-left">
           <div className="sim-select-wrap">
             <span className="sim-field-label">Strategy</span>
@@ -250,7 +690,107 @@ export function SimulatorView() {
             <span className="sim-symbol-text">
               {store.controls.symbol}.{store.controls.exchange}
             </span>
-            <span className="sim-timeframe-tag">{store.controls.timeframe}</span>
+            <select
+              className="sim-timeframe-tag"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+              value={store.controls.timeframe}
+              onChange={(e) => store.setControls({ timeframe: e.target.value })}
+              title="Change Timeframe"
+            >
+              {['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '1d', '1w'].map(
+                (tf) => (
+                  <option key={tf} value={tf}>
+                    {tf}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          {/* Date Range Selector Popover */}
+          <div className="sim-date-range-wrap" ref={dateRangeRef}>
+            <button
+              type="button"
+              className="sim-date-range-btn"
+              onClick={() => setIsDateRangeOpen(!isDateRangeOpen)}
+              title="Configure Simulation Date Range"
+            >
+              <Calendar size={13} style={{ color: 'var(--primary)' }} />
+              <span className="sim-date-range-preset-pill">{store.controls.period}</span>
+              <span className="sim-date-range-dates">
+                {activeStartDate} → {activeEndDate}
+              </span>
+              <ChevronDown size={11} style={{ color: 'var(--fg-muted)' }} />
+            </button>
+
+            {isDateRangeOpen && (
+              <div className="sim-date-range-popover">
+                <div className="sim-date-range-header">
+                  <div className="sim-date-range-title">
+                    <Calendar size={13} style={{ color: 'var(--primary)' }} />
+                    <span>Simulation Date Range</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="sim-drawer-close-btn"
+                    onClick={() => setIsDateRangeOpen(false)}
+                    title="Close"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                <div className="sim-preset-chips">
+                  {PERIOD_PRESETS.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      className={`sim-preset-chip ${store.controls.period === p ? 'active' : ''}`}
+                      onClick={() => handleSelectPreset(p)}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="sim-date-inputs-row">
+                  <div className="sim-date-input-field">
+                    <span className="sim-date-input-lbl">Start Date</span>
+                    <input
+                      type="date"
+                      className="sim-date-native-input"
+                      value={activeStartDate}
+                      onChange={(e) => handleStartDateChange(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="sim-date-input-field">
+                    <span className="sim-date-input-lbl">End Date</span>
+                    <input
+                      type="date"
+                      className="sim-date-native-input"
+                      value={activeEndDate}
+                      onChange={(e) => handleEndDateChange(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, paddingTop: 4 }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-xs"
+                    onClick={() => setIsDateRangeOpen(false)}
+                  >
+                    Apply Range
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -687,111 +1227,24 @@ export function SimulatorView() {
 
           {/* TAB 2: TRADE JOURNAL */}
           {dockTab === 'trades' && (
-            <div className="sim-journal-pane">
-              {trips.length === 0 ? (
-                <div className="sim-empty-state">
-                  <span>No completed trades yet. Step or Play the simulation to watch trades execute.</span>
-                </div>
-              ) : (
-                <div className="portfolio-table-wrapper">
-                  <table className="portfolio-table">
-                    <thead>
-                      <tr>
-                        <th>Trade ID</th>
-                        <th>Instrument</th>
-                        <th>Side</th>
-                        <th>Entry Timestamp & Price</th>
-                        <th>Exit Timestamp & Price</th>
-                        <th style={{ textAlign: 'right' }}>Qty</th>
-                        <th style={{ textAlign: 'right' }}>Realized P&L</th>
-                        <th style={{ textAlign: 'center' }}>R:R Multiple</th>
-                        <th>Status / Reason</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {trips.map((tr) => (
-                        <tr key={tr.id} className="portfolio-table-row">
-                          <td style={{ fontWeight: 600 }}>{tr.id}</td>
-                          <td style={{ fontWeight: 600 }}>{tr.instrument}</td>
-                          <td>
-                            <span className={`pill ${tr.direction === 'long' ? 'pill-bullish' : 'pill-bearish'}`}>
-                              {tr.direction.toUpperCase()}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{ fontWeight: 500 }}>₹{tr.avgEntry.toFixed(2)}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--fg-muted)' }}>
-                              {new Date(tr.entryTs * 1000).toLocaleString('en-IN', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </div>
-                          </td>
-                          <td>
-                            {tr.exitTs ? (
-                              <>
-                                <div style={{ fontWeight: 500 }}>₹{tr.avgExit?.toFixed(2) ?? '—'}</div>
-                                <div style={{ fontSize: '11px', color: 'var(--fg-muted)' }}>
-                                  {new Date(tr.exitTs * 1000).toLocaleString('en-IN', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </div>
-                              </>
-                            ) : (
-                              <span style={{ color: 'var(--accent-gold)' }}>Open Position</span>
-                            )}
-                          </td>
-                          <td className="num" style={{ textAlign: 'right' }}>
-                            {tr.quantity}
-                          </td>
-                          <td
-                            className="num"
-                            style={{
-                              textAlign: 'right',
-                              fontWeight: 700,
-                              color: (tr.realizedPnl ?? 0) >= 0 ? 'var(--bullish)' : 'var(--bearish)',
-                            }}
-                          >
-                            {tr.realizedPnl !== null ? (
-                              <>
-                                {tr.realizedPnl >= 0 ? '+' : ''}₹{tr.realizedPnl.toFixed(2)}
-                                <div style={{ fontSize: '11px' }}>
-                                  {tr.returnPct ? `${(tr.returnPct * 100).toFixed(2)}%` : ''}
-                                </div>
-                              </>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <span
-                              className={`pill ${
-                                (tr.realizedPnl ?? 0) >= 0 ? 'pill-bullish' : 'pill-bearish'
-                              }`}
-                            >
-                              {(tr.realizedPnl ?? 0) >= 0 ? '+2.2R' : '-1.0R'}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="sim-reason-badge">{tr.exitReason ?? tr.status}</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            <div className="sim-journal-pane" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <ConfigurableTable
+                data={trips}
+                columns={tradeJournalColumns}
+                keyExtractor={(tr) => tr.id}
+                compact
+                pagination={trips.length > 25}
+                pageSize={25}
+                emptyTitle="No Completed Trades Yet"
+                emptySubtitle="Step or play the simulation forward to observe confluence triggers and trade executions."
+                totalItemsLabel="trades"
+              />
             </div>
           )}
 
           {/* TAB 3: SANDBOXED PORTFOLIO */}
           {dockTab === 'portfolio' && (
-            <div className="sim-portfolio-pane">
+            <div className="sim-portfolio-pane" style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="sim-portfolio-stat-row">
                 <div className="card sim-portfolio-stat">
                   <span className="sim-kpi-lbl">Sandbox Account</span>
@@ -823,94 +1276,40 @@ export function SimulatorView() {
                 </div>
               </div>
 
-              {engineState.activePosition ? (
-                <div className="portfolio-table-wrapper" style={{ marginTop: 14 }}>
-                  <table className="portfolio-table">
-                    <thead>
-                      <tr>
-                        <th>Symbol</th>
-                        <th>Side</th>
-                        <th>Quantity</th>
-                        <th>Entry Price</th>
-                        <th>Mark Price</th>
-                        <th>Unrealized P&L</th>
-                        <th>Return %</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="portfolio-table-row">
-                        <td style={{ fontWeight: 600 }}>{engineState.activePosition.symbol}</td>
-                        <td>
-                          <span className="pill pill-bullish">{engineState.activePosition.side.toUpperCase()}</span>
-                        </td>
-                        <td>{engineState.activePosition.quantity}</td>
-                        <td>₹{engineState.activePosition.entryPrice.toFixed(2)}</td>
-                        <td>₹{engineState.activePosition.currentPrice.toFixed(2)}</td>
-                        <td className={engineState.activePosition.unrealizedPnl >= 0 ? 'color-bullish' : 'color-bearish'} style={{ fontWeight: 700 }}>
-                          {engineState.activePosition.unrealizedPnl >= 0 ? '+' : ''}₹{engineState.activePosition.unrealizedPnl.toFixed(2)}
-                        </td>
-                        <td className={engineState.activePosition.unrealizedReturnPct >= 0 ? 'color-bullish' : 'color-bearish'} style={{ fontWeight: 600 }}>
-                          {engineState.activePosition.unrealizedReturnPct >= 0 ? '+' : ''}{(engineState.activePosition.unrealizedReturnPct * 100).toFixed(2)}%
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
+              <div style={{ flex: 1, minHeight: 220 }}>
+                <ConfigurableTable
+                  data={sandboxPositions}
+                  columns={portfolioColumns}
+                  keyExtractor={(row) => row.id}
+                  compact
+                  emptyTitle="No Active Sandboxed Positions"
+                  emptySubtitle="Portfolio is currently flat. Step forward or click Play to simulate market executions and open positions."
+                  totalItemsLabel="positions"
+                />
+              </div>
             </div>
           )}
 
           {/* TAB 4: SIGNAL CONFLUENCE */}
           {dockTab === 'signals' && (
-            <div className="sim-signals-pane">
-              <div className="sim-signals-header">
+            <div className="sim-signals-pane" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div className="sim-signals-header" style={{ marginBottom: 10 }}>
                 <span style={{ fontSize: '13px', fontWeight: 600 }}>Live Multi-Indicator Confluence Evaluation</span>
                 <span style={{ fontSize: '12px', color: 'var(--fg-muted)' }}>
                   Evaluated at Bar {engineState.currentBarIndex} · {engineState.currentTick?.timeStr ?? '—'}
                 </span>
               </div>
 
-              <div className="portfolio-table-wrapper" style={{ marginTop: 10 }}>
-                <table className="portfolio-table">
-                  <thead>
-                    <tr>
-                      <th>Indicator / Rule</th>
-                      <th>Condition</th>
-                      <th>Status</th>
-                      <th>Indication</th>
-                      <th>Weight</th>
-                      <th>Observed Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {engineState.activeSignals.map((sig) => (
-                      <tr key={sig.id} className="portfolio-table-row">
-                        <td style={{ fontWeight: 600 }}>{sig.label}</td>
-                        <td><code>{sig.condition}</code></td>
-                        <td>
-                          <span className={`pill ${sig.active ? 'pill-bullish' : 'pill-neutral'}`}>
-                            {sig.active ? 'TRIGGERED' : 'INACTIVE'}
-                          </span>
-                        </td>
-                        <td>
-                          <span
-                            className={`pill ${
-                              sig.indication === 'bullish'
-                                ? 'pill-bullish'
-                                : sig.indication === 'bearish'
-                                ? 'pill-bearish'
-                                : 'pill-neutral'
-                            }`}
-                          >
-                            {sig.indication.toUpperCase()}
-                          </span>
-                        </td>
-                        <td>{sig.weight}</td>
-                        <td>{sig.details || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{ flex: 1, minHeight: 220 }}>
+                <ConfigurableTable
+                  data={engineState.activeSignals}
+                  columns={signalColumns}
+                  keyExtractor={(sig) => sig.id}
+                  compact
+                  emptyTitle="No Active Strategy Signals"
+                  emptySubtitle="No strategy rules or indicator signals triggered for the current replay bar."
+                  totalItemsLabel="rules"
+                />
               </div>
             </div>
           )}

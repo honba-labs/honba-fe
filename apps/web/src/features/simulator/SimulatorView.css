@@ -677,3 +677,146 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Date Range Selector & Popover in Simulator Command Bar */
+.sim-date-range-wrap {
+  position: relative;
+}
+
+.sim-date-range-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 4px 10px;
+  color: var(--fg-primary);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sim-date-range-btn:hover {
+  border-color: var(--primary);
+  background-color: var(--bg-hover);
+}
+
+.sim-date-range-preset-pill {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-primary, #2962ff);
+  background: rgba(41, 98, 255, 0.12);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.sim-date-range-dates {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--fg-secondary);
+}
+
+.sim-date-range-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  padding: 14px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: hbCardPop 0.15s ease-out;
+}
+
+.sim-date-range-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+
+.sim-date-range-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sim-preset-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.sim-preset-chip {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.sim-preset-chip:hover {
+  background-color: var(--bg-hover);
+  color: var(--fg-primary);
+  border-color: var(--border-strong);
+}
+
+.sim-preset-chip.active {
+  background-color: var(--primary);
+  color: #0b0e14;
+  border-color: var(--primary);
+  font-weight: 700;
+}
+
+.sim-date-inputs-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sim-date-input-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sim-date-input-lbl {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+
+.sim-date-native-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  color: var(--fg-primary);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  outline: none;
+  width: 100%;
+}
+
+.sim-date-native-input:focus {
+  border-color: var(--primary);
+}

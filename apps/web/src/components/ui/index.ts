@@ -7,3 +7,4 @@ export * from './hb-sparkline';
 export * from './hb-gauge';
 export * from './hb-range-bar';
 export * from './pill-dropdown';
+export * from './data-table';
