@@ -69,6 +69,7 @@ export const ScreenerPage: React.FC = () => {
       if (quickPreset === 'watchlist' && !useScreenerStore.getState().shortlistedSymbols.includes(inst.symbol)) return false;
       if (quickPreset === 'gainers' && inst.changePercent <= 0) return false;
       if (quickPreset === 'losers' && inst.changePercent >= 0) return false;
+      if (quickPreset === 'most_capitalized' && inst.marketCap < 500000000000) return false;
       if (quickPreset === 'most_active' && inst.volume < 2000000) return false;
       if (quickPreset === 'high52' && inst.price < inst.high52 * 0.95) return false;
       if (quickPreset === 'oversold' && inst.rsi14 >= 35) return false;

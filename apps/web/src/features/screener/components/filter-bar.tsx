@@ -20,6 +20,17 @@ import {
   Redo2,
   Check,
   X,
+  Layers,
+  TrendingUp,
+  TrendingDown,
+  Crown,
+  Rocket,
+  Gem,
+  Coins,
+  Flame,
+  ArrowUpRight,
+  ArrowDownRight,
+  Activity,
 } from 'lucide-react';
 import { IndexDrawer } from './index-drawer';
 import { getIndicesForMarket } from '../../../core/indices';
@@ -32,18 +43,25 @@ export const SCREENER_TYPES: { id: ScreenerType; name: string; defaultPresetTitl
   { id: 'mf', name: 'MF Screener', defaultPresetTitle: 'All mutual funds' },
 ];
 
-export const SCREEN_PRESETS = [
-  { id: 'all', name: 'All stocks', icon: '📋' },
-  { id: 'most_capitalized', name: 'Most capitalized', icon: '👑' },
-  { id: 'most_active', name: 'Volume leaders', icon: '🔥' },
-  { id: 'gainers', name: 'Top gainers', icon: '📈' },
-  { id: 'losers', name: 'Top losers', icon: '📉' },
-  { id: 'momentum', name: 'Bullish momentum', icon: '🚀' },
-  { id: 'value', name: 'Value stocks (P/E < 25)', icon: '💎' },
-  { id: 'dividend', name: 'High dividend yield', icon: '💰' },
-  { id: 'high52', name: '52-week high', icon: '⚡' },
-  { id: 'oversold', name: 'Oversold RSI (<35)', icon: '📉' },
-  { id: 'overbought', name: 'Overbought RSI (>70)', icon: '⚡' },
+export interface ScreenPresetItem {
+  id: string;
+  name: string;
+  icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties }>;
+  iconClass?: string;
+}
+
+export const SCREEN_PRESETS: ScreenPresetItem[] = [
+  { id: 'all', name: 'All stocks', icon: Layers },
+  { id: 'gainers', name: 'Top gainers', icon: TrendingUp, iconClass: 'preset-icon-gainers' },
+  { id: 'losers', name: 'Top losers', icon: TrendingDown, iconClass: 'preset-icon-losers' },
+  { id: 'most_capitalized', name: 'Most capitalized', icon: Crown },
+  { id: 'momentum', name: 'Bullish momentum', icon: Rocket },
+  { id: 'value', name: 'Value stocks (P/E < 25)', icon: Gem },
+  { id: 'dividend', name: 'High dividend yield', icon: Coins },
+  { id: 'most_active', name: 'Volume leaders', icon: Flame },
+  { id: 'high52', name: '52-week high', icon: ArrowUpRight },
+  { id: 'oversold', name: 'Oversold RSI (<35)', icon: ArrowDownRight },
+  { id: 'overbought', name: 'Overbought RSI (>70)', icon: Activity },
 ];
 
 export const HONBA_TABS = [
@@ -105,8 +123,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Button refs for anchoring floating dropdowns
-  const screenerTypeBtnRef = useRef<HTMLButtonElement>(null);
-  const presetsBtnRef = useRef<HTMLButtonElement>(null);
   const marketBtnRef = useRef<HTMLButtonElement>(null);
   const watchlistBtnRef = useRef<HTMLButtonElement>(null);
   const indexBtnRef = useRef<HTMLButtonElement>(null);
@@ -141,7 +157,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target?.closest?.('.tv-pill-dropdown') || target?.closest?.('.tv-screener-type-btn') || target?.closest?.('.tv-screen-title-btn')) {
+      if (target?.closest?.('.tv-pill-dropdown')) {
         return;
       }
       if (containerRef.current && !containerRef.current.contains(target)) {
@@ -154,9 +170,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
   const marketInfo = dataLayer.getCurrentMarketInfo();
   const allMarkets = dataLayer.getSupportedMarkets();
-  const activeScreenTitle = useScreenerStore((state) => state.activeScreenTitle);
-  const currentScreenerObj = SCREENER_TYPES.find((s) => s.id === screenerType) || SCREENER_TYPES[0];
-  const currentScreenTitle = activeScreenTitle || currentScreenerObj.defaultPresetTitle;
 
   const toggleDropdown = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -173,16 +186,248 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     }
   };
 
+  const handleSelectPreset = (presetId: string) => {
+    if (presetId === quickPreset && presetId !== 'all') {
+      // Toggle off if already active -> reset to 'all'
+      handleSelectPreset('all');
+      return;
+    }
+
+    setQuickPreset(presetId);
+
+    switch (presetId) {
+      case 'all':
+        setAdvanced({
+          minChangePercent: null,
+          maxChangePercent: null,
+          marketCapTier: 'all',
+          peMin: null,
+          peMax: null,
+          minDividendYield: null,
+          technicalRating: 'all',
+          minVolume: null,
+          near52WeekHigh: false,
+          rsiMin: null,
+          rsiMax: null,
+        });
+        break;
+
+      case 'gainers':
+        setAdvanced({
+          minChangePercent: 0,
+          maxChangePercent: null,
+          marketCapTier: 'all',
+          peMin: null,
+          peMax: null,
+          minDividendYield: null,
+          technicalRating: 'all',
+          near52WeekHigh: false,
+          rsiMin: null,
+          rsiMax: null,
+        });
+        break;
+
+      case 'losers':
+        setAdvanced({
+          minChangePercent: null,
+          maxChangePercent: 0,
+          marketCapTier: 'all',
+          peMin: null,
+          peMax: null,
+          minDividendYield: null,
+          technicalRating: 'all',
+          near52WeekHigh: false,
+          rsiMin: null,
+          rsiMax: null,
+        });
+        break;
+
+      case 'most_capitalized':
+        setAdvanced({
+          marketCapTier: 'large',
+          minChangePercent: null,
+          maxChangePercent: null,
+          peMin: null,
+          peMax: null,
+          minDividendYield: null,
+          technicalRating: 'all',
+          near52WeekHigh: false,
+          rsiMin: null,
+          rsiMax: null,
+        });
+        break;
+
+      case 'momentum':
+        setAdvanced({
+          technicalRating: 'Buy',
+          minChangePercent: null,
+          maxChangePercent: null,
+          marketCapTier: 'all',
+          peMin: null,
+          peMax: null,
+          minDividendYield: null,
+          near52WeekHigh: false,
+          rsiMin: null,
+          rsiMax: null,
+        });
+        break;
+
+      case 'value':
+        setAdvanced({
+          peMin: 0,
+          peMax: 25,
+          minChangePercent: null,
+          maxChangePercent: null,
+          marketCapTier: 'all',
+          minDividendYield: null,
+          technicalRating: 'all',
+          near52WeekHigh: false,
+          rsiMin: null,
+          rsiMax: null,
+        });
+        break;
+
+      case 'dividend':
+        setAdvanced({
+          minDividendYield: 2.0,
+          minChangePercent: null,
+          maxChangePercent: null,
+          marketCapTier: 'all',
+          peMin: null,
+          peMax: null,
+          technicalRating: 'all',
+          near52WeekHigh: false,
+          rsiMin: null,
+          rsiMax: null,
+        });
+        break;
+
+      case 'most_active':
+        setAdvanced({
+          minVolume: 2000000,
+          minChangePercent: null,
+          maxChangePercent: null,
+          marketCapTier: 'all',
+          peMin: null,
+          peMax: null,
+          minDividendYield: null,
+          technicalRating: 'all',
+          near52WeekHigh: false,
+          rsiMin: null,
+          rsiMax: null,
+        });
+        break;
+
+      case 'high52':
+        setAdvanced({
+          near52WeekHigh: true,
+          minChangePercent: null,
+          maxChangePercent: null,
+          marketCapTier: 'all',
+          peMin: null,
+          peMax: null,
+          minDividendYield: null,
+          technicalRating: 'all',
+          rsiMin: null,
+          rsiMax: null,
+        });
+        break;
+
+      case 'oversold':
+        setAdvanced({
+          rsiMax: 35,
+          rsiMin: null,
+          minChangePercent: null,
+          maxChangePercent: null,
+          marketCapTier: 'all',
+          peMin: null,
+          peMax: null,
+          minDividendYield: null,
+          technicalRating: 'all',
+          near52WeekHigh: false,
+        });
+        break;
+
+      case 'overbought':
+        setAdvanced({
+          rsiMin: 70,
+          rsiMax: null,
+          minChangePercent: null,
+          maxChangePercent: null,
+          marketCapTier: 'all',
+          peMin: null,
+          peMax: null,
+          minDividendYield: null,
+          technicalRating: 'all',
+          near52WeekHigh: false,
+        });
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  const isPresetActive = (presetId: string) => {
+    if (presetId === 'all') {
+      return (
+        (quickPreset === 'all' || !quickPreset) &&
+        advanced.minChangePercent === null &&
+        advanced.maxChangePercent === null &&
+        advanced.marketCapTier === 'all' &&
+        advanced.peMin === null &&
+        advanced.peMax === null &&
+        advanced.minDividendYield === null &&
+        advanced.technicalRating === 'all' &&
+        !advanced.near52WeekHigh &&
+        advanced.rsiMin === null &&
+        advanced.rsiMax === null &&
+        (advanced.minVolume === null || advanced.minVolume === undefined)
+      );
+    }
+    if (presetId === 'gainers') {
+      return quickPreset === 'gainers' || (advanced.minChangePercent !== null && advanced.minChangePercent !== undefined && advanced.minChangePercent >= 0);
+    }
+    if (presetId === 'losers') {
+      return quickPreset === 'losers' || (advanced.maxChangePercent !== null && advanced.maxChangePercent !== undefined && advanced.maxChangePercent <= 0);
+    }
+    if (presetId === 'most_capitalized') {
+      return quickPreset === 'most_capitalized' || advanced.marketCapTier === 'large' || advanced.marketCapTier === 'mega';
+    }
+    if (presetId === 'value') {
+      return quickPreset === 'value' || (advanced.peMax !== null && advanced.peMax <= 25);
+    }
+    if (presetId === 'dividend') {
+      return quickPreset === 'dividend' || (advanced.minDividendYield !== null && advanced.minDividendYield >= 1.5);
+    }
+    if (presetId === 'momentum') {
+      return quickPreset === 'momentum' || advanced.technicalRating === 'Buy' || advanced.technicalRating === 'Strong Buy';
+    }
+    if (presetId === 'high52') {
+      return quickPreset === 'high52' || !!advanced.near52WeekHigh;
+    }
+    if (presetId === 'oversold') {
+      return quickPreset === 'oversold' || (advanced.rsiMax !== null && advanced.rsiMax <= 35);
+    }
+    if (presetId === 'overbought') {
+      return quickPreset === 'overbought' || (advanced.rsiMin !== null && advanced.rsiMin >= 70);
+    }
+    if (presetId === 'most_active') {
+      return quickPreset === 'most_active' || (advanced.minVolume !== null && advanced.minVolume !== undefined && advanced.minVolume >= 2000000);
+    }
+    return quickPreset === presetId;
+  };
+
   const handleAiSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!aiPrompt.trim()) return;
     const q = aiPrompt.toLowerCase();
     if (q.includes('high dividend') || q.includes('dividend')) {
-      setQuickPreset('dividend');
+      handleSelectPreset('dividend');
     } else if (q.includes('gain') || q.includes('bullish') || q.includes('top gainers')) {
-      setQuickPreset('gainers');
+      handleSelectPreset('gainers');
     } else if (q.includes('value') || q.includes('low pe')) {
-      setQuickPreset('value');
+      handleSelectPreset('value');
     } else if (q.includes('tech') || q.includes('it')) {
       setAdvanced({ sector: 'Technology' });
     } else if (q.includes('bank') || q.includes('finance')) {
@@ -196,174 +441,31 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
   return (
     <div className="tv-screener-header-container" ref={containerRef}>
-      {/* Row 1: Stock Screener Breadcrumb, All stocks ⌵, Undo/Redo & Settings */}
+      {/* Row 1: Popular Screens Bubbles & Header Actions */}
       <div className="tv-header-title-row">
-        <div className="tv-title-left">
-          {/* Instrument Screener Selector (Stock Screener ⌵, ETF Screener ⌵, etc.) */}
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <button
-              ref={screenerTypeBtnRef}
-              className={`tv-screener-type-btn ${activeDropdown === 'screenerType' ? 'active' : ''}`}
-              onClick={(e) => toggleDropdown('screenerType', e)}
-              title="Select Screener Instrument"
-            >
-              <span>{currentScreenerObj.name}</span>
-              <ChevronDown
-                size={12}
-                style={{
-                  transform: activeDropdown === 'screenerType' ? 'rotate(180deg)' : 'none',
-                  transition: 'transform 0.15s ease',
-                  opacity: 0.75,
-                }}
-              />
-            </button>
-
-            <PillDropdown
-              isOpen={activeDropdown === 'screenerType'}
-              onClose={() => setActiveDropdown(null)}
-              triggerRef={screenerTypeBtnRef}
-              width={200}
-            >
-              <div className="tv-screener-type-dropdown">
-                {SCREENER_TYPES.map((type) => (
-                  <div
-                    key={type.id}
-                    className={`tv-pill-option ${type.id === screenerType ? 'selected' : ''}`}
-                    onClick={() => {
-                      setScreenerType(type.id);
-                      setActiveDropdown(null);
-                    }}
-                  >
-                    <span style={{ fontWeight: type.id === screenerType ? 600 : 400 }}>
-                      {type.name}
-                    </span>
-                    {type.id === screenerType && <Check size={14} />}
-                  </div>
-                ))}
-              </div>
-            </PillDropdown>
+        <div className="tv-popular-screens-container">
+          <div className="tv-popular-screens-label">
+            Popular Screens:
           </div>
-
-          {/* Screen Preset Title & Options (All stocks ⌵) */}
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <button
-              ref={presetsBtnRef}
-              className={`tv-screen-title-btn ${activeDropdown === 'presets' ? 'active' : ''}`}
-              onClick={() => toggleDropdown('presets')}
-              title="Click to switch saved screen"
-            >
-              <span>{currentScreenTitle}</span>
-              <ChevronDown
-                size={18}
-                style={{
-                  transform: activeDropdown === 'presets' ? 'rotate(180deg)' : 'none',
-                  transition: 'transform 0.15s ease',
-                  opacity: 0.8,
-                }}
-              />
-            </button>
-
-            <PillDropdown
-              isOpen={activeDropdown === 'presets'}
-              onClose={() => setActiveDropdown(null)}
-              triggerRef={presetsBtnRef}
-              width={280}
-            >
-              <div className="tv-screen-menu-header">
-                <div className="tv-menu-switch-row">
-                  <span>Autosave</span>
-                  <button
-                    type="button"
-                    className={`tv-toggle-switch ${autosave ? 'active' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setAutosave(!autosave);
-                    }}
-                    title={autosave ? 'Autosave enabled' : 'Autosave disabled'}
-                  >
-                    <div className="tv-toggle-thumb" />
-                  </button>
-                </div>
-                <div
-                  className="tv-pill-option"
-                  onClick={() => {
-                    navigator.clipboard?.writeText?.(window.location.href);
-                    setActiveDropdown(null);
-                  }}
-                >
-                  <span>Share screen</span>
-                </div>
-                <div
-                  className="tv-pill-option"
-                  onClick={() => {
-                    const name = prompt('Name for copy of current screen:', `${currentScreenTitle} (Copy)`);
-                    if (name && name.trim()) {
-                      useScreenerStore.getState().saveCurrentAsNewScreen(name.trim());
-                    }
-                    setActiveDropdown(null);
-                  }}
-                >
-                  <span>Make a copy…</span>
-                </div>
-                <div
-                  className="tv-pill-option"
-                  onClick={() => {
-                    onExportCSV();
-                    setActiveDropdown(null);
-                  }}
-                >
-                  <span>Download results as CSV</span>
-                </div>
-
-                <div className="tv-pill-divider" />
-
-                <div
-                  className="tv-pill-option"
-                  onClick={() => {
-                    setActiveDropdown(null);
-                    const name = prompt('Enter a name for your new screen:');
-                    if (name && name.trim()) {
-                      useScreenerStore.getState().saveCurrentAsNewScreen(name.trim());
-                    }
-                  }}
-                >
-                  <span>Create new screen…</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted, #787b86)', fontFamily: 'monospace' }}>Shift + N</span>
-                </div>
-                <div
-                  className="tv-pill-option"
-                  onClick={() => {
-                    setActiveDropdown(null);
-                    useScreenerStore.getState().setOpenScreenModalOpen(true);
-                  }}
-                >
-                  <span>Open screen…</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted, #787b86)', fontFamily: 'monospace' }}>.</span>
-                </div>
-              </div>
-
-              <div className="tv-pill-divider" />
-
-              <div style={{ padding: '8px 14px 4px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Popular Screens
-              </div>
-              {SCREEN_PRESETS.map((preset) => (
-                <div
+          <div className="tv-popular-bubbles-list">
+            {SCREEN_PRESETS.map((preset) => {
+              const active = isPresetActive(preset.id);
+              const PresetIcon = preset.icon;
+              return (
+                <button
                   key={preset.id}
-                  className={`tv-pill-option ${preset.id === quickPreset ? 'selected' : ''}`}
-                  onClick={() => {
-                    setQuickPreset(preset.id);
-                    setActiveDropdown(null);
-                  }}
+                  type="button"
+                  className={`tv-popular-bubble ${active ? 'active' : ''} preset-${preset.id}`}
+                  onClick={() => handleSelectPreset(preset.id)}
+                  title={`Apply screen: ${preset.name}`}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 13 }}>{preset.icon}</span>
-                    <span style={{ fontWeight: preset.id === quickPreset ? 600 : 400 }}>{preset.name}</span>
-                  </div>
-                  {preset.id === quickPreset && <Check size={14} />}
-                </div>
-              ))}
-            </PillDropdown>
+                  <span className={`tv-popular-bubble-icon ${preset.iconClass || ''}`}>
+                    <PresetIcon size={13} strokeWidth={1.8} />
+                  </span>
+                  <span className="tv-popular-bubble-name">{preset.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -598,10 +700,17 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <div className="tv-filter-pill-wrapper">
               <button
                 ref={chgBtnRef}
-                className={`tv-filter-pill ${quickPreset === 'gainers' || quickPreset === 'losers' ? 'active' : ''}`}
+                className={`tv-filter-pill ${quickPreset === 'gainers' || quickPreset === 'losers' || (advanced.minChangePercent !== null && advanced.minChangePercent !== undefined) || (advanced.maxChangePercent !== null && advanced.maxChangePercent !== undefined) ? 'active' : ''}`}
                 onClick={() => toggleDropdown('chg')}
               >
-                <span>Chg %</span>
+                <span>
+                  Chg %
+                  {quickPreset === 'gainers' || (advanced.minChangePercent !== null && advanced.minChangePercent !== undefined && advanced.minChangePercent >= 0)
+                    ? ': Gainers'
+                    : quickPreset === 'losers' || (advanced.maxChangePercent !== null && advanced.maxChangePercent !== undefined && advanced.maxChangePercent <= 0)
+                    ? ': Losers'
+                    : ''}
+                </span>
                 <ChevronDown size={11} style={{ opacity: 0.6 }} />
               </button>
               <PillDropdown
@@ -611,31 +720,34 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 width={180}
               >
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${quickPreset !== 'gainers' && quickPreset !== 'losers' && advanced.minChangePercent === null && advanced.maxChangePercent === null ? 'selected' : ''}`}
                   onClick={() => {
-                    setQuickPreset('all');
+                    handleSelectPreset('all');
                     setActiveDropdown(null);
                   }}
                 >
                   <span>All Changes</span>
+                  {quickPreset !== 'gainers' && quickPreset !== 'losers' && advanced.minChangePercent === null && advanced.maxChangePercent === null && <Check size={13} />}
                 </div>
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${quickPreset === 'gainers' || (advanced.minChangePercent !== null && advanced.minChangePercent !== undefined && advanced.minChangePercent >= 0) ? 'selected' : ''}`}
                   onClick={() => {
-                    setQuickPreset('gainers');
+                    handleSelectPreset('gainers');
                     setActiveDropdown(null);
                   }}
                 >
                   <span style={{ color: '#089981', fontWeight: 600 }}>▲ Gainers (&gt; 0%)</span>
+                  {(quickPreset === 'gainers' || (advanced.minChangePercent !== null && advanced.minChangePercent !== undefined && advanced.minChangePercent >= 0)) && <Check size={13} />}
                 </div>
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${quickPreset === 'losers' || (advanced.maxChangePercent !== null && advanced.maxChangePercent !== undefined && advanced.maxChangePercent <= 0) ? 'selected' : ''}`}
                   onClick={() => {
-                    setQuickPreset('losers');
+                    handleSelectPreset('losers');
                     setActiveDropdown(null);
                   }}
                 >
                   <span style={{ color: '#f23645', fontWeight: 600 }}>▼ Losers (&lt; 0%)</span>
+                  {(quickPreset === 'losers' || (advanced.maxChangePercent !== null && advanced.maxChangePercent !== undefined && advanced.maxChangePercent <= 0)) && <Check size={13} />}
                 </div>
               </PillDropdown>
             </div>
@@ -644,10 +756,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <div className="tv-filter-pill-wrapper">
               <button
                 ref={mktCapBtnRef}
-                className={`tv-filter-pill ${advanced.marketCapTier !== 'all' ? 'active' : ''}`}
+                className={`tv-filter-pill ${advanced.marketCapTier !== 'all' || quickPreset === 'most_capitalized' ? 'active' : ''}`}
                 onClick={() => toggleDropdown('mktCap')}
               >
-                <span>Mkt cap: {advanced.marketCapTier === 'all' ? 'All' : advanced.marketCapTier}</span>
+                <span>
+                  Mkt cap: {advanced.marketCapTier === 'all' ? (quickPreset === 'most_capitalized' ? 'Large Cap' : 'All') : advanced.marketCapTier}
+                </span>
                 <ChevronDown size={11} style={{ opacity: 0.6 }} />
               </button>
               <PillDropdown
@@ -667,7 +781,17 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     key={tier.id}
                     className={`tv-pill-option ${advanced.marketCapTier === tier.id ? 'selected' : ''}`}
                     onClick={() => {
-                      setAdvanced({ marketCapTier: tier.id as any });
+                      if (tier.id === 'all') {
+                        setAdvanced({ marketCapTier: 'all' });
+                        if (quickPreset === 'most_capitalized') setQuickPreset('all');
+                      } else {
+                        setAdvanced({ marketCapTier: tier.id as any });
+                        if (tier.id === 'large' || tier.id === 'mega') {
+                          setQuickPreset('most_capitalized');
+                        } else if (quickPreset === 'most_capitalized') {
+                          setQuickPreset('all');
+                        }
+                      }
                       setActiveDropdown(null);
                     }}
                   >
@@ -682,10 +806,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <div className="tv-filter-pill-wrapper">
               <button
                 ref={peBtnRef}
-                className={`tv-filter-pill ${advanced.peMin !== null || advanced.peMax !== null ? 'active' : ''}`}
+                className={`tv-filter-pill ${advanced.peMin !== null || advanced.peMax !== null || quickPreset === 'value' ? 'active' : ''}`}
                 onClick={() => toggleDropdown('pe')}
               >
-                <span>P/E</span>
+                <span>
+                  P/E
+                  {advanced.peMin === 0 && advanced.peMax === 15
+                    ? ': < 15'
+                    : advanced.peMax === 25
+                    ? ': < 25'
+                    : advanced.peMin === 25 && advanced.peMax === 50
+                    ? ': 25–50'
+                    : advanced.peMin !== null || advanced.peMax !== null
+                    ? ': Active'
+                    : quickPreset === 'value'
+                    ? ': < 25'
+                    : ''}
+                </span>
                 <ChevronDown size={11} style={{ opacity: 0.6 }} />
               </button>
               <PillDropdown
@@ -695,40 +832,48 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 width={190}
               >
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${advanced.peMin === null && advanced.peMax === null && quickPreset !== 'value' ? 'selected' : ''}`}
                   onClick={() => {
                     setAdvanced({ peMin: null, peMax: null });
+                    if (quickPreset === 'value') setQuickPreset('all');
                     setActiveDropdown(null);
                   }}
                 >
                   <span>Any P/E</span>
+                  {advanced.peMin === null && advanced.peMax === null && quickPreset !== 'value' && <Check size={13} />}
                 </div>
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${advanced.peMin === 0 && advanced.peMax === 15 ? 'selected' : ''}`}
                   onClick={() => {
                     setAdvanced({ peMin: 0, peMax: 15 });
+                    setQuickPreset('value');
                     setActiveDropdown(null);
                   }}
                 >
                   <span>Value (&lt; 15)</span>
+                  {advanced.peMin === 0 && advanced.peMax === 15 && <Check size={13} />}
                 </div>
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${(advanced.peMax === 25 && (advanced.peMin === 0 || advanced.peMin === null)) || (quickPreset === 'value' && advanced.peMax === 25) ? 'selected' : ''}`}
                   onClick={() => {
-                    setAdvanced({ peMin: 15, peMax: 25 });
+                    setAdvanced({ peMin: 0, peMax: 25 });
+                    setQuickPreset('value');
                     setActiveDropdown(null);
                   }}
                 >
-                  <span>Reasonable (15 – 25)</span>
+                  <span>Reasonable (&lt; 25)</span>
+                  {((advanced.peMax === 25 && (advanced.peMin === 0 || advanced.peMin === null)) || (quickPreset === 'value' && advanced.peMax === 25)) && <Check size={13} />}
                 </div>
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${advanced.peMin === 25 && advanced.peMax === 50 ? 'selected' : ''}`}
                   onClick={() => {
                     setAdvanced({ peMin: 25, peMax: 50 });
+                    if (quickPreset === 'value') setQuickPreset('all');
                     setActiveDropdown(null);
                   }}
                 >
                   <span>Growth (25 – 50)</span>
+                  {advanced.peMin === 25 && advanced.peMax === 50 && <Check size={13} />}
                 </div>
               </PillDropdown>
             </div>
@@ -737,10 +882,17 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <div className="tv-filter-pill-wrapper">
               <button
                 ref={dividendBtnRef}
-                className={`tv-filter-pill ${advanced.minDividendYield !== null ? 'active' : ''}`}
+                className={`tv-filter-pill ${advanced.minDividendYield !== null || quickPreset === 'dividend' ? 'active' : ''}`}
                 onClick={() => toggleDropdown('dividend')}
               >
-                <span>Div yield %</span>
+                <span>
+                  Div yield %
+                  {advanced.minDividendYield !== null
+                    ? `: > ${advanced.minDividendYield}%`
+                    : quickPreset === 'dividend'
+                    ? ': > 1.5%'
+                    : ''}
+                </span>
                 <ChevronDown size={11} style={{ opacity: 0.6 }} />
               </button>
               <PillDropdown
@@ -750,40 +902,48 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 width={190}
               >
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${advanced.minDividendYield === null && quickPreset !== 'dividend' ? 'selected' : ''}`}
                   onClick={() => {
                     setAdvanced({ minDividendYield: null });
+                    if (quickPreset === 'dividend') setQuickPreset('all');
                     setActiveDropdown(null);
                   }}
                 >
                   <span>Any Yield</span>
+                  {advanced.minDividendYield === null && quickPreset !== 'dividend' && <Check size={13} />}
                 </div>
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${advanced.minDividendYield === 1.0 ? 'selected' : ''}`}
                   onClick={() => {
                     setAdvanced({ minDividendYield: 1.0 });
+                    setQuickPreset('dividend');
                     setActiveDropdown(null);
                   }}
                 >
                   <span>Over 1%</span>
+                  {advanced.minDividendYield === 1.0 && <Check size={13} />}
                 </div>
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${advanced.minDividendYield === 2.0 || (quickPreset === 'dividend' && advanced.minDividendYield === 2.0) ? 'selected' : ''}`}
                   onClick={() => {
                     setAdvanced({ minDividendYield: 2.0 });
+                    setQuickPreset('dividend');
                     setActiveDropdown(null);
                   }}
                 >
                   <span>Over 2%</span>
+                  {(advanced.minDividendYield === 2.0 || (quickPreset === 'dividend' && advanced.minDividendYield === 2.0)) && <Check size={13} />}
                 </div>
                 <div
-                  className="tv-pill-option"
+                  className={`tv-pill-option ${advanced.minDividendYield === 4.0 ? 'selected' : ''}`}
                   onClick={() => {
                     setAdvanced({ minDividendYield: 4.0 });
+                    setQuickPreset('dividend');
                     setActiveDropdown(null);
                   }}
                 >
                   <span>High Yield (&gt; 4%)</span>
+                  {advanced.minDividendYield === 4.0 && <Check size={13} />}
                 </div>
               </PillDropdown>
             </div>
@@ -836,10 +996,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <div className="tv-filter-pill-wrapper">
               <button
                 ref={ratingBtnRef}
-                className={`tv-filter-pill ${advanced.technicalRating !== 'all' ? 'active' : ''}`}
+                className={`tv-filter-pill ${advanced.technicalRating !== 'all' || quickPreset === 'momentum' ? 'active' : ''}`}
                 onClick={() => toggleDropdown('rating')}
               >
-                <span>Analyst rating: {advanced.technicalRating === 'all' ? 'All' : advanced.technicalRating}</span>
+                <span>
+                  Analyst rating: {advanced.technicalRating === 'all' ? (quickPreset === 'momentum' ? 'Buy' : 'All') : advanced.technicalRating}
+                </span>
                 <ChevronDown size={11} style={{ opacity: 0.6 }} />
               </button>
               <PillDropdown
@@ -861,6 +1023,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     className={`tv-pill-option ${advanced.technicalRating === r.id ? 'selected' : ''}`}
                     onClick={() => {
                       setAdvanced({ technicalRating: r.id as any });
+                      if (r.id === 'Buy' || r.id === 'Strong Buy') {
+                        setQuickPreset('momentum');
+                      } else if (quickPreset === 'momentum') {
+                        setQuickPreset('all');
+                      }
                       setActiveDropdown(null);
                     }}
                   >
