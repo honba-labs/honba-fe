@@ -55,8 +55,14 @@ export function AppLayout() {
     if (p === '/screener') return 'Stock Screener';
     if (p.startsWith('/instrument')) return 'Instruments · Asset Deep-Dive';
     if (p === '/workbench') return 'Trading Workbench';
-    if (p === '/strategies' || p === '/strategy-studio') return 'Strategies & Algo Bots';
-    if (p.startsWith('/algodesigner')) return 'Visual Algo Designer';
+    if (
+      p.startsWith('/strategy-builder') ||
+      p.startsWith('/algodesigner') ||
+      p === '/strategies' ||
+      p === '/strategy-studio'
+    ) {
+      return 'AI Strategy Builder';
+    }
     if (p === '/simulator') return 'Simulation & Backtest Replay';
     if (p === '/tradebook') return 'Tradebook & Session Journal';
     if (p === '/markets') return 'Markets Overview';
@@ -94,10 +100,11 @@ export function AppLayout() {
         {/* Primary nav links in exact user-specified order:
             1. Portfolio (Landing)
             2. Screener
-            3. Workbench
-            4. Strategy Studio
-            5. Simulator
-            6. Tradebook */}
+            3. Instruments
+            4. Workbench
+            5. AI Strategy Builder
+            6. Simulator
+            7. Tradebook */}
         <nav className="wunder-nav-links">
           <NavLink
             to="/portfolio"
@@ -136,23 +143,21 @@ export function AppLayout() {
           </NavLink>
 
           <NavLink
-            to="/strategies"
+            to="/strategy-builder"
             className={({ isActive }) =>
-              `wunder-nav-item ${isActive || location.pathname === '/strategy-studio' ? 'active' : ''}`
+              `wunder-nav-item ${
+                isActive ||
+                location.pathname.startsWith('/strategy-builder') ||
+                location.pathname.startsWith('/algodesigner') ||
+                location.pathname === '/strategies' ||
+                location.pathname === '/strategy-studio'
+                  ? 'active'
+                  : ''
+              }`
             }
-            title="Strategies & Algo Bots"
+            title="AI Strategy Builder"
           >
             <BrainCircuit size={20} />
-          </NavLink>
-
-          <NavLink
-            to="/algodesigner"
-            className={({ isActive }) =>
-              `wunder-nav-item ${isActive || location.pathname.startsWith('/algodesigner') ? 'active' : ''}`
-            }
-            title="Visual Algo Designer"
-          >
-            <Workflow size={20} />
           </NavLink>
 
           <NavLink

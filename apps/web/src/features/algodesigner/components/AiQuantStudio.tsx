@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import Editor from '@monaco-editor/react';
 import {
   Sparkles,
@@ -31,6 +31,14 @@ import {
   Eye,
   RefreshCw,
   X,
+  Download,
+  GitCompare,
+  Workflow,
+  SlidersHorizontal,
+  Bot,
+  BrainCircuit,
+  Hash,
+  Boxes,
 } from 'lucide-react';
 
 import type { ApiClient } from '../../../core/api/client';
@@ -66,6 +74,7 @@ export interface AiQuantStudioProps {
 }
 
 export type StudioTab = 'frontier' | 'autopilot';
+export type CenterTab = 'code' | 'flow' | 'params' | 'diff';
 export type TelemetryTab = 'overview' | 'monte-carlo' | 'walk-forward' | 'diagnostics';
 
 export interface StrategyTemplatePreset {
@@ -75,6 +84,9 @@ export interface StrategyTemplatePreset {
   timeframe: string;
   description: string;
   prompt: string;
+  sharpe: number;
+  winRate: number;
+  archetype: string;
 }
 
 const STRATEGY_PRESETS: StrategyTemplatePreset[] = [
@@ -85,6 +97,9 @@ const STRATEGY_PRESETS: StrategyTemplatePreset[] = [
     timeframe: '5m',
     description: 'Dual EMA crossover with RSI momentum regime gate and dynamic ATR risk sizing',
     prompt: 'Build an intraday trend breakout strategy on NIFTY 5m with EMA(9) crossing EMA(24), RSI(14) > 55 filter for chop elimination, and 1.8x ATR trailing bracket stops risking 1.0% equity per trade.',
+    sharpe: 2.33,
+    winRate: 64.5,
+    archetype: 'Trend / Momentum',
   },
   {
     id: 'banknifty-squeeze',
@@ -93,6 +108,9 @@ const STRATEGY_PRESETS: StrategyTemplatePreset[] = [
     timeframe: '15m',
     description: 'Bollinger Band squeeze inside Keltner Channel with directional ADX confirmation',
     prompt: 'Create a volatility expansion breakout strategy on BANKNIFTY 15m detecting Bollinger Bands contracting inside Keltner Channels, triggering on momentum expansion with ADX > 25.',
+    sharpe: 2.65,
+    winRate: 68.2,
+    archetype: 'Volatility Breakout',
   },
   {
     id: 'hft-vwap',
@@ -101,6 +119,9 @@ const STRATEGY_PRESETS: StrategyTemplatePreset[] = [
     timeframe: '1m',
     description: 'Mean reversion on volume-weighted standard deviation bands with strict time decay',
     prompt: 'Design a statistical mean-reversion algorithm on RELIANCE 1m targeting price extensions beyond 2.0 standard deviations from intraday VWAP, closing positions within 15 minutes or upon VWAP touch.',
+    sharpe: 2.10,
+    winRate: 62.0,
+    archetype: 'Statistical Mean Reversion',
   },
   {
     id: 'stat-arb',
@@ -109,7 +130,19 @@ const STRATEGY_PRESETS: StrategyTemplatePreset[] = [
     timeframe: '5m',
     description: 'Statistical arbitrage on cointegrated spread z-score reversion',
     prompt: 'Develop a statistical arbitrage pairs trading model tracking the synthetic spread between NIFTY and BANKNIFTY futures, opening mean-reversion positions at z-score ±2.2 with half-life decay stops.',
+    sharpe: 2.80,
+    winRate: 71.4,
+    archetype: 'Pairs Arbitrage',
   },
+];
+
+const PROMPT_CHIPS = [
+  { label: '+ Volatility Squeeze (BB/KC)', text: 'Add a volatility squeeze filter requiring Bollinger Bands to contract inside Keltner Channels before expansion entry.' },
+  { label: '+ 1.8x ATR Trailing Bracket', text: 'Enforce dynamic 1.8x ATR trailing stops with mandatory exchange bracket stop-loss orders.' },
+  { label: '+ Anti-Chop RSI Gate (> 55)', text: 'Require RSI(14) > 55 bullish momentum regime gate to eliminate consolidation chop.' },
+  { label: '+ VWAP Mean-Reversion Anchor', text: 'Anchor trade direction to intraday VWAP, rejecting long entries extended > 2.5 sigma above VWAP.' },
+  { label: '+ 15:15 IST Square-Off Guard', text: 'Auto square-off all open intraday positions strictly at 15:15 IST before market close.' },
+  { label: '+ Max 1.0% Capital Risk', text: 'Size all position quantities so that stop-loss execution risks strictly <= 1.0% of portfolio equity.' },
 ];
 
 export const AiQuantStudio: React.FC<AiQuantStudioProps> = ({
@@ -118,11 +151,19 @@ export const AiQuantStudio: React.FC<AiQuantStudioProps> = ({
   onNotice,
 }) => {
   const [activeTab, setActiveTab] = useState<StudioTab>('frontier');
+  const [centerTab, setCenterTab] = useState<CenterTab>('code');
   const [telemetryTab, setTelemetryTab] = useState<TelemetryTab>('overview');
   const [selectedModel, setSelectedModel] = useState<string>('DeepSeek-R1 (Quant CoT)');
   const [prompt, setPrompt] = useState<string>(STRATEGY_PRESETS[0].prompt);
   const [symbol, setSymbol] = useState<string>(STRATEGY_PRESETS[0].symbol);
   const [timeframe, setTimeframe] = useState<string>(STRATEGY_PRESETS[0].timeframe);
+
+  // Hyperparameters
+  const [fastEma, setFastEma] = useState<number>(9);
+  const [slowEma, setSlowEma] = useState<number>(24);
+  const [rsiGate, setRsiGate] = useState<number>(55);
+  const [atrMult, setAtrMult] = useState<number>(1.8);
+  const [riskEquityPct, setRiskEquityPct] = useState<number>(1.0);
 
   // Optimization Target Goals
   const [targetSharpe, setTargetSharpe] = useState<number>(2.0);
@@ -141,7 +182,7 @@ export const AiQuantStudio: React.FC<AiQuantStudioProps> = ({
   });
   const [riskModalOpen, setRiskModalOpen] = useState<boolean>(false);
 
-  // Iteration state (Phase 2)
+  // Iteration state
   const [iterations, setIterations] = useState<OptimizationIteration[]>([]);
   const [selectedIterationIndex, setSelectedIterationIndex] = useState<number>(0);
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -227,6 +268,12 @@ class NiftyIntradayMomentum(_base.Strategy):
     if (onNotice) onNotice(`Loaded template: ${preset.title}`);
   };
 
+  // Append prompt modifier chips
+  const handleAddPromptChip = (chipText: string) => {
+    setPrompt((prev) => (prev ? `${prev.trim()} ${chipText}` : chipText));
+    if (onNotice) onNotice(`Added prompt directive: ${chipText.slice(0, 36)}...`);
+  };
+
   // Phase 2: Run Autonomous Multi-Iteration Optimization Loop
   const handleStartLoop = async () => {
     setIsRunning(true);
@@ -269,7 +316,7 @@ class NiftyIntradayMomentum(_base.Strategy):
     if (onNotice) onNotice('Autonomous Quant Optimization Complete: 3 Iterations Synthesized');
   };
 
-  // Phase 2: One-click "Apply AI Drawdown Fix"
+  // Apply Drawdown Fix
   const handleApplyDrawdownFix = () => {
     if (selectedIterationIndex < iterations.length - 1) {
       setSelectedIterationIndex((idx) => idx + 1);
@@ -283,7 +330,7 @@ class NiftyIntradayMomentum(_base.Strategy):
     }
   };
 
-  // Phase 3: Simulate Next Model Order Proposal & Runtime Disposition
+  // Simulate Next Model Order Proposal & Runtime Disposition
   const handleSimulateNextProposal = () => {
     const cmp = 24954.5;
     const proposal = simulateModelOrderProposal(symbol, cmp, 'buy');
@@ -321,11 +368,33 @@ class NiftyIntradayMomentum(_base.Strategy):
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
+  const handleDownloadCode = () => {
+    const blob = new Blob([strategyCode], { type: 'text/x-python' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentIteration?.graph.name || 'ai_quant_strategy'}.py`;
+    a.click();
+    URL.revokeObjectURL(url);
+    if (onNotice) onNotice('Strategy Python file downloaded');
+  };
+
   const handleApplyToSystem = () => {
+    const stratName = currentIteration?.graph.name || 'nifty50_momentum_v3_atr_optimized';
     if (onApplyStrategy) {
-      onApplyStrategy(strategyCode, currentIteration?.graph.name || 'ai_quant_strategy');
+      onApplyStrategy(strategyCode, stratName);
     }
-    if (onNotice) onNotice('Strategy deployed to live runtime engine');
+    const now = new Date().toLocaleTimeString();
+    setLiveLog((prev) => [
+      ...prev,
+      {
+        timestamp: now,
+        level: 'info',
+        message: `🚀 Strategy Deployed: "${stratName}" mounted to execution runtime with Inviolable Risk Governance.`,
+      },
+    ]);
+    setActiveTab('autopilot');
+    if (onNotice) onNotice('Strategy successfully deployed to Autopilot (Live/Paper Arena)');
   };
 
   return (
@@ -333,12 +402,6 @@ class NiftyIntradayMomentum(_base.Strategy):
       {/* Studio Top Control Bar */}
       <header className="quant-studio-header">
         <div className="quant-studio-title-group">
-          <div className="studio-brand">
-            <Sparkles className="brand-icon" size={18} />
-            <h1 className="brand-title">Honba AI Quant Studio</h1>
-            <span className="badge-framework">Autonomous Strategy Engine</span>
-          </div>
-
           {/* Mode Switcher */}
           <div className="studio-nav-tabs">
             <button
@@ -371,7 +434,7 @@ class NiftyIntradayMomentum(_base.Strategy):
               aria-label="Select AI Quant Model"
             >
               <option value="DeepSeek-R1 (Quant CoT)">DeepSeek-R1 (Quant CoT)</option>
-              <option value="Claude 3.5 Sonnet (Quant Architect)">Claude 3.5 Sonnet (Quant Architect)</option>
+              <option value="Claude 3.7 Sonnet (Quant Architect)">Claude 3.7 Sonnet (Quant Architect)</option>
               <option value="Qwen 2.5 Coder 32B">Qwen 2.5 Coder 32B</option>
               <option value="GPT-4o Quant Engine">GPT-4o Quant Engine</option>
             </select>
@@ -401,26 +464,56 @@ class NiftyIntradayMomentum(_base.Strategy):
           <section className="frontier-copilot-pane">
             <div className="pane-header">
               <div className="pane-title">
-                <Sparkles size={14} className="text-accent" />
-                <span>AI Strategy Builder</span>
+                <Bot size={14} className="text-accent" />
+                <span>Strategy Hypothesis &amp; Prompt</span>
               </div>
-              <span className="badge-subtle">Natural Language Spec</span>
+              <span className="badge-subtle">AI Strategy Builder · Natural Language Spec</span>
             </div>
 
             {/* Presets List */}
             <div className="presets-container">
-              <span className="section-label">Quant Research Presets</span>
+              <div className="section-label-row">
+                <span className="section-label">Quant Research Presets</span>
+                <span className="presets-count-badge">{STRATEGY_PRESETS.length} Curated</span>
+              </div>
               <div className="presets-grid">
-                {STRATEGY_PRESETS.map((preset) => (
+                {STRATEGY_PRESETS.map((preset) => {
+                  const isSelected = symbol === preset.symbol;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`preset-chip ${isSelected ? 'selected' : ''}`}
+                      onClick={() => handleSelectPreset(preset)}
+                      title={preset.description}
+                    >
+                      <div className="preset-top-row">
+                        <span className="preset-chip-title">{preset.title}</span>
+                        <span className="preset-sharpe-tag">SR {preset.sharpe.toFixed(2)}</span>
+                      </div>
+                      <div className="preset-bottom-row">
+                        <span className="preset-chip-symbol">{preset.symbol} • {preset.timeframe}</span>
+                        <span className="preset-archetype-tag">{preset.archetype}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Directive Chips */}
+            <div className="prompt-directives-container">
+              <span className="section-label">Directives & Prompt Augmentations</span>
+              <div className="directive-chips-list">
+                {PROMPT_CHIPS.map((chip, idx) => (
                   <button
-                    key={preset.id}
+                    key={idx}
                     type="button"
-                    className="preset-chip"
-                    onClick={() => handleSelectPreset(preset)}
-                    title={preset.description}
+                    className="directive-tag-btn"
+                    onClick={() => handleAddPromptChip(chip.text)}
+                    title={chip.text}
                   >
-                    <span className="preset-chip-title">{preset.title}</span>
-                    <span className="preset-chip-symbol">{preset.symbol} • {preset.timeframe}</span>
+                    <span>{chip.label}</span>
                   </button>
                 ))}
               </div>
@@ -428,16 +521,19 @@ class NiftyIntradayMomentum(_base.Strategy):
 
             {/* Prompt Input */}
             <div className="prompt-input-wrapper">
-              <label htmlFor="ai-quant-prompt" className="section-label">
-                Trading Thesis & Signal Rationale
-              </label>
+              <div className="field-label-row">
+                <label htmlFor="ai-quant-prompt" className="section-label">
+                  Trading Thesis & Signal Rationale
+                </label>
+                <span className="prompt-token-count">{prompt.length} chars</span>
+              </div>
               <textarea
                 id="ai-quant-prompt"
                 className="quant-prompt-textarea"
                 rows={4}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe your strategy logic, indicators, and risk boundaries..."
+                placeholder="Describe your strategy logic, indicators, and risk boundaries in plain English..."
               />
             </div>
 
@@ -579,7 +675,7 @@ class NiftyIntradayMomentum(_base.Strategy):
             )}
           </section>
 
-          {/* Center Column: Python Strategy Code Sandbox */}
+          {/* Center Column: Python Strategy Code Sandbox & Visual Architecture */}
           <section className="frontier-code-pane">
             <div className="pane-header">
               <div className="pane-title">
@@ -587,6 +683,43 @@ class NiftyIntradayMomentum(_base.Strategy):
                 <span>Strategy Python Sandbox</span>
                 <span className="badge-subtle">Pure Strategy Code</span>
               </div>
+
+              {/* Sub-view switcher */}
+              <div className="center-tab-switcher">
+                <button
+                  type="button"
+                  className={`center-tab-btn ${centerTab === 'code' ? 'active' : ''}`}
+                  onClick={() => setCenterTab('code')}
+                >
+                  <FileCode size={12} />
+                  <span>Code</span>
+                </button>
+                <button
+                  type="button"
+                  className={`center-tab-btn ${centerTab === 'flow' ? 'active' : ''}`}
+                  onClick={() => setCenterTab('flow')}
+                >
+                  <Workflow size={12} />
+                  <span>AI Logic Flow</span>
+                </button>
+                <button
+                  type="button"
+                  className={`center-tab-btn ${centerTab === 'params' ? 'active' : ''}`}
+                  onClick={() => setCenterTab('params')}
+                >
+                  <SlidersHorizontal size={12} />
+                  <span>Hyperparameters</span>
+                </button>
+                <button
+                  type="button"
+                  className={`center-tab-btn ${centerTab === 'diff' ? 'active' : ''}`}
+                  onClick={() => setCenterTab('diff')}
+                >
+                  <GitCompare size={12} />
+                  <span>AI Diff</span>
+                </button>
+              </div>
+
               <div className="pane-actions">
                 <button
                   type="button"
@@ -599,6 +732,15 @@ class NiftyIntradayMomentum(_base.Strategy):
                 </button>
                 <button
                   type="button"
+                  className="code-action-btn"
+                  onClick={handleDownloadCode}
+                  title="Download Python Strategy File"
+                >
+                  <Download size={13} />
+                  <span>Export .py</span>
+                </button>
+                <button
+                  type="button"
                   className="code-action-btn btn-apply-primary"
                   onClick={handleApplyToSystem}
                 >
@@ -608,24 +750,232 @@ class NiftyIntradayMomentum(_base.Strategy):
               </div>
             </div>
 
-            <div className="editor-container">
-              <Editor
-                height="100%"
-                defaultLanguage="python"
-                theme="vs-dark"
-                value={strategyCode}
-                onChange={(val) => setStrategyCode(val || '')}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 12,
-                  fontFamily: 'JetBrains Mono, Fira Code, monospace',
-                  lineNumbers: 'on',
-                  scrollBeyondLastLine: false,
-                  wordWrap: 'on',
-                  padding: { top: 12 },
-                }}
-              />
-            </div>
+            {/* Center Tab Viewports */}
+            {centerTab === 'code' && (
+              <div className="editor-container">
+                <Editor
+                  height="100%"
+                  defaultLanguage="python"
+                  theme="vs-dark"
+                  value={strategyCode}
+                  onChange={(val) => setStrategyCode(val || '')}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    fontFamily: 'JetBrains Mono, Fira Code, monospace',
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'on',
+                    padding: { top: 12 },
+                  }}
+                />
+              </div>
+            )}
+
+            {centerTab === 'flow' && (
+              <div className="ai-logic-flow-view">
+                <div className="flow-header">
+                  <div className="flow-title">
+                    <Workflow size={15} className="text-accent" />
+                    <span>AI-Synthesized Execution Graph</span>
+                  </div>
+                  <span className="flow-badge">Vectorized Pipeline</span>
+                </div>
+                <div className="flow-nodes-container">
+                  <div className="flow-node">
+                    <div className="node-icon-col market">
+                      <Activity size={18} />
+                    </div>
+                    <div className="node-info-col">
+                      <span className="node-step">1. Ingestion Feed</span>
+                      <strong className="node-name">{symbol} ({timeframe} Bars)</strong>
+                      <span className="node-desc">Streaming live OHLCV ticks from high-performance adapter gateway</span>
+                    </div>
+                    <span className="node-status-pill ok">LIVE FEED</span>
+                  </div>
+
+                  <div className="flow-arrow-down">
+                    <ArrowRight size={16} />
+                  </div>
+
+                  <div className="flow-node">
+                    <div className="node-icon-col indicator">
+                      <TrendingUp size={18} />
+                    </div>
+                    <div className="node-info-col">
+                      <span className="node-step">2. Feature Extraction</span>
+                      <strong className="node-name">Dual EMA ({fastEma}/{slowEma}) + RSI ({rsiGate}) + ATR ({atrMult}x)</strong>
+                      <span className="node-desc">Vectorized mathematical indicator matrix updated per tick</span>
+                    </div>
+                    <span className="node-status-pill ok">CALCULATED</span>
+                  </div>
+
+                  <div className="flow-arrow-down">
+                    <ArrowRight size={16} />
+                  </div>
+
+                  <div className="flow-node">
+                    <div className="node-icon-col signal">
+                      <Sparkles size={18} />
+                    </div>
+                    <div className="node-info-col">
+                      <span className="node-step">3. Alpha Signal Confluence</span>
+                      <strong className="node-name">Golden Cross (EMA{fastEma} &gt; EMA{slowEma}) &amp; RSI &gt; {rsiGate}</strong>
+                      <span className="node-desc">Multi-rule boolean logic filter removing rangebound noise and chop</span>
+                    </div>
+                    <span className="node-status-pill ok">TRIGGER</span>
+                  </div>
+
+                  <div className="flow-arrow-down">
+                    <ArrowRight size={16} />
+                  </div>
+
+                  <div className="flow-node highlight-risk">
+                    <div className="node-icon-col risk">
+                      <Lock size={18} />
+                    </div>
+                    <div className="node-info-col">
+                      <span className="node-step">4. Inviolable Risk Governance</span>
+                      <strong className="node-name">Dynamic Sizing ({riskEquityPct}% Equity) &amp; {atrMult}x ATR Bracket Stop</strong>
+                      <span className="node-desc">Deterministic interception clamping leverage to 1.0x cash-hard</span>
+                    </div>
+                    <span className="node-status-pill locked">PROTECTED</span>
+                  </div>
+
+                  <div className="flow-arrow-down">
+                    <ArrowRight size={16} />
+                  </div>
+
+                  <div className="flow-node">
+                    <div className="node-icon-col execution">
+                      <CheckCircle2 size={18} />
+                    </div>
+                    <div className="node-info-col">
+                      <span className="node-step">5. Order Gateway</span>
+                      <strong className="node-name">BUY Bracket Order with Exchange-Enforced OCO Bracket</strong>
+                      <span className="node-desc">Direct market routing with slippage protection and instant fill confirmation</span>
+                    </div>
+                    <span className="node-status-pill ok">READY</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {centerTab === 'params' && (
+              <div className="hyperparameters-view">
+                <div className="params-header">
+                  <div className="params-title">
+                    <SlidersHorizontal size={15} className="text-accent" />
+                    <span>Real-Time Hyperparameter Tuner</span>
+                  </div>
+                  <span className="params-badge">Dynamic Variables</span>
+                </div>
+                <div className="params-controls-grid">
+                  <div className="param-control-card">
+                    <div className="param-label-row">
+                      <span>Fast EMA Period</span>
+                      <strong className="text-accent">{fastEma}</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min="3"
+                      max="30"
+                      value={fastEma}
+                      onChange={(e) => setFastEma(parseInt(e.target.value, 10))}
+                    />
+                    <span className="param-hint">Shorter period tracks quick momentum turns</span>
+                  </div>
+
+                  <div className="param-control-card">
+                    <div className="param-label-row">
+                      <span>Slow EMA Period</span>
+                      <strong className="text-accent">{slowEma}</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min="15"
+                      max="100"
+                      value={slowEma}
+                      onChange={(e) => setSlowEma(parseInt(e.target.value, 10))}
+                    />
+                    <span className="param-hint">Base trend direction and trailing support baseline</span>
+                  </div>
+
+                  <div className="param-control-card">
+                    <div className="param-label-row">
+                      <span>RSI Regime Gate</span>
+                      <strong className="text-accent">{rsiGate}</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min="40"
+                      max="70"
+                      value={rsiGate}
+                      onChange={(e) => setRsiGate(parseInt(e.target.value, 10))}
+                    />
+                    <span className="param-hint">Threshold to confirm directional bullish continuation</span>
+                  </div>
+
+                  <div className="param-control-card">
+                    <div className="param-label-row">
+                      <span>ATR Trailing Multiplier</span>
+                      <strong className="text-accent">{atrMult.toFixed(1)}x</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min="1.0"
+                      max="4.0"
+                      step="0.1"
+                      value={atrMult}
+                      onChange={(e) => setAtrMult(parseFloat(e.target.value))}
+                    />
+                    <span className="param-hint">Volatility-adjusted bracket buffer for trailing stop-loss</span>
+                  </div>
+
+                  <div className="param-control-card">
+                    <div className="param-label-row">
+                      <span>Capital Risk per Trade (% Equity)</span>
+                      <strong className="text-bull">{riskEquityPct.toFixed(1)}%</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.2"
+                      max="2.5"
+                      step="0.1"
+                      value={riskEquityPct}
+                      onChange={(e) => setRiskEquityPct(parseFloat(e.target.value))}
+                    />
+                    <span className="param-hint">Maximum dollar drawdown tolerated per trade execution</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {centerTab === 'diff' && (
+              <div className="diff-view-container">
+                <div className="diff-header">
+                  <div className="diff-title">
+                    <GitCompare size={15} className="text-accent" />
+                    <span>AI Mutation &amp; Refinement Diff</span>
+                  </div>
+                  <span className="diff-badge">Iteration Comparison</span>
+                </div>
+                <div className="diff-content-box">
+                  <div className="diff-line diff-unchanged"># honba:strategy:v1 (AI Quant Strategy)</div>
+                  <div className="diff-line diff-unchanged">from __future__ import annotations</div>
+                  <div className="diff-line diff-unchanged">import honba.strategies.base as _base</div>
+                  <div className="diff-line diff-unchanged">class NiftyIntradayMomentum(_base.Strategy):</div>
+                  <div className="diff-line diff-added">+    # AI Refinement: Injected 14-period RSI regime gate to prevent false breakouts</div>
+                  <div className="diff-line diff-added">+    self.rsi = self.build_indicator(&quot;rsi&quot;, period={rsiGate})</div>
+                  <div className="diff-line diff-added">+    self.atr = self.build_indicator(&quot;atr&quot;, period=14)</div>
+                  <div className="diff-line diff-unchanged">    def on_bar(self, bar) -&gt; None:</div>
+                  <div className="diff-line diff-modified">~        if fast &gt; slow and getattr(self, &quot;_prev_fast&quot;, 0) &lt;= getattr(self, &quot;_prev_slow&quot;, 0) and rsi_val &gt; {rsiGate}:</div>
+                  <div className="diff-line diff-added">+            # Dynamic ATR risk sizing: {riskEquityPct}% capital risk / ({atrMult} * ATR)</div>
+                  <div className="diff-line diff-added">+            stop_distance = max(atr_val * {atrMult}, 5.0)</div>
+                  <div className="diff-line diff-unchanged">            self.buy(bar.instrument_id, qty, stop_loss=bar.close - stop_distance)</div>
+                </div>
+              </div>
+            )}
 
             {/* Bottom Parameter Quick-Tuner */}
             <div className="parameter-tuner-bar">
@@ -636,23 +986,50 @@ class NiftyIntradayMomentum(_base.Strategy):
               <div className="tuner-chips">
                 <div className="tuner-chip">
                   <span className="chip-name">Fast EMA:</span>
-                  <input type="number" defaultValue={9} className="tuner-input" />
+                  <input
+                    type="number"
+                    value={fastEma}
+                    onChange={(e) => setFastEma(parseInt(e.target.value, 10) || 9)}
+                    className="tuner-input"
+                  />
                 </div>
                 <div className="tuner-chip">
                   <span className="chip-name">Slow EMA:</span>
-                  <input type="number" defaultValue={24} className="tuner-input" />
+                  <input
+                    type="number"
+                    value={slowEma}
+                    onChange={(e) => setSlowEma(parseInt(e.target.value, 10) || 24)}
+                    className="tuner-input"
+                  />
                 </div>
                 <div className="tuner-chip">
                   <span className="chip-name">RSI Gate:</span>
-                  <input type="number" defaultValue={55} className="tuner-input" />
+                  <input
+                    type="number"
+                    value={rsiGate}
+                    onChange={(e) => setRsiGate(parseInt(e.target.value, 10) || 55)}
+                    className="tuner-input"
+                  />
                 </div>
                 <div className="tuner-chip">
                   <span className="chip-name">ATR Multiplier:</span>
-                  <input type="number" step="0.1" defaultValue={1.8} className="tuner-input" />
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={atrMult}
+                    onChange={(e) => setAtrMult(parseFloat(e.target.value) || 1.8)}
+                    className="tuner-input"
+                  />
                 </div>
                 <div className="tuner-chip">
                   <span className="chip-name">Risk Equity %:</span>
-                  <input type="number" step="0.1" defaultValue={1.0} className="tuner-input" />
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={riskEquityPct}
+                    onChange={(e) => setRiskEquityPct(parseFloat(e.target.value) || 1.0)}
+                    className="tuner-input"
+                  />
                 </div>
               </div>
             </div>
@@ -745,7 +1122,7 @@ class NiftyIntradayMomentum(_base.Strategy):
               <>
                 <div className="equity-chart-section">
                   <div className="chart-header">
-                    <span>Cumulative Equity & Underwater Drawdown</span>
+                    <span>Cumulative Equity &amp; Underwater Drawdown</span>
                     <span className="chart-range">Simulated Historical Candles</span>
                   </div>
                   <div className="svg-chart-container">
@@ -778,7 +1155,7 @@ class NiftyIntradayMomentum(_base.Strategy):
                   <div className="robustness-header">
                     <div className="robustness-title">
                       <TrendingUp size={14} className="text-bull" />
-                      <span>Rule Significance & Edge Testing</span>
+                      <span>Rule Significance &amp; Edge Testing</span>
                     </div>
                     <span className="badge-subtle">Bootstrap Alpha</span>
                   </div>
@@ -967,7 +1344,7 @@ class NiftyIntradayMomentum(_base.Strategy):
                     onClick={handleApplyDrawdownFix}
                   >
                     <Zap size={14} />
-                    <span>⚡ Apply AI Drawdown Fix & Auto-Refine</span>
+                    <span>⚡ Apply AI Drawdown Fix &amp; Auto-Refine</span>
                   </button>
                 </div>
               </div>
@@ -1017,7 +1394,7 @@ class NiftyIntradayMomentum(_base.Strategy):
                 }}
               >
                 <ShieldAlert size={14} />
-                <span>Emergency Flatten & Halt</span>
+                <span>Emergency Flatten &amp; Halt</span>
               </button>
             </div>
           </div>
@@ -1036,7 +1413,7 @@ class NiftyIntradayMomentum(_base.Strategy):
                 <div className="reasoning-bubble">
                   <span className="bubble-timestamp">14:34:00</span>
                   <p className="bubble-text">
-                    <strong>CoT Market Analysis:</strong> 5-minute candle on {symbol} printed high-volume consolidation above EMA(9) @ 24,930. RSI(14) reading 62.4 confirms expanding momentum regime. Volatility ATR is compressing to 14.2 points, signaling upcoming directional expansion.
+                    <strong>CoT Market Analysis:</strong> 5-minute candle on {symbol} printed high-volume consolidation above EMA({fastEma}) @ 24,930. RSI(14) reading 62.4 confirms expanding momentum regime. Volatility ATR is compressing to 14.2 points, signaling upcoming directional expansion.
                   </p>
                 </div>
                 <div className="reasoning-bubble">
@@ -1059,7 +1436,7 @@ class NiftyIntradayMomentum(_base.Strategy):
               <div className="pane-header">
                 <div className="pane-title">
                   <ShieldCheck size={14} className="text-bull" />
-                  <span>Deterministic Risk Execution & Audit Log</span>
+                  <span>Deterministic Risk Execution &amp; Audit Log</span>
                 </div>
                 <span className="badge-subtle">Runtime Interceptor</span>
               </div>
@@ -1258,7 +1635,7 @@ class NiftyIntradayMomentum(_base.Strategy):
                   if (onNotice) onNotice('Runtime Risk Envelope parameters updated.');
                 }}
               >
-                Apply & Lock Envelope
+                Apply &amp; Lock Envelope
               </button>
             </div>
           </div>

@@ -189,9 +189,6 @@ describe('AlgoDesignerPage — AI-First Quant Studio route', () => {
 
     renderPage(<AlgoDesignerPage />);
 
-    // Header title and brand present
-    expect(screen.getByText('Honba AI Quant Studio')).toBeInTheDocument();
-    expect(screen.getByText(/Autonomous Strategy Engine/i)).toBeInTheDocument();
     // Mode Switcher buttons present
     expect(screen.getByRole('button', { name: /frontier \(strategy lab\)/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /autopilot \(live\/paper arena\)/i })).toBeInTheDocument();

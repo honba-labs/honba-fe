@@ -35,11 +35,11 @@ export const StrategiesPage: React.FC = () => {
           <HbButton
             variant="primary"
             size="sm"
-            icon={<Workflow size={14} />}
-            onClick={() => navigate('/algodesigner')}
-            title="Open Visual Flow & Python Code Designer"
+            icon={<Sparkles size={14} />}
+            onClick={() => navigate('/strategy-builder')}
+            title="Open Autonomous AI Strategy Builder"
           >
-            Launch Visual Algo Designer
+            Launch AI Strategy Builder
           </HbButton>
         </div>
       </div>

@@ -35,11 +35,9 @@ describe('AiQuantStudio (Honba Autonomous Strategy Engine - Phase 2 & 3)', () =>
     vi.clearAllMocks();
   });
 
-  it('renders the AI Quant Studio with autonomous strategy engine badges', () => {
+  it('renders the AI Quant Studio with mode switcher and risk badges', () => {
     render(<AiQuantStudio />);
 
-    expect(screen.getByText(/Honba AI Quant Studio/i)).toBeInTheDocument();
-    expect(screen.getByText(/Autonomous Strategy Engine/i)).toBeInTheDocument();
     expect(screen.getByText(/Frontier \(Strategy Lab\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Autopilot \(Live\/Paper Arena\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Runtime Risk: Clamped/i)).toBeInTheDocument();
