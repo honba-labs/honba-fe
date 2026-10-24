@@ -6,9 +6,9 @@ API_ADDR ?= 127.0.0.1:8000
 
 .PHONY: api web dev
 
-# Backend only (honba serve)
+# Backend only (honba-ya serve)
 api:
-	cd ../honba && cargo run -p honba-cli -- serve \
+	cd ../honba-ya && cargo run -p honba-ya-cli -- serve \
 		--data-dir $(abspath $(DATA_DIR)) \
 		--journals-dir $(abspath $(JOURNALS_DIR)) \
 		--addr $(API_ADDR) --cors-origin http://localhost:5175
