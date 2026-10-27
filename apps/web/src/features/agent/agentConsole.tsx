@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { X } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { useQuotesStream } from '@/hooks/useQuotesStream';
-import { useLinkGroup } from '@/hooks/useLinkGroup';
+import { useDebate } from './debateOrchestrator';
+import { AgentConsoleMessage } from './agentConsole';
 
 export interface AgentConsoleMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'debate';
   content: string;
   citations?: Array<{
     document: string;
@@ -34,6 +34,7 @@ export const AgentConsole: React.FC<AgentConsoleProps> = ({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const { selectedSymbol, activeSymbol } = useStore();
+  const { rounds, active, setActive, start } = useDebate('market outlook', selectedSymbol?.ticker);
 
   // SSE streaming from the agent console
   useEffect(() => {
@@ -57,6 +58,14 @@ export const AgentConsole: React.FC<AgentConsoleProps> = ({
           id: data.id,
           role: 'system',
           content: `Thread: ${data.threadName}`,
+          timestamp: Date.now(),
+        }]);
+      } else if (data.type === 'debate-round') {
+        // Add debate round from SSE
+        setMessages((prev) => [...prev, {
+          id: data.id,
+          role: 'debate',
+          content: data.content,
           timestamp: Date.now(),
         }]);
       }
@@ -160,6 +169,11 @@ export const AgentConsole: React.FC<AgentConsoleProps> = ({
                     ))}
                   </div>
                 )}
+                {msg.role === 'debate' && (
+                  <div className="agent-console-debate-tag">
+                    <strong>{msg.content.split(':')[0]}</strong>
+                  </div>
+                )}
               </div>
               {msg.action && (
                 <div className="agent-console-action">
@@ -193,6 +207,35 @@ export const AgentConsole: React.FC<AgentConsoleProps> = ({
               </div>
             </div>
           ))}
+
+          {/* Debate rounds */}
+          {rounds.map((round) => (
+            <div
+              key={round.id}
+              className={`agent-console-message agent-console-message-debate`}
+            >
+              <div className="agent-console-message-content">
+                <div className="agent-console-debate-speaker">
+                  {round.speaker === 'pm' ? 'Portfolio Manager' :
+                    round.speaker === 'bull' ? 'Bull' :
+                    round.speaker === 'bear' ? 'Bear' : 'Neutral'}
+                </div>
+                <div className="agent-console-debate-content">{round.content}</div>
+              </div>
+              <div className="agent-console-message-meta">
+                {new Date(round.timestamp).toLocaleTimeString()}
+              </div>
+            </div>
+          ))}
+
+          {/* PM Synthesis at the end */}
+          {rounds.some((r) => r.speaker === 'pm') && (
+            <div key="pm-synthesis" className="agent-console-message agent-console-message-debate agent-console-message-pm-synthesis">
+              <div className="agent-console-message-content">
+                <strong>PM Decision:</strong> {rounds.filter((r) => r.speaker === 'pm').at(0)?.content || 'Pending...'}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input area */}
@@ -216,6 +259,15 @@ export const AgentConsole: React.FC<AgentConsoleProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Debate control bar */}
+        {rounds.length === 0 && (
+          <div className="agent-console-debate-control">
+            <button onClick={start} className="agent-console-debate-start-btn">
+              Start Multi-Agent Debate
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
