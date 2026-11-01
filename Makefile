@@ -3,12 +3,13 @@ DATA_DIR ?= ../honba-data/data
 JOURNALS_DIR ?= ../honba-data/data/journals
 # API_ADDR must match the proxy target in apps/web/vite.config.ts
 API_ADDR ?= 127.0.0.1:8000
+HONBA ?= $(if $(wildcard ../.venv/bin/honba),../.venv/bin/honba,honba)
 
 .PHONY: api web dev
 
-# Backend only (honba-ya serve)
+# Backend only (honba serve via honba-tamashii)
 api:
-	cd ../honba-ya && cargo run -p honba-ya-cli -- serve \
+	$(HONBA) serve \
 		--data-dir $(abspath $(DATA_DIR)) \
 		--journals-dir $(abspath $(JOURNALS_DIR)) \
 		--addr $(API_ADDR) --cors-origin http://localhost:5175
